@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -684,7 +685,7 @@
             </div>
             <div class="preview-scroll">
               <table class="preview-table">
-                <thead><tr><th>受注日</th><th>受注番号</th><th>図番</th><th>数量</th><th>単価</th><th>原番</th><th>希望納期</th></tr></thead>
+                <thead><tr><th>受注日</th><th>受注番号</th><th>図番</th><th>数量</th><th>単価</th><th>原番</th><th>希望納期</th><th>納入先</th></tr></thead>
                 <tbody id="preview-body"></tbody>
               </table>
             </div>
@@ -708,6 +709,10 @@
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
             <span class="orders-count" id="orders-count">読込中...</span>
+            <button class="refresh-btn" onclick="exportOrdersCSV()" style="background:#f0fdf4;border-color:#bbf7d0;color:#15803d;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              CSV出力
+            </button>
             <button class="refresh-btn" onclick="loadOrders()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
               更新
@@ -853,7 +858,7 @@ async function handleFiles(files) {
     }
   }
   if (extractedRows.length === 0) {
-    showStatus('error', 'データを抽出できませんでした。ファイルを確認してください。');
+    showStatus('error', 'データを抽出できませんでした。画像PDFの場合はテキスト抽出不可です（YP4-N等）。テキスト付きPDFをご使用ください。');
     return;
   }
   showStatus('success', extractedRows.length + '件のデータを抽出しました', 100);
@@ -868,120 +873,428 @@ async function parsePDF(file) {
   for (let p = 1; p <= pdf.numPages; p++) {
     const page = await pdf.getPage(p);
     const content = await page.getTextContent();
-    const texts = content.items.map(i => i.str);
-    rows.push(...extractPDFRows(texts));
+    if (!content.items.length) continue;
+
+    // pdf.jsはword単位でitemsを返す → y座標でグループ化して行を再構築
+    // transform[5] はページ下からのy（大きいほど上）→ 降順ソートで上から下へ
+    // ±2px の誤差を吸収するため、既存グループに近いyがあればマージする
+    const lineMap = {};
+    for (const item of content.items) {
+      const s = item.str;
+      if (!s || !s.trim()) continue;
+      const y = item.transform ? item.transform[5] : 0;
+      const x = item.transform ? item.transform[4] : 0;
+      // 既存グループの中に2px以内のyがあればそこに追加、なければ新規
+      let key = null;
+      for (const k of Object.keys(lineMap)) {
+        if (Math.abs(Number(k) - y) <= 2) { key = k; break; }
+      }
+      if (key === null) { key = String(y); lineMap[key] = []; }
+      lineMap[key].push({ x, text: s });
+    }
+
+    // y座標降順（上から下の順）でソートし、各行をx昇順に結合
+    const sortedYs = Object.keys(lineMap).map(Number).sort((a, b) => b - a);
+    const lines = sortedYs.map(y =>
+      lineMap[y].sort((a, b) => a.x - b.x).map(t => t.text).join(' ')
+    );
+    const full = lines.join('\n');
+
+    if (!full.trim()) continue;
+
+    // デバッグ用: コンソールに判定情報を出力
+    console.log(`[PDF p${p}] 先頭:`, full.substring(0, 80).replace(/\n/g,' '));
+    console.log(`[PDF p${p}] G11桁:`, /G\d{11}/.test(full), '| 明細備考:', full.includes('明細備考'));
+
+    if (full.includes('購買注文書') && full.includes('オークマ株式会社')) {
+      console.log('[PDF] → フォーマット3: オークマ');
+      rows.push(...extractOkumaRows(full, lines));
+    } else if (full.includes('注文書番号') && (full.includes('PG') || full.includes('BJ'))) {
+      console.log('[PDF] → フォーマット1: キタムラ機械');
+      rows.push(...extractKitamuraRows(full));
+    } else if (full.includes('ユアサネオテック') || /注文[ＮN][ｏo][．.]/.test(full)) {
+      console.log('[PDF] → フォーマット2: ユアサネオテック');
+      rows.push(...extractYuasaRows(full));
+    } else if ((full.includes('発注書') && full.includes('野村')) || (full.includes('注文№') && full.includes('発注数') && full.includes('見積No'))) {
+      console.log('[PDF] → フォーマット4: 野村製作所');
+      rows.push(...extractNomuraRows(full, lines));
+    } else if (/[A-Z]{1,3}\d{5,}/.test(full) && full.includes('明細備考') && full.includes('IZUSHI')) {
+      console.log('[PDF] → フォーマット5: IZUSHI');
+      rows.push(...extractIzushiRows(full, lines));
+    } else {
+      console.log('[PDF] → フォーマット不明（スキップ） full=', full.substring(0,200));
+    }
+    // テキストが取れない画像PDFはスキップ
   }
   return rows;
 }
 
-function extractPDFRows(texts) {
+// ---- フォーマット1: キタムラ機械 ----
+// 同ページに注文書・注文請書・控の3セクション → 最初の注文書のみ
+function extractKitamuraRows(full) {
   const rows = [];
-  const full = texts.join('\n');
 
-  // Extract order date
+  // 注文書セクションのみ（「注文請書」の前まで）
+  const reqIdx = full.indexOf('注文請書');
+  const sec = reqIdx > 0 ? full.substring(0, reqIdx) : full;
+
+  // 注文日
   let orderDate = '';
-  const dm = full.match(/発注日\s*(\d{2})\/(\d{2})\/(\d{2})/);
-  if (dm) orderDate = `20${dm[1]}/${dm[2]}/${dm[3]}`;
+  const odm = sec.match(/注文日\s+(\d{4}\/\d{2}\/\d{2})/);
+  if (odm) orderDate = odm[1];
 
-  // Extract purchase order number
+  // 注文書番号 (originalno)
+  let originalno = '';
+  const onm = sec.match(/注文書番号\s+(\S+)/);
+  if (onm) originalno = onm[1];
+
+  // 各行を解析: "PG12345678 図番 版数 品名 ... 数量 単価.00"
+  const lines = sec.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    const m = line.match(/^([A-Z]{2}\d{6,})\s+([\S]+)\s+\d{2}\s+.+?\s+(\d+)\s+([\d,]+)\.00/);
+    if (m) {
+      const orderno   = m[1];
+      const drawingno = m[2];
+      const quantity  = parseInt(m[3]);
+      const price     = parseInt(m[4].replace(/,/g, ''));
+      let deliverydate = '';
+      // 次の最大3行から納期日を探す（レイアウトにより1〜2行後にくる場合がある）
+      for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+        const nd = lines[j].match(/(\d{4}\/\d{2}\/\d{2})/);
+        if (nd) { deliverydate = nd[1]; break; }
+      }
+      rows.push({ orderdate: orderDate, orderno, drawingno, quantity, price,
+                  originalno, deliverydate, delivery_destination: null, shippingdate: null });
+    }
+  }
+  return rows;
+}
+
+// ---- フォーマット2: ユアサネオテック (画像PDFは空配列を返す) ----
+function extractYuasaRows(full) {
+  const rows = [];
+  let orderDate = '';
+  const odm = full.match(/発行日\s+(\d{4}\/\d{2}\/\d{2})/);
+  if (odm) orderDate = odm[1];
+
+  let orderno = '';
+  const onm = full.match(/注文[ＮN][ｏo][．.]\s*([\w\-]+)/);
+  if (onm) orderno = onm[1].trim();
+  if (!orderno) return rows;
+
+  let drawingno = '';
+  const dm = full.match(/大阪テック[^\n]*\n\s*([A-Z0-9][A-Z0-9\/\-]{5,})/);
+  if (dm) drawingno = dm[1].trim();
+  if (!drawingno) {
+    const dm2 = full.match(/(\d[A-Z]\d{7,})/);
+    if (dm2) drawingno = dm2[1];
+  }
+
+  let quantity = 1;
+  const qm = full.match(/\n\s*(\d{1,3})\s+(?:ケ|式|個|本|枚)/);
+  if (qm) quantity = parseInt(qm[1]);
+
+  let price = 0;
+  const pm = full.match(/単価\s+([\d,]+)/);
+  if (pm) price = parseInt(pm[1].replace(/,/g, ''));
+
+  let deliverydate = '';
+  const ddm = full.match(/(\d{4}\/\d{2}\/\d{2})/);
+  if (ddm) deliverydate = ddm[1];
+
+  let originalno = '';
+  const im = full.match(/(\d{12,})/);
+  if (im) originalno = im[1];
+  const im2 = full.match(/(\d{12,})\n([A-Z][A-Z0-9\/]+)/);
+  if (im2) originalno = im2[1] + im2[2];
+
+  rows.push({ orderdate: orderDate, orderno, drawingno, quantity, price,
+              originalno, deliverydate, delivery_destination: null, shippingdate: null });
+  return rows;
+}
+
+// ---- フォーマット4: 野村製作所 ----
+// 1ページに発注書・現品票・受領書・納品書兼請求書の4セクション → 発注書のみ取得
+function extractNomuraRows(full, lines) {
+  const rows = [];
+
+  // 「現品票」出現前（発注書セクションのみ）
+  const hinhyoIdx = full.indexOf('現品票');
+  const sec = hinhyoIdx > 0 ? full.substring(0, hinhyoIdx) : full;
+
+  // 発注日: 最初の yyyy/mm/dd
+  let orderDate = '';
+  const odm = sec.match(/(\d{4}\/\d{2}\/\d{2})/);
+  if (odm) orderDate = odm[1];
+
+  // 注文No: "0000367754" → 先頭の0を除いた数字部分
+  let orderno = '';
+  const onm = sec.match(/0000(\d{6,})/);
+  if (onm) orderno = onm[1];
+
+  // 品番/図番: "2A2556-0" パターン（英数字+ハイフン+数字）
+  let drawingno = '';
+  const dm = sec.match(/(\d[A-Z]\d{4}-\d)/);
+  if (dm) drawingno = dm[1];
+
+  // originalno: 見積No.
+  let originalno = '';
+  const im = sec.match(/見積No\.(\d+)/);
+  if (im) originalno = im[1];
+
+  // 納期: "2026/06/30 1 0 1" 形式の行から
+  let deliverydate = '';
+  for (const line of sec.split('\n')) {
+    const nm = line.match(/^(\d{4}\/\d{2}\/\d{2})\s+\d+/);
+    if (nm) { deliverydate = nm[1]; break; }
+  }
+
+  // 発注単価: "¥140,000" または "\\140,000"
+  let price = 0;
+  const pm = sec.match(/[¥\\\\]([\d,]+)/);
+  if (pm) price = parseInt(pm[1].replace(/,/g, ''));
+
+  if (orderno || drawingno) {
+    rows.push({ orderdate: orderDate, orderno, drawingno, quantity: 1,
+                price, originalno, deliverydate,
+                delivery_destination: null, shippingdate: null });
+  }
+  return rows;
+}
+
+// ---- フォーマット5: IZUSHI注文書 ----
+// 行形式: "G26001151003 U33678A01 OT-015113 1.0 P 248,800"
+// 次行に行番号, その次に "大阪テック 品名", 明細備考に納期
+function extractIzushiRows(full, lines) {
+  const rows = [];
+
+  // 発行日: "発 行 日 2026年06月03日"
+  let orderDate = '';
+  const odm = full.match(/発\s*行\s*日\s*(\d{4})年(\d{2})月(\d{2})日/);
+  if (odm) orderDate = `${odm[1]}/${odm[2]}/${odm[3]}`;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    // 注文番号パターン:
+    // G+11桁: G26001151003 U33678A01 OT-015113 1.0 P 248,800
+    // RF+6桁: RF008440 NLX2500/1250Ge B軸 10.0 P 14,000
+    // 共通: [A-Z]{1,3}\d{5,} で始まり 数量 P 単価 で終わる
+    const m = line.match(/^([A-Z]{1,3}\d{5,})\s+(.+?)\s+([\d.]+)\s+P\s+([\d,]+)$/);
+    if (!m) continue;
+
+    const orderno      = m[1];
+    const productRaw   = m[2];
+    const quantity     = parseFloat(m[3]) || 1;
+    const price        = parseInt(m[4].replace(/,/g, ''));
+
+    const productParts = [productRaw];
+    let deliverydate = '';
+
+    for (let j = i + 1; j < Math.min(i + 6, lines.length); j++) {
+      const nxt = lines[j].trim();
+      if (/^\d+$/.test(nxt)) continue;        // 行番号スキップ
+      if (/^[\d,]+$/.test(nxt)) continue;     // 金額のみスキップ
+
+      // 大阪テック行: 品名部分のみ取得（末尾の金額・数字は除外）
+      const mm = nxt.match(/^大阪[テﾃ][ッｯ][クｸ]\s+(.*)/);
+      if (mm) {
+        const name = mm[1].replace(/\s+[\d,]+$/, '').trim();
+        if (name && !/^[\d,]+$/.test(name)) productParts.push(name);
+        continue;
+      }
+      // 品名続き行（英数字・カタカナ等）
+      if (/^[A-Z0-9]/.test(nxt) && !nxt.includes('明細備考') && !nxt.includes('合 計') &&
+          !nxt.includes('■') && !nxt.includes('FAX')) {
+        productParts.push(nxt);
+        continue;
+      }
+      // 明細備考から納期（末尾の日付を取得）
+      const mm2 = nxt.match(/明細備考[：:]\s*.*?(\d{4}\/\d{1,2}\/\d{1,2})\s*$/);
+      if (mm2) {
+        const d = mm2[1].split('/');
+        deliverydate = `${d[0]}/${d[1].padStart(2,'0')}/${d[2].padStart(2,'0')}`;
+        break;
+      }
+    }
+
+    const drawingno = productParts.join(' ').trim();
+    rows.push({ orderdate: orderDate, orderno, drawingno, quantity,
+                price, originalno: '', deliverydate,
+                delivery_destination: null, shippingdate: null });
+  }
+  return rows;
+}
+
+// ---- フォーマット3: オークマ 購買注文書 ----
+// 行形式: "H1090-xxxx 単価.00 数量 税抜金額 yyyy/mm/dd"
+// 1ページ1購買オーダー、複数行あり
+function extractOkumaRows(full, lines) {
+  const rows = [];
+
+  // 発注日: "発注日 26/06/05"
+  let orderDate = '';
+  const odm = full.match(/発注日\s+(\d{2})\/(\d{2})\/(\d{2})/);
+  if (odm) orderDate = `20${odm[1]}/${odm[2]}/${odm[3]}`;
+
+  // 購買オーダー番号: "購買オーダー BJ-xxxxx"
   let po = '';
-  const pom = full.match(/オークマ株式会社\s+(BJ-\d+)/);
+  const pom = full.match(/購買オーダー\s+(BJ-\d+)/);
   if (pom) po = pom[1];
-
   if (!po) return rows;
 
-  // Find line items by looking for pattern: 3-digit line no, then part number H####-...
-  const lineRe = /\b(0[123456789]0)\b/g;
-  const partRe = /\b(H\d{4}-[\w-]+)/;
-
-  let m;
-  const allText = texts.join(' ');
-
-  // Split by line numbers 010, 020, 030 etc.
-  const segments = allText.split(/\b(0[123456789]0)\b/).filter(s => s.trim());
-
-  let currentLine = null;
-  for (let i = 0; i < segments.length; i++) {
-    const seg = segments[i].trim();
-    if (/^0[123456789]0$/.test(seg)) {
-      currentLine = seg;
-      continue;
-    }
-    if (currentLine && seg.length > 0) {
-      const pm = seg.match(/\b(H\d{4}-[\w-]+)/);
-      if (pm) {
-        const partNo = pm[1];
-        // Extract quantity and unit price: pattern "NNN,NNN.00 N NNN,NNN"
-        const qm = seg.match(/([\d,]+\.\d+)\s+(\d+)\s+([\d,]+)/);
-        const qty = qm ? parseInt(qm[2]) : 1;
-        const unitPrice = qm ? parseFloat(qm[1].replace(/,/g,'')) : 0;
-        // Delivery date
-        const delm = seg.match(/(\d{4}\/\d{2}\/\d{2})/);
-        const delivery = delm ? delm[1] : '';
-        rows.push({
-          orderdate: orderDate,
-          orderno: po + '-' + currentLine,
-          drawingno: partNo,
-          quantity: qty,
-          price: unitPrice,
-          originalno: currentLine,
-          deliverydate: delivery,
-          shippingdate: null
-        });
-      }
-      currentLine = null;
+  // 品目行: "H1090-xxxx 単価.00 数量 税抜金額 yyyy/mm/dd"
+  for (const line of lines) {
+    const m = line.match(/^(H\d{4}-[\w\-]+)\s+([\d,]+)\.00\s+(\d+)\s+[\d,]+\s+(\d{4}\/\d{2}\/\d{2})/);
+    if (m) {
+      rows.push({
+        orderdate: orderDate,
+        orderno:   po,
+        drawingno: m[1],
+        quantity:  parseInt(m[3]),
+        price:     parseInt(m[2].replace(/,/g, '')),
+        originalno: po,
+        deliverydate: m[4],
+        delivery_destination: null,
+        shippingdate: null
+      });
     }
   }
   return rows;
 }
 
 // ---- Excel Parser ----
+// Excelシリアル日付 → "yyyy/mm/dd"
+function excelDateToStr(v) {
+  if (!v) return '';
+  if (typeof v === 'number' && v > 40000) {
+    const d = new Date(Math.round((v - 25569) * 86400 * 1000));
+    return `${d.getUTCFullYear()}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${String(d.getUTCDate()).padStart(2,'0')}`;
+  }
+  return String(v).trim();
+}
+
 async function parseExcel(file) {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: 'array', cellDates: false });
   const ws = wb.Sheets[wb.SheetNames[0]];
   const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
   if (data.length < 2) return [];
-  const header = data[0];
+  const header = data[0].map(h => String(h).trim());
   const ci = {};
-  header.forEach((h, i) => { ci[String(h).trim()] = i; });
+  header.forEach((h, i) => { ci[h] = i; });
 
-  const col = {
-    originalno: ci['オーダ'] ?? 8,
-    orderno: ci['手配番号'] ?? 10,
-    drawingno: ci['図面番号'] ?? 16,
-    quantity: ci['数量'] ?? 20,
-    deliverydate: ci['指示納期'] ?? 21,
-    price: ci['単価'] ?? 25,
-    orderdate_col: null
-  };
+  // ---- フォーマット判定 ----
+  if (ci['手配番号'] !== undefined || ci['見積照会日'] !== undefined) {
+    // フォーマットA: 手配状況照会
+    return parseExcelTehaijo(data, ci);
+  } else if (ci['オーダーNo.'] !== undefined || ci['発注日'] !== undefined) {
+    // フォーマットB: S03010_NewOrderMain_Excel
+    return parseExcelNewOrder(data, ci);
+  } else {
+    // 従来フォーマット（オークマ系）
+    return parseExcelOkuma(data, ci);
+  }
+}
 
+// ---- フォーマットA: 手配状況照会 ----
+// orderdate=見積照会日, orderno=手配番号, drawingno=部品番号,
+// quantity=数量, price=金額, originalno=見積照会番号(なければオーダ),
+// deliverydate=指示納期, delivery_destination=納場名
+function parseExcelTehaijo(data, ci) {
   const rows = [];
+  // 見積照会番号カラムは存在しないので originalno = オーダ＋アイテム
+  const colMap = {
+    orderdate:    ci['見積照会日'],
+    orderno:      ci['手配番号'],
+    drawingno:    ci['部品番号'],
+    quantity:     ci['数量'],
+    price:        ci['金額'],
+    originalno:   ci['オーダ'],          // オーダ番号をoriginalnoに
+    deliverydate: ci['指示納期'],
+    delivery_destination: ci['納場名'],
+  };
+  for (let r = 1; r < data.length; r++) {
+    const row = data[r];
+    const orderno = String(row[colMap.orderno] || '').trim();
+    const drawingno = String(row[colMap.drawingno] || '').trim();
+    if (!orderno && !drawingno) continue;
+    rows.push({
+      orderdate:            excelDateToStr(row[colMap.orderdate]),
+      orderno,
+      drawingno,
+      quantity:             parseInt(row[colMap.quantity]) || 0,
+      price:                parseFloat(row[colMap.price]) || 0,
+      originalno:           String(row[colMap.originalno] || '').trim(),
+      deliverydate:         excelDateToStr(row[colMap.deliverydate]),
+      delivery_destination: String(row[colMap.delivery_destination] || '').trim(),
+      shippingdate:         null,
+    });
+  }
+  return rows;
+}
+
+// ---- フォーマットB: S03010_NewOrderMain_Excel ----
+// orderdate=発注日, orderno=オーダーNo., drawingno=品番,
+// quantity=発注数, price=税抜単価, originalno=空,
+// deliverydate=納期, delivery_destination=納入先
+function parseExcelNewOrder(data, ci) {
+  const rows = [];
+  const colMap = {
+    orderdate:    ci['発注日'],
+    orderno:      ci['オーダーNo.'],
+    drawingno:    ci['品番'],
+    quantity:     ci['発注数'],
+    price:        ci['税抜単価'],
+    deliverydate: ci['納期'],
+    delivery_destination: ci['納入先'],
+  };
+  for (let r = 1; r < data.length; r++) {
+    const row = data[r];
+    const orderno = String(row[colMap.orderno] || '').trim();
+    const drawingno = String(row[colMap.drawingno] || '').trim();
+    if (!orderno && !drawingno) continue;
+    rows.push({
+      orderdate:            excelDateToStr(row[colMap.orderdate]),
+      orderno,
+      drawingno,
+      quantity:             parseInt(row[colMap.quantity]) || 0,
+      price:                parseFloat(row[colMap.price]) || 0,
+      originalno:           '',
+      deliverydate:         excelDateToStr(row[colMap.deliverydate]),
+      delivery_destination: String(row[colMap.delivery_destination] || '').trim(),
+      shippingdate:         null,
+    });
+  }
+  return rows;
+}
+
+// ---- 従来フォーマット（オークマ系Excel）----
+function parseExcelOkuma(data, ci) {
+  const rows = [];
+  const col = {
+    originalno:   ci['オーダ']    ?? 8,
+    orderno:      ci['手配番号']   ?? 10,
+    drawingno:    ci['図面番号']   ?? 16,
+    quantity:     ci['数量']       ?? 20,
+    deliverydate: ci['指示納期']   ?? 21,
+    price:        ci['単価']       ?? 25,
+  };
   for (let r = 1; r < data.length; r++) {
     const row = data[r];
     const orderno = String(row[col.orderno] || '').trim();
     const drawingno = String(row[col.drawingno] || '').trim();
     if (!orderno && !drawingno) continue;
-
-    // Convert Excel serial date
-    let delivery = '';
-    const rawDate = row[col.deliverydate];
-    if (rawDate && typeof rawDate === 'number' && rawDate > 40000) {
-      const utc = new Date(Math.round((rawDate - 25569) * 86400 * 1000));
-      delivery = `${utc.getUTCFullYear()}/${String(utc.getUTCMonth()+1).padStart(2,'0')}/${String(utc.getUTCDate()).padStart(2,'0')}`;
-    } else if (rawDate) {
-      delivery = String(rawDate);
-    }
-
     rows.push({
-      orderdate: '2026/06/04',
+      orderdate:            '',
       orderno,
       drawingno,
-      quantity: parseInt(row[col.quantity]) || 0,
-      price: parseFloat(row[col.price]) || 0,
-      originalno: String(row[col.originalno] || '').trim(),
-      deliverydate: delivery,
-      shippingdate: null
+      quantity:             parseInt(row[col.quantity]) || 0,
+      price:                parseFloat(row[col.price]) || 0,
+      originalno:           String(row[col.originalno] || '').trim(),
+      deliverydate:         excelDateToStr(row[col.deliverydate]),
+      delivery_destination: '',
+      shippingdate:         null,
     });
   }
   return rows;
@@ -998,7 +1311,8 @@ function renderPreview() {
       <td style="text-align:right">${r.price.toLocaleString()}</td>
       <td>${r.originalno}</td>
       <td>${r.deliverydate}</td>
-    </tr>`).join('') + (extractedRows.length > 20 ? `<tr><td colspan="7" style="text-align:center;color:#9ca3af;font-size:11px;padding:8px;">… 他 ${extractedRows.length-20}件</td></tr>` : '');
+      <td>${r.delivery_destination || ''}</td>
+    </tr>`).join('') + (extractedRows.length > 20 ? `<tr><td colspan="8" style="text-align:center;color:#9ca3af;font-size:11px;padding:8px;">… 他 ${extractedRows.length-20}件</td></tr>` : '');
   document.getElementById('preview-wrap').style.display = 'block';
 }
 
@@ -1080,6 +1394,62 @@ function sortOrders(key) {
     return sortAsc ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
   });
   renderOrdersTable();
+}
+
+function exportOrdersCSV() {
+  const data = filteredOrders;
+  if (!data || data.length === 0) {
+    alert('エクスポートするデータがありません。');
+    return;
+  }
+
+  // カラム定義（ヘッダー名: フィールド名）
+  const columns = [
+    { header: '受注番号(P番号)', field: 'productno' },
+    { header: '受注日',         field: 'orderdate' },
+    { header: '発注番号',       field: 'orderno' },
+    { header: '図番',           field: 'drawingno' },
+    { header: '数量',           field: 'quantity' },
+    { header: '単価',           field: 'price' },
+    { header: '原番',           field: 'originalno' },
+    { header: '希望納期',       field: 'deliverydate' },
+    { header: '出荷日',         field: 'shippingdate' },
+    { header: '納入先',         field: 'delivery_destination' },
+    { header: '登録日時',       field: 'created_at' },
+  ];
+
+  // BOM付きUTF-8でExcelでの文字化けを防止
+  const BOM = '\uFEFF';
+
+  // ヘッダー行
+  const header = columns.map(c => `"${c.header}"`).join(',');
+
+  // データ行
+  const rows = data.map(r =>
+    columns.map(c => {
+      let v = r[c.field];
+      if (v === null || v === undefined) v = '';
+      // 日時は日付部分のみ
+      if (c.field === 'created_at' && v) v = String(v).substring(0, 10);
+      // ダブルクォートをエスケープ
+      return `"${String(v).replace(/"/g, '""')}"`;
+    }).join(',')
+  );
+
+  const csv = BOM + [header, ...rows].join('\r\n');
+
+  // ダウンロード
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const now  = new Date();
+  const ts   = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+  a.href     = url;
+  a.download = `受注一覧_${ts}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function renderOrdersTable() {
