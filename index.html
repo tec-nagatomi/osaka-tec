@@ -3243,9 +3243,9 @@ async function doSaveNewRows(rows, silent = false) {
       console.log(`[子レコード] ${origRow.drawingno}(カバー) qty=${qty} × seal=${sealCount} = ${total}件`);
     } else if (category) {
       // カバー以外で品目区分が何かしら登録されている場合（パーツ・搬送台など）
-      // シール番号は付与せず、数量分だけ子データを作成
+      // シール番号は付与せず、数量分だけ子データを作成（sealnoはNOT NULL制約のため空文字を使用）
       for (let n = 1; n <= qty; n++) {
-        childRows.push({ order_id: savedOrder.id, sealno: null, delivery: null, inspectionsheet: null, _drawingno: origRow.drawingno, _needsSeal: false });
+        childRows.push({ order_id: savedOrder.id, sealno: '', delivery: null, inspectionsheet: null, _drawingno: origRow.drawingno, _needsSeal: false });
       }
       console.log(`[子レコード] ${origRow.drawingno}(${category}) qty=${qty}件（シール番号なし）`);
     }
@@ -3722,12 +3722,12 @@ async function backfillPartsChildren() {
   console.log(`[backfill] 子データ未作成のパーツ受注: ${targets.length}件（既に子データがある ${partsOrders.length - targets.length}件はスキップ）`);
   if (!targets.length) { console.log('[backfill] 作成対象がありません。終了します。'); return; }
 
-  // 4) 数量分の子データ（sealno=null）を組み立てて挿入
+  // 4) 数量分の子データ（sealnoは空文字。NOT NULL制約のためnullは使えない）を組み立てて挿入
   const childRows = [];
   targets.forEach(o => {
     const qty = parseInt(o.quantity) || 1;
     for (let n = 1; n <= qty; n++) {
-      childRows.push({ order_id: o.id, sealno: null, delivery: null, inspectionsheet: null, _drawingno: o.drawingno });
+      childRows.push({ order_id: o.id, sealno: '', delivery: null, inspectionsheet: null, _drawingno: o.drawingno });
     }
   });
   console.log(`[backfill] 作成する子データ件数: ${childRows.length}件`);
@@ -6542,14 +6542,14 @@ async function backfillChildrenForDrawing(drawingno, category) {
       }
     }
 
-    // 子データを組み立て（カバー=採番あり／パーツ=採番なし）
+    // 子データを組み立て（カバー=採番あり／それ以外=シール番号なし。NOT NULL制約のため空文字を使用）
     const childRows = [];
     targets.forEach(o => {
       const qty = parseInt(o.quantity) || 1;
       const count = category === 'カバー' ? qty * sealPerUnit : qty;
       const needsSeal = category === 'カバー';
       for (let n = 1; n <= count; n++) {
-        childRows.push({ order_id: o.id, sealno: null, delivery: null, inspectionsheet: null, _needsSeal: needsSeal, _drawingno: drawingno });
+        childRows.push({ order_id: o.id, sealno: needsSeal ? null : '', delivery: null, inspectionsheet: null, _needsSeal: needsSeal, _drawingno: drawingno });
       }
     });
     if (!childRows.length) return;
@@ -7628,3 +7628,4 @@ async function saveRoute() {
 
 </body>
 </html>
+
