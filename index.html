@@ -199,6 +199,7 @@
   .status-box.processing { background: #dbeafe; color: #1e40af; }
   .status-box.success { background: #d1fae5; color: #065f46; }
   .status-box.error { background: #fee2e2; color: #991b1b; }
+  .status-box.warning { background: #fef3c7; color: #92400e; }
   .status-msg { display: flex; align-items: center; gap: 8px; }
   .status-msg svg { width: 16px; height: 16px; flex-shrink: 0; }
   .progress-bar { height: 4px; background: #bfdbfe; border-radius: 2px; margin-top: 8px; overflow: hidden; }
@@ -926,6 +927,11 @@
             </div>
           </div>
         </div>
+        <div id="unregistered-banner" style="display:none;align-items:center;gap:8px;background:#fef3c7;border:1px solid #fde68a;color:#92400e;border-radius:8px;padding:8px 14px;margin:0 16px 8px;font-size:12px;font-weight:600;cursor:pointer;" onclick="toggleUnregisteredFilter()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span id="unregistered-banner-text"></span>
+          <span style="margin-left:auto;font-weight:700;text-decoration:underline;">クリックで絞り込み</span>
+        </div>
         <div class="orders-search">
           <input class="search-input" id="search-input" type="text" placeholder="受注番号・図番・取引先・受注日・出荷日で検索..." oninput="filterOrders()">
         </div>
@@ -1317,6 +1323,22 @@
           </select>
         </div>
         <div class="pd-form-group">
+          <label class="pd-form-label">第2品目区分</label>
+          <select class="pd-form-input" id="pd-second_category">
+            <option value="">なし</option>
+            <option value="BK">BK</option>
+            <option value="P">P</option>
+          </select>
+        </div>
+        <div class="pd-form-group">
+          <label class="pd-form-label">部品番号</label>
+          <input class="pd-form-input" id="pd-part_number" type="text" placeholder="OT番号 または P番号">
+        </div>
+        <div class="pd-form-group">
+          <label class="pd-form-label">部品番号URL</label>
+          <input class="pd-form-input" id="pd-part_number_url" type="text">
+        </div>
+        <div class="pd-form-group">
           <label class="pd-form-label">取引先</label>
           <select class="pd-form-input" id="pd-client">
             <option value="">選択してください</option>
@@ -1343,10 +1365,6 @@
             <option value="大鳥機工株式会社">大鳥機工株式会社</option>
             <option value="株式会社池貝">株式会社池貝</option>
           </select>
-        </div>
-        <div class="pd-form-group">
-          <label class="pd-form-label">製品コード</label>
-          <input class="pd-form-input" id="pd-product_code" type="text">
         </div>
         <div class="pd-form-group full">
           <label class="pd-form-label">品名</label>
@@ -1385,22 +1403,23 @@
           <input class="pd-form-input" id="pd-old_drawing_url" type="text">
         </div>
         <div class="pd-form-group full">
-          <label class="pd-form-label">部品URL</label>
+          <label class="pd-form-label">構成パーツURL</label>
           <input class="pd-form-input" id="pd-component_url" type="text">
         </div>
       </div>
     </div>
     <!-- 子レコードセクション -->
     <div id="pd-child-section" style="display:none; border-top:1px solid #e5e7eb; padding:16px 20px 0;">
-      <div style="font-size:12px; font-weight:700; color:#374151; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+      <div style="font-size:12px; font-weight:700; color:#374151; margin-bottom:2px; display:flex; align-items:center; gap:8px;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        構成パーツ（子レコード）
+        セット詳細（内訳）
         <button onclick="addPdChildRow()" style="margin-left:auto; padding:3px 10px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:5px; font-size:11px; font-weight:600; cursor:pointer;">+ 行追加</button>
       </div>
+      <div style="font-size:10px; color:#9ca3af; margin-bottom:10px;">1つの製品が複数部位から成る場合の内訳（例: X軸用／Y軸用）を登録します</div>
       <!-- ヘッダー行 -->
       <div style="display:grid; grid-template-columns:1fr 1fr 80px 36px; gap:6px; padding:0 0 4px; border-bottom:1px solid #e5e7eb; margin-bottom:6px;">
         <span style="font-size:10px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em;">OT番号</span>
-        <span style="font-size:10px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em;">品名</span>
+        <span style="font-size:10px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em;">内訳名称</span>
         <span style="font-size:10px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em;">数量</span>
         <span></span>
       </div>
@@ -1633,7 +1652,7 @@ async function loadLaserAssign() {
     if (drawingnos.length) {
       const inList = drawingnos.map(d => `"${d}"`).join(',');
       const pdRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${inList})&select=customer_drawing_no,product_name,ot_number,client,product_category`,
+        `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${inList})&select=customer_drawing_no,product_name,ot_number,client,product_category,second_category,part_number,part_number_url`,
         { headers: H }
       );
       if (pdRes.ok) (await pdRes.json()).forEach(p => pdMap.set(p.customer_drawing_no, p));
@@ -1657,6 +1676,9 @@ async function loadLaserAssign() {
           otNumber: pd?.ot_number || '-',
           client: pd?.client || '-',
           productCategory: pd?.product_category || '',
+          secondCategory: pd?.second_category || '',
+          partNumber: pd?.part_number || '',
+          partNumberUrl: pd?.part_number_url || '',
           orderdate: o.orderdate || '-',
           deliverydate: o.deliverydate || '-',
           quantity: o.quantity != null ? o.quantity : '-',
@@ -1766,6 +1788,7 @@ function laserCardHtml(g) {
       '<span style="font-size:9px;font-weight:700;color:#1d4ed8;letter-spacing:0.08em;white-space:nowrap;">作業指示書' + copyBadge + '</span>' +
       '<span style="display:flex;align-items:center;gap:5px;overflow:hidden;">' +
         (g.productCategory ? categoryBadgeHtml(g.productCategory) : '') +
+        (g.secondCategory ? secondCategoryBadgeHtml(g.secondCategory, g.partNumber, g.partNumberUrl) : '') +
         '<span style="font-size:11px;font-weight:700;color:#2563eb;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + g.productNo + '</span>' +
       '</span>' +
     '</div>' +
@@ -3179,6 +3202,7 @@ async function doSaveNewRows(rows, silent = false) {
   const drawingNos = [...new Set(rows.map(r => r.drawingno).filter(Boolean))];
   let sealPerUnitMap = new Map();
   let categoryMap = new Map(); // drawingno → product_category（カバー／パーツ／その他 判定用）
+  let unregisteredDrawingNos = []; // 製品マスタ(productdate)未登録の図番
   if (drawingNos.length > 0) {
     try {
       const pdRes = await fetch(
@@ -3211,6 +3235,11 @@ async function doSaveNewRows(rows, silent = false) {
             }
           }
         }
+      }
+      // 製品マスタ未登録の図番を検出（今回の注文データに含まれるが productdate に存在しないもの）
+      unregisteredDrawingNos = drawingNos.filter(d => !categoryMap.has(d));
+      if (unregisteredDrawingNos.length > 0) {
+        console.warn('[doSaveNewRows] 製品マスタ未登録の図番:', unregisteredDrawingNos);
       }
     } catch(e) { console.warn('[doSaveNewRows] seal取得失敗', e); }
   }
@@ -3325,9 +3354,18 @@ async function doSaveNewRows(rows, silent = false) {
     }
   }
 
+  // 製品マスタ未登録の図番がある場合は、保存成功時にも必ず気づけるよう警告する
+  if (unregisteredDrawingNos.length > 0) {
+    showUnregisteredWarning(unregisteredDrawingNos, rows);
+  }
+
   if (!silent) {
     const childMsg = childRows.length > 0 ? `（子レコード ${childRows.length}件 自動生成）` : '';
-    showStatus('success', `✓ ${saved.length}件を osakatec_DB/orders に保存しました ${childMsg}`, 100);
+    const warnMsg = unregisteredDrawingNos.length > 0
+      ? ` ／ ⚠️ 製品マスタ未登録 ${unregisteredDrawingNos.length}件あり`
+      : '';
+    showStatus(unregisteredDrawingNos.length > 0 ? 'warning' : 'success',
+      `✓ ${saved.length}件を osakatec_DB/orders に保存しました ${childMsg}${warnMsg}`, 100);
     btn.textContent = '保存完了';
     isSaving = true;  // 自分の保存通知での二重再読込を抑制
     setTimeout(() => { loadOrders(); loadCalendarEvents(); clearImport(); isSaving = false; }, 1500);
@@ -3402,6 +3440,50 @@ async function createChildRoutesFromBase(insertedChildren, childRows, savedOrder
     if (!ins.ok) console.warn('[childRoute] 固有ルート生成失敗:', await ins.text());
     else console.log(`[childRoute] 固有ルート ${payload.length}件 生成完了`);
   } catch (e) { console.warn('[childRoute] 固有ルートINSERT例外', e); }
+}
+
+// 製品マスタ(productdate)未登録の図番がインポートデータに含まれていた場合に表示する警告モーダル。
+// トースト通知(showStatus)はclearImport()で自動的に消えてしまうため、
+// 見落とし防止のため手動で閉じるまで残るモーダルとして表示する。
+function showUnregisteredWarning(unregisteredList, rows) {
+  // drawingno → その図番を含む受注番号一覧
+  const ordersByDrawing = new Map();
+  rows.forEach(r => {
+    if (!unregisteredList.includes(r.drawingno)) return;
+    if (!ordersByDrawing.has(r.drawingno)) ordersByDrawing.set(r.drawingno, []);
+    ordersByDrawing.get(r.drawingno).push(r.orderno);
+  });
+
+  const overlay = document.createElement('div');
+  overlay.id = 'unregistered-warning-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:14px;width:100%;max-width:640px;max-height:85vh;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,0.25);display:flex;flex-direction:column;">
+      <div style="background:linear-gradient(135deg,#f59e0b,#d97706);padding:16px 20px;color:#fff;">
+        <div style="font-size:15px;font-weight:700;">⚠️ 製品マスタ未登録の受注があります</div>
+        <div style="font-size:11px;opacity:0.9;margin-top:3px;">以下の図番は productdate（製品マスタ）に登録されていません。受注データ自体は保存済みですが、取引先・製品名・品目区分が一覧に表示されず、子データ（シール番号等）も自動生成されません。</div>
+      </div>
+      <div style="overflow-y:auto;padding:16px 20px;flex:1;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <tr style="background:#f9fafb;">
+            <th style="padding:6px 10px;text-align:left;color:#6b7280;">図番</th>
+            <th style="padding:6px 10px;text-align:left;color:#6b7280;">受注番号</th>
+          </tr>
+          ${unregisteredList.map(d => `
+            <tr>
+              <td style="padding:6px 10px;border-top:1px solid #f3f4f6;font-family:monospace;font-weight:600;">${d}</td>
+              <td style="padding:6px 10px;border-top:1px solid #f3f4f6;font-family:monospace;">${(ordersByDrawing.get(d)||[]).join(', ')}</td>
+            </tr>`).join('')}
+        </table>
+      </div>
+      <div style="padding:14px 20px;border-top:1px solid #f3f4f6;display:flex;justify-content:flex-end;gap:8px;background:#f9fafb;">
+        <button onclick="document.getElementById('unregistered-warning-overlay').remove()"
+          style="padding:8px 20px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;color:#374151;font-size:12px;font-weight:600;cursor:pointer;">後で確認する</button>
+        <button onclick="document.getElementById('unregistered-warning-overlay').remove();showPage('productdate', document.querySelector('[data-page=productdate]'))"
+          style="padding:8px 20px;border-radius:8px;border:none;background:#d97706;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">製品マスタ登録へ</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
 }
 
 function showStatus(type, msg, pct) {
@@ -3831,7 +3913,7 @@ async function loadOrders() {
     // ordersとproductdateを並行取得（両方ページネーション対応）
     const [rawOrders, pdList] = await Promise.all([
       fetchAllRows(`${SUPABASE_URL}/rest/v1/orders?select=*&order=orderdate.desc,id.desc`),
-      fetchAllRows(`${SUPABASE_URL}/rest/v1/productdate?select=designid,customer_drawing_no,client,product_name,ot_number,delivery_destination,product_category`)
+      fetchAllRows(`${SUPABASE_URL}/rest/v1/productdate?select=designid,customer_drawing_no,client,product_name,ot_number,delivery_destination,product_category,second_category,part_number,part_number_url`)
     ]);
 
     // productdateをcustomer_drawing_noでMapに変換（高速検索用）
@@ -3850,6 +3932,9 @@ async function loadOrders() {
         pd_ot_number:             pd?.ot_number             || '',
         pd_delivery_destination:  pd?.delivery_destination  || '',
         pd_product_category:      pd?.product_category      || '',
+        pd_second_category:       pd?.second_category        || '',
+        pd_part_number:           pd?.part_number             || '',
+        pd_part_number_url:       pd?.part_number_url         || '',
         has_order_memo: false,
         has_pd_memo:    false,
         has_memo:       false,
@@ -3912,11 +3997,9 @@ async function loadOrders() {
         has_unset_delivery: unsetSet.has(r.id),
       }));
     } catch(e) { console.warn('[loadOrders] メモ取得失敗', e); }
-    filteredOrders = [...allOrders];
-    document.getElementById('orders-count').textContent = allOrders.length + '件';
-    currentPage = 1;
-    renderOrdersTable();
     buildClientSelect(); // 取引先セレクトを更新
+    updateUnregisteredBanner(); // 製品マスタ未登録の受注があれば警告バナー表示
+    filterOrders(); // 現在選択中のフィルター（取引先・カバー/メンテ・未納期など）を再適用してから描画（件数表示・ページングもここで更新される）
     await loadCalendarEvents(); // allOrders確定後にカレンダー更新
   } catch(e) {
     document.getElementById('orders-tbody').innerHTML = `<tr><td colspan="12"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><p>データ取得エラー: ${e.message}</p></div></td></tr>`;
@@ -3928,6 +4011,31 @@ let todayFilterActive = false;
 let deliveryStatusFilter = ''; // '' = すべて / 'unset' = 未納期のみ / 'confirmed' = 納期確定のみ
 let categoryFilter = '';       // '' = すべて / 'カバー' / 'メンテ'（カバー以外すべて）
 let clientFilterValue = '';
+let unregisteredFilterActive = false; // 製品マスタ(productdate)未登録の受注のみ表示するフィルター
+
+// 製品マスタ(productdate)に図番が登録されていない受注件数を確認し、あればバナーで警告表示する。
+// orders.drawingno が productdate.customer_drawing_no に一件も一致しない受注が対象。
+function updateUnregisteredBanner() {
+  const banner = document.getElementById('unregistered-banner');
+  if (!banner) return;
+  const count = allOrders.filter(o => !o.pd_client).length;
+  if (count > 0) {
+    document.getElementById('unregistered-banner-text').textContent =
+      `製品マスタ未登録の受注が ${count}件 あります（取引先・製品名が表示されません）`;
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+    unregisteredFilterActive = false;
+  }
+}
+
+// バナークリックで「製品マスタ未登録のみ」表示を切り替える
+function toggleUnregisteredFilter() {
+  unregisteredFilterActive = !unregisteredFilterActive;
+  const banner = document.getElementById('unregistered-banner');
+  if (banner) banner.style.background = unregisteredFilterActive ? '#fde68a' : '#fef3c7';
+  filterOrders();
+}
 let currentUser = null;
 let calBaseMode = 'shipping'; // 'shipping' or 'order'
 
@@ -4079,6 +4187,9 @@ function filterOrders() {
     if (clientFilterValue) {
       if (!(r.pd_client || '').includes(clientFilterValue)) return false;
     }
+    if (unregisteredFilterActive) {
+      if (r.pd_client) return false; // pd_clientが空＝productdate未登録の受注のみ表示
+    }
     // 出荷日フィルター
     if (shipFrom && (r.shippingdate || '') < shipFrom) return false;
     if (shipTo   && (r.shippingdate || '') > shipTo)   return false;
@@ -4103,7 +4214,7 @@ function filterOrders() {
   currentPage = 1;
   renderOrdersTable();
   const countEl = document.getElementById('orders-count');
-  const hasFilter = todayFilterActive || deliveryStatusFilter || categoryFilter || clientFilterValue || shipFrom || shipTo || orderFrom || orderTo || q;
+  const hasFilter = todayFilterActive || deliveryStatusFilter || categoryFilter || clientFilterValue || shipFrom || shipTo || orderFrom || orderTo || q || unregisteredFilterActive;
   if (hasFilter) {
     countEl.textContent = `${filteredOrders.length}件 / 全${allOrders.length}件`;
     countEl.style.color = '#1d4ed8';
@@ -4204,7 +4315,7 @@ function renderOrdersTable() {
       <td>${r.orderdate || '-'}</td>
       <td>${r.pd_client || '-'}</td>
       <td>${r.pd_product_name || '-'}</td>
-      <td>${categoryBadgeHtml(r.pd_product_category)}</td>
+      <td>${categoryBadgeHtml(r.pd_product_category)}${secondCategoryBadgeHtml(r.pd_second_category, r.pd_part_number, r.pd_part_number_url)}</td>
       <td class="mono" style="font-size:11px;color:${categoryTextColor(r.pd_product_category)};font-weight:700;">${r.pd_ot_number || '-'}</td>
       <td class="mono" style="font-size:11px">${r.drawingno || '-'}</td>
       <td class="mono" style="font-size:11px">${r.orderno || '-'}</td>
@@ -4457,7 +4568,7 @@ function renderDetailModal(p, children) {
             <td style="padding:4px 8px 4px 0;color:#6b7280;font-weight:600;white-space:nowrap;width:80px;">取引先</td>
             <td style="padding:4px 0;color:#111827;font-weight:600;">${_detailProductdate.client || '-'}</td>
             <td style="padding:4px 8px;color:#6b7280;font-weight:600;white-space:nowrap;width:80px;">品目区分</td>
-            <td style="padding:4px 0;">${categoryBadgeHtml(_detailProductdate.product_category)}</td>
+            <td style="padding:4px 0;">${categoryBadgeHtml(_detailProductdate.product_category)}${secondCategoryBadgeHtml(_detailProductdate.second_category, _detailProductdate.part_number, _detailProductdate.part_number_url)}</td>
           </tr>
           <tr style="background:rgba(186,230,253,0.15);">
             <td style="padding:4px 8px 4px 0;color:#6b7280;font-weight:600;white-space:nowrap;">OT番号</td>
@@ -5057,6 +5168,25 @@ function categoryBadgeHtml(cat) {
 function categoryTextColor(cat) {
   if (!cat) return '#111827';
   return cat === 'カバー' ? '#0369a1' : '#6d28d9';
+}
+
+// 第2品目区分バッジ(BK／P)。丸型・光沢グレー・白文字。カーソルを合わせると部品番号をツールチップ表示。
+// part_number_url が登録されている場合はクリックでそのURLを新規タブで開く。
+// 品目区分バッジ(categoryBadgeHtml)の直後に並べて使う想定。
+function secondCategoryBadgeHtml(secondCat, partNo, partNoUrl) {
+  if (!secondCat) return '';
+  const title = String(partNo || '').replace(/"/g, '&quot;');
+  const inner = secondCat;
+  const badgeStyle = 'display:inline-flex;align-items:center;justify-content:center;'
+    + 'width:22px;height:22px;min-width:22px;border-radius:50%;margin-left:5px;vertical-align:middle;'
+    + 'background:linear-gradient(180deg,#e5e7eb 0%,#9ca3af 45%,#6b7280 100%);color:#fff;'
+    + 'font-size:10px;font-weight:800;line-height:1;letter-spacing:0.02em;'
+    + 'box-shadow:inset 0 1px 1px rgba(255,255,255,0.7),inset 0 -2px 3px rgba(0,0,0,0.25),0 1px 2px rgba(0,0,0,0.3);'
+    + 'text-shadow:0 1px 1px rgba(0,0,0,0.3);';
+  if (partNoUrl) {
+    return '<a href="' + partNoUrl + '" target="_blank" rel="noopener" title="' + title + '（クリックで参照先を開く）" onclick="event.stopPropagation()" style="' + badgeStyle + 'text-decoration:none;cursor:pointer;">' + inner + '</a>';
+  }
+  return '<span title="' + title + '" style="' + badgeStyle + 'cursor:default;">' + inner + '</span>';
 }
 
 function memoIconHtml(r) {
@@ -6220,7 +6350,7 @@ function renderProductdateTable() {
 
   document.getElementById('pd-tbody').innerHTML = slice.map(r => `
     <tr onclick="openPdDetail(${r.designid})" title="クリックして詳細を表示" style="cursor:pointer;">
-      <td>${categoryBadgeHtml(r.product_category)}</td>
+      <td>${categoryBadgeHtml(r.product_category)}${secondCategoryBadgeHtml(r.second_category, r.part_number, r.part_number_url)}</td>
       <td>${r.client||'-'}</td>
       <td class="mono" style="font-size:11px;color:${categoryTextColor(r.product_category)};font-weight:700;">${r.ot_number||'-'}</td>
       <td class="mono" style="font-size:11px">${r.customer_drawing_no||'-'}</td>
@@ -6266,7 +6396,7 @@ function openPdDetail(id) {
 
   document.getElementById('pd-detail-body').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 20px;">
-      <div><div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:3px;">品目区分</div><div style="font-size:13px;">${categoryBadgeHtml(rec.product_category)}</div></div>
+      <div><div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:3px;">品目区分</div><div style="font-size:13px;">${categoryBadgeHtml(rec.product_category)}${secondCategoryBadgeHtml(rec.second_category, rec.part_number, rec.part_number_url)}</div></div>
       <div><div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:3px;">取引先</div><div style="font-size:13px;color:#111827;">${fmt(rec.client)}</div></div>
       <div><div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:3px;">OT番号</div><div style="font-size:13px;color:${otColor};font-family:monospace;font-weight:700;">${fmt(rec.ot_number)}</div></div>
       <div><div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:3px;">客先図番</div><div style="font-size:13px;color:#111827;font-family:monospace;">${fmt(rec.customer_drawing_no)}</div></div>
@@ -6311,14 +6441,14 @@ function openEditFromDetail() {
 
 function openPdModal(id) {
   const modal = document.getElementById('pd-modal-overlay');
-  const fields = ['ot_number','customer_drawing_no','product_category','client','product_code',
+  const fields = ['ot_number','customer_drawing_no','product_category','second_category','part_number','part_number_url','client',
     'product_name','latest_quote_date','current_price','approval_return_date',
     'delivery_destination','remarks','approved_url','drawing_url','old_drawing_url','component_url'];
 
   const childSection = document.getElementById('pd-child-section');
 
   // select に前回補った「旧データ」用の一時optionが残っていれば除去
-  ['pd-product_category','pd-client'].forEach(sid => {
+  ['pd-product_category','pd-second_category','pd-client'].forEach(sid => {
     const sel = document.getElementById(sid);
     if (sel && sel.tagName === 'SELECT') {
       Array.from(sel.options).forEach(o => { if (o.dataset.temp === '1') o.remove(); });
@@ -6379,7 +6509,7 @@ async function loadPdChildRows(parentDesignid) {
     const rows = res.ok ? await res.json() : [];
     container.innerHTML = '';
     if (rows.length === 0) {
-      container.innerHTML = '<div style="text-align:center;padding:8px;font-size:11px;color:#9ca3af;">子レコードなし</div>';
+      container.innerHTML = '<div style="text-align:center;padding:8px;font-size:11px;color:#9ca3af;">内訳データなし</div>';
     } else {
       rows.forEach(row => renderPdChildRow(row));
     }
@@ -6413,8 +6543,8 @@ function renderPdChildRow(row) {
 // 新規行追加ボタン
 function addPdChildRow() {
   const container = document.getElementById('pd-child-rows');
-  // "子レコードなし"メッセージを消す
-  if (container.querySelector('[style*="子レコードなし"]') || container.innerHTML.includes('子レコードなし')) {
+  // "内訳データなし"メッセージを消す
+  if (container.querySelector('[style*="内訳データなし"]') || container.innerHTML.includes('内訳データなし')) {
     container.innerHTML = '';
   }
   const div = document.createElement('div');
@@ -6425,7 +6555,7 @@ function addPdChildRow() {
     <input type="text" placeholder="OT番号 (例: OT-102541-5)" value=""
       style="padding:6px 8px;border:1px solid #bfdbfe;border-radius:6px;font-size:12px;width:100%;box-sizing:border-box;background:#eff6ff;"
       onchange="markChildDirty(this)">
-    <input type="text" placeholder="品名" value=""
+    <input type="text" placeholder="内訳名称 (例: X軸用)" value=""
       style="padding:6px 8px;border:1px solid #bfdbfe;border-radius:6px;font-size:12px;width:100%;box-sizing:border-box;background:#eff6ff;"
       onchange="markChildDirty(this)">
     <input type="number" min="1" placeholder="数量" value="1"
@@ -6463,7 +6593,7 @@ async function deletePdChildRow(btn) {
   row.remove();
   const container = document.getElementById('pd-child-rows');
   if (container.children.length === 0) {
-    container.innerHTML = '<div style="text-align:center;padding:8px;font-size:11px;color:#9ca3af;">子レコードなし</div>';
+    container.innerHTML = '<div style="text-align:center;padding:8px;font-size:11px;color:#9ca3af;">内訳データなし</div>';
   }
 }
 
@@ -6618,8 +6748,10 @@ async function savePdRecord() {
     ot_number:              document.getElementById('pd-ot_number').value.trim() || null,
     customer_drawing_no:    document.getElementById('pd-customer_drawing_no').value.trim() || null,
     product_category:       document.getElementById('pd-product_category').value.trim() || null,
+    second_category:        document.getElementById('pd-second_category').value.trim() || null,
+    part_number:            document.getElementById('pd-part_number').value.trim() || null,
+    part_number_url:        document.getElementById('pd-part_number_url').value.trim() || null,
     client:                 document.getElementById('pd-client').value.trim() || null,
-    product_code:           document.getElementById('pd-product_code').value.trim() || null,
     product_name:           document.getElementById('pd-product_name').value.trim() || null,
     latest_quote_date:      document.getElementById('pd-latest_quote_date').value.trim() || null,
     current_price:          document.getElementById('pd-current_price').value !== '' ? parseInt(document.getElementById('pd-current_price').value) : null,
@@ -6731,7 +6863,7 @@ async function handlePdImportFile(file) {
     // フィールド名で列マッピング
     const fieldRow = rows[0] || [];
     const colMap = {};
-    const expectedFields = ['product_category','client','ot_number','customer_drawing_no','product_code','product_name','latest_quote_date','current_price','delivery_destination','approval_return_date','remarks','approved_url','drawing_url','old_drawing_url','component_url'];
+    const expectedFields = ['product_category','second_category','part_number','part_number_url','client','ot_number','customer_drawing_no','product_code','product_name','latest_quote_date','current_price','delivery_destination','approval_return_date','remarks','approved_url','drawing_url','old_drawing_url','component_url'];
     fieldRow.forEach((h, i) => { if (expectedFields.includes(String(h).trim())) colMap[String(h).trim()] = i; });
 
     pdImportRows = [];
@@ -6741,6 +6873,9 @@ async function handlePdImportFile(file) {
       const get = (f) => { const idx = colMap[f]; return idx !== undefined ? String(row[idx]||'').trim() : ''; };
       pdImportRows.push({
         product_category: get('product_category') || null,
+        second_category: get('second_category') || null,
+        part_number: get('part_number') || null,
+        part_number_url: get('part_number_url') || null,
         client: get('client') || null,
         ot_number: get('ot_number') || null,
         customer_drawing_no: get('customer_drawing_no') || null,
