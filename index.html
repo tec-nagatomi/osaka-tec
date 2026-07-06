@@ -435,6 +435,7 @@
     padding: 18px 24px; border-bottom: 1px solid #e5e7eb;
     background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
     border-radius: 14px 14px 0 0;
+    flex-wrap: wrap; gap: 8px;
   }
   .detail-modal-title { font-size: 15px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 10px; }
   .detail-modal-title svg { width: 18px; height: 18px; }
@@ -446,6 +447,140 @@
   .detail-modal-close:hover { background: rgba(255,255,255,0.25); }
   .detail-modal-close svg { width: 16px; height: 16px; }
   .detail-modal-body { padding: 24px; }
+
+  /* ==================== DETAIL MODAL v2 (responsive redesign) ==================== */
+  /* 3カラム構造。狭い画面では自動的に縦積みに切り替わる */
+  .detail-columns { display: flex; gap: 0; min-height: 400px; }
+  .detail-col-left {
+    width: 300px; min-width: 280px; border-right: 1px solid #e5e7eb;
+    padding: 14px; background: #fafafa; flex-shrink: 0;
+  }
+  .detail-col-center {
+    flex: 1.4; min-width: 0; /* min-width:0 がないとflex子要素が内容幅以下に縮まずはみ出す */
+    overflow-y: auto; max-height: calc(90vh - 60px); border-right: 1px solid #e5e7eb;
+  }
+  .detail-col-right {
+    width: 270px; min-width: 250px; padding: 14px; background: #fffbf0;
+    flex-shrink: 0; overflow-y: auto; max-height: calc(90vh - 60px);
+  }
+  /* モニター分割などで幅が狭い場合: 3カラム → 縦積み */
+  @media (max-width: 1100px) {
+    .detail-columns { flex-direction: column; }
+    .detail-col-left {
+      width: 100%; min-width: 0; border-right: none;
+      border-bottom: 1px solid #e5e7eb; box-sizing: border-box;
+    }
+    .detail-col-center { max-height: none; border-right: none; }
+    .detail-col-right {
+      width: 100%; min-width: 0; max-height: none; box-sizing: border-box;
+      border-top: 1px solid #e5e7eb;
+    }
+    .detail-overlay { padding: 10px; }
+  }
+
+  /* ヒーローカード（品名・受注番号などの主役情報） */
+  .dhero {
+    border-radius: 12px; padding: 16px 18px; margin-bottom: 10px;
+    position: relative; overflow: hidden;
+  }
+  .dhero.pd { background: linear-gradient(135deg, #ecfeff 0%, #e0f2fe 100%); border: 1px solid #bae6fd; }
+  .dhero.order { background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%); border: 1px solid #c7d2fe; }
+  .dhero-label {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+    margin-bottom: 4px; display: flex; align-items: center; gap: 6px;
+  }
+  .dhero.pd .dhero-label { color: #0891b2; }
+  .dhero.order .dhero-label { color: #4f46e5; }
+  .dhero-value {
+    font-size: 19px; font-weight: 800; line-height: 1.3;
+    overflow-wrap: anywhere; word-break: break-word;
+  }
+  .dhero.pd .dhero-value { color: #0c4a6e; }
+  .dhero.order .dhero-value { color: #1e3a8a; font-family: 'SF Mono','Consolas',monospace; letter-spacing: 0.02em; }
+  .dhero-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .dhero-badges { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+  /* フィールドグリッド: 幅に応じて自動で 3列→2列→1列 に折り返す */
+  .dfields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px; background: #e2e8f0;
+    border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;
+  }
+  .dfield { background: #fff; padding: 9px 12px; min-width: 0; }
+  .dfield.span2 { grid-column: span 2; }
+  @media (max-width: 500px) { .dfield.span2 { grid-column: span 1; } }
+  .dfield-l {
+    font-size: 9.5px; font-weight: 700; color: #94a3b8;
+    letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 3px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .dfield-v {
+    font-size: 12.5px; font-weight: 600; color: #1e293b;
+    overflow-wrap: anywhere; word-break: break-word; line-height: 1.45;
+  }
+  .dfield-v.mono { font-family: 'SF Mono','Consolas',monospace; font-size: 12px; }
+  .dfield-v.accent { color: #1d4ed8; font-weight: 800; }
+  .dfield-v.money { font-variant-numeric: tabular-nums; }
+  .dfield-v.warn { color: #ea580c; font-weight: 800; }
+
+  /* セクションカード */
+  .dsection { margin-bottom: 16px; }
+  .dsection-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px; gap: 8px; flex-wrap: wrap;
+  }
+  .dsection-title {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .dsection-title::before {
+    content: ''; display: inline-block; width: 3px; height: 14px; border-radius: 2px;
+  }
+  .dsection-title.cyan { color: #0891b2; } .dsection-title.cyan::before { background: #06b6d4; }
+  .dsection-title.blue { color: #1d4ed8; } .dsection-title.blue::before { background: #3b82f6; }
+  .dsection-title.green { color: #059669; } .dsection-title.green::before { background: #10b981; }
+  .dsection-title.gray { color: #9ca3af; } .dsection-title.gray::before { background: #d1d5db; }
+
+  /* 関連URLピルボタン */
+  .durl-pills { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+  .durl-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 20px;
+    text-decoration: none; color: #fff; transition: opacity 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .durl-pill:hover { opacity: 0.85; transform: translateY(-1px); }
+  .durl-pill svg { width: 11px; height: 11px; }
+
+  /* 進捗リング付きバー */
+  .dprogress-wrap {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px;
+  }
+  .dprogress-bar { height: 10px; background: #f1f5f9; border-radius: 5px; overflow: hidden; position: relative; }
+  .dprogress-fill {
+    height: 100%; border-radius: 5px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+    background: linear-gradient(90deg, #3b82f6, #6366f1);
+    background-size: 200% 100%;
+  }
+  .dprogress-fill.done { background: linear-gradient(90deg, #10b981, #059669); }
+
+  /* 製品詳細モーダル: 左=製品情報 / 右=製品マスタメモ の2カラム。狭い画面では縦積み */
+  .pdd-columns { display: flex; gap: 16px; align-items: stretch; }
+  .pdd-main { flex: 1.6; min-width: 0; }
+  .pdd-memo {
+    flex: 1; min-width: 230px; max-width: 320px;
+    background: #fffbf0; border: 1px solid #fde68a; border-radius: 10px;
+    padding: 12px; align-self: flex-start; box-sizing: border-box;
+    position: sticky; top: 0;
+  }
+  @media (max-width: 800px) {
+    .pdd-columns { flex-direction: column; }
+    .pdd-memo { max-width: none; min-width: 0; width: 100%; position: static; }
+  }
+
+
+
 
   /* Parent section */
   .detail-section-label {
@@ -1151,7 +1286,7 @@
 
 <!-- ==================== PRODUCTDATE DETAIL MODAL ==================== -->
 <div class="pd-modal-overlay" id="pd-detail-overlay" onclick="if(event.target===this)closePdDetail()">
-  <div class="pd-modal" style="width:min(820px,95vw);">
+  <div class="pd-modal" style="width:min(1080px,95vw);">
     <div class="pd-modal-header">
       <span class="pd-modal-title" id="pd-detail-title">製品詳細</span>
       <div style="display:flex;align-items:center;gap:8px;">
@@ -4518,6 +4653,10 @@ function renderDetailModal(p, children) {
   const wo = document.getElementById('detail-work-order');
   const woBtn = document.getElementById('work-order-toggle-btn');
   if (wo) wo.style.display = '';
+  // 製品マスタメモパネルも表示状態にリセット
+  // （編集モード中にモーダルを閉じると display:none が残り、次回開いた時にメモが表示されないバグの修正）
+  const pdMemoPanel = document.getElementById('detail-pd-memo');
+  if (pdMemoPanel) pdMemoPanel.style.display = '';
   if (woBtn) {
     woBtn.style.background = '#f0fdf4';
     woBtn.style.color = '#059669';
@@ -4552,158 +4691,176 @@ function renderDetailModal(p, children) {
   document.getElementById('detail-view-content').innerHTML = `
     <!-- 製品マスタ情報（productdate） -->
     ${_detailProductdate ? `
-    <div style="margin-bottom:16px;">
-      <div class="detail-section-label" style="color:#0891b2;margin-bottom:8px;">製品マスタ情報</div>
-      <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:14px;">
+    <div class="dsection">
+      <div class="dsection-head">
+        <span class="dsection-title cyan">製品マスタ情報</span>
+      </div>
 
-        <!-- 品名（大きく表示） -->
-        <div style="margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #bae6fd;">
-          <div style="font-size:10px;font-weight:700;color:#0891b2;letter-spacing:0.06em;margin-bottom:3px;">品　名</div>
-          <div style="font-size:15px;font-weight:700;color:#0c4a6e;">${_detailProductdate.product_name || '-'}</div>
-        </div>
-
-        <!-- 主要情報（ラベル:値の横並びリスト） -->
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-          <tr>
-            <td style="padding:4px 8px 4px 0;color:#6b7280;font-weight:600;white-space:nowrap;width:80px;">取引先</td>
-            <td style="padding:4px 0;color:#111827;font-weight:600;">${_detailProductdate.client || '-'}</td>
-            <td style="padding:4px 8px;color:#6b7280;font-weight:600;white-space:nowrap;width:80px;">品目区分</td>
-            <td style="padding:4px 0;">${categoryBadgeHtml(_detailProductdate.product_category)}${secondCategoryBadgeHtml(_detailProductdate.second_category, _detailProductdate.part_number, _detailProductdate.part_number_url)}</td>
-          </tr>
-          <tr style="background:rgba(186,230,253,0.15);">
-            <td style="padding:4px 8px 4px 0;color:#6b7280;font-weight:600;white-space:nowrap;">OT番号</td>
-            <td style="padding:4px 0;color:${categoryTextColor(_detailProductdate.product_category)};font-family:monospace;font-weight:700;">${_detailProductdate.ot_number || '-'}</td>
-            <td style="padding:4px 8px;color:#6b7280;font-weight:600;white-space:nowrap;">客先図番</td>
-            <td style="padding:4px 0;color:#0c4a6e;font-family:monospace;">${_detailProductdate.customer_drawing_no || '-'}</td>
-          </tr>
-          <tr>
-            <td style="padding:4px 8px 4px 0;color:#6b7280;font-weight:600;white-space:nowrap;">現行価格</td>
-            <td style="padding:4px 0;color:#111827;font-weight:700;">¥ ${_detailProductdate.current_price != null ? Number(_detailProductdate.current_price).toLocaleString() : '-'}</td>
-            <td style="padding:4px 8px;color:#6b7280;font-weight:600;white-space:nowrap;">最新見積日</td>
-            <td style="padding:4px 0;color:#111827;">${_detailProductdate.latest_quote_date || '-'}</td>
-          </tr>
-          <tr style="background:rgba(186,230,253,0.15);">
-            <td style="padding:4px 8px 4px 0;color:#6b7280;font-weight:600;white-space:nowrap;">承認返却日</td>
-            <td style="padding:4px 0;color:#111827;">${_detailProductdate.approval_return_date || '-'}</td>
-            <td style="padding:4px 8px;color:#6b7280;font-weight:600;white-space:nowrap;">納入先</td>
-            <td style="padding:4px 0;color:#111827;">${_detailProductdate.delivery_destination || '-'}</td>
-          </tr>
-          ${_detailProductdate.remarks ? `
-          <tr>
-            <td style="padding:4px 8px 4px 0;color:#6b7280;font-weight:600;white-space:nowrap;vertical-align:top;">備考</td>
-            <td colspan="3" style="padding:4px 0;color:#b45309;">${_detailProductdate.remarks}</td>
-          </tr>` : ''}
-        </table>
-
-        <!-- 関連URL -->
-        <div style="margin-top:10px;padding-top:8px;border-top:1px solid #bae6fd;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-          <span style="font-size:10px;font-weight:600;color:#6b7280;margin-right:2px;">関連URL:</span>
-          ${_detailProductdate.approved_url ? `<a href="${_detailProductdate.approved_url}" target="_blank" style="font-size:11px;padding:3px 10px;background:#7c3aed;color:#fff;border-radius:4px;text-decoration:none;">承認図</a>` : ''}
-          ${_detailProductdate.drawing_url ? `<a href="${_detailProductdate.drawing_url}" target="_blank" style="font-size:11px;padding:3px 10px;background:#1d4ed8;color:#fff;border-radius:4px;text-decoration:none;">図面</a>` : ''}
-          ${_detailProductdate.old_drawing_url ? `<a href="${_detailProductdate.old_drawing_url}" target="_blank" style="font-size:11px;padding:3px 10px;background:#6b7280;color:#fff;border-radius:4px;text-decoration:none;">旧図面</a>` : ''}
-          ${_detailProductdate.component_url ? `<a href="${_detailProductdate.component_url}" target="_blank" style="font-size:11px;padding:3px 10px;background:#059669;color:#fff;border-radius:4px;text-decoration:none;">構成パーツ</a>` : ''}
-          ${!_detailProductdate.approved_url && !_detailProductdate.drawing_url && !_detailProductdate.old_drawing_url && !_detailProductdate.component_url ? '<span style="font-size:11px;color:#9ca3af;">URLなし</span>' : ''}
+      <!-- ヒーロー: 品名 + 品目区分バッジ -->
+      <div class="dhero pd">
+        <div class="dhero-row">
+          <div style="min-width:0;flex:1;">
+            <div class="dhero-label">品名</div>
+            <div class="dhero-value">${_detailProductdate.product_name || '-'}</div>
+          </div>
+          <div class="dhero-badges">
+            ${categoryBadgeHtml(_detailProductdate.product_category)}${secondCategoryBadgeHtml(_detailProductdate.second_category, _detailProductdate.part_number, _detailProductdate.part_number_url)}
+          </div>
         </div>
       </div>
+
+      <!-- フィールドグリッド（幅に応じて自動折返し） -->
+      <div class="dfields">
+        <div class="dfield span2">
+          <div class="dfield-l">取引先</div>
+          <div class="dfield-v">${_detailProductdate.client || '-'}</div>
+        </div>
+        <div class="dfield">
+          <div class="dfield-l">OT番号</div>
+          <div class="dfield-v mono" style="color:${categoryTextColor(_detailProductdate.product_category)};font-weight:800;">${_detailProductdate.ot_number || '-'}</div>
+        </div>
+        <div class="dfield">
+          <div class="dfield-l">客先図番</div>
+          <div class="dfield-v mono">${_detailProductdate.customer_drawing_no || '-'}</div>
+        </div>
+        <div class="dfield">
+          <div class="dfield-l">現行価格</div>
+          <div class="dfield-v money">${_detailProductdate.current_price != null ? '¥ ' + Number(_detailProductdate.current_price).toLocaleString() : '-'}</div>
+        </div>
+        <div class="dfield">
+          <div class="dfield-l">最新見積日</div>
+          <div class="dfield-v">${_detailProductdate.latest_quote_date || '-'}</div>
+        </div>
+        <div class="dfield">
+          <div class="dfield-l">承認返却日</div>
+          <div class="dfield-v">${_detailProductdate.approval_return_date || '-'}</div>
+        </div>
+        <div class="dfield">
+          <div class="dfield-l">納入先</div>
+          <div class="dfield-v">${_detailProductdate.delivery_destination || '-'}</div>
+        </div>
+        ${_detailProductdate.remarks ? `
+        <div class="dfield span2" style="background:#fffbeb;">
+          <div class="dfield-l" style="color:#d97706;">備考</div>
+          <div class="dfield-v" style="color:#b45309;">${_detailProductdate.remarks}</div>
+        </div>` : ''}
+      </div>
+
+      <!-- 関連URL -->
+      <div class="durl-pills">
+        <span style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;">関連URL</span>
+        ${_detailProductdate.approved_url ? `<a class="durl-pill" href="${_detailProductdate.approved_url}" target="_blank" style="background:#7c3aed;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>承認図</a>` : ''}
+        ${_detailProductdate.drawing_url ? `<a class="durl-pill" href="${_detailProductdate.drawing_url}" target="_blank" style="background:#1d4ed8;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>図面</a>` : ''}
+        ${_detailProductdate.old_drawing_url ? `<a class="durl-pill" href="${_detailProductdate.old_drawing_url}" target="_blank" style="background:#64748b;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>旧図面</a>` : ''}
+        ${_detailProductdate.component_url ? `<a class="durl-pill" href="${_detailProductdate.component_url}" target="_blank" style="background:#059669;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>構成パーツ</a>` : ''}
+        ${!_detailProductdate.approved_url && !_detailProductdate.drawing_url && !_detailProductdate.old_drawing_url && !_detailProductdate.component_url ? '<span style="font-size:11px;color:#cbd5e1;">なし</span>' : ''}
+      </div>
     </div>` : `
-    <div style="margin-bottom:16px;">
-      <div class="detail-section-label" style="color:#9ca3af;margin-bottom:8px;">製品マスタ情報</div>
-      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;font-size:12px;color:#9ca3af;text-align:center;">
+    <div class="dsection">
+      <div class="dsection-head"><span class="dsection-title gray">製品マスタ情報</span></div>
+      <div style="background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;padding:16px;font-size:12px;color:#94a3b8;text-align:center;">
         図番「${p.drawingno || '-'}」に対応する製品マスタが見つかりません
       </div>
     </div>`}
 
     <!-- 受注情報（orders） -->
-    <div style="margin-bottom:16px;">
-      <div class="detail-section-label" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <span>受注情報</span>
+    <div class="dsection">
+      <div class="dsection-head">
+        <span class="dsection-title blue">受注情報</span>
         <span id="changelog-btn-area"></span>
       </div>
-      <div style="background:#f8faff;border:1px solid #dbeafe;border-radius:10px;padding:14px;">
 
-        <!-- 受注番号（大きく表示）＋ ステータス（全納／分納） -->
-        <div style="margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #dbeafe;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-          <div>
-            <div style="font-size:10px;font-weight:700;color:#1d4ed8;letter-spacing:0.06em;margin-bottom:3px;">受注番号</div>
-            <div style="font-size:22px;font-weight:700;color:#1e3a8a;font-family:monospace;">${p.orderno || '-'}</div>
+      <!-- ヒーロー: 受注番号 + ステータス -->
+      <div class="dhero order">
+        <div class="dhero-row">
+          <div style="min-width:0;flex:1;">
+            <div class="dhero-label">受注番号</div>
+            <div class="dhero-value">${p.orderno || '-'}</div>
           </div>
-          <div style="text-align:right;">
-            <div style="font-size:10px;font-weight:700;color:#6b7280;margin-bottom:3px;">ステータス</div>
-            <div>${deliveryStatusHtml}</div>
-          </div>
+          <div class="dhero-badges">${deliveryStatusHtml}</div>
         </div>
+      </div>
 
-        <!-- 詳細情報テーブル -->
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-          <tr>
-            <td style="padding:5px 8px 5px 0;color:#6b7280;font-weight:600;white-space:nowrap;width:72px;">製　番</td>
-            <td style="padding:5px 0;color:#111827;font-size:12px;font-weight:500;">${p.productno || '-'}</td>
-            <td style="padding:5px 8px;color:#6b7280;font-weight:600;white-space:nowrap;width:72px;">原　番</td>
-            <td style="padding:5px 0;color:#111827;">${p.originalno || '-'}</td>
-          </tr>
-          <tr style="background:rgba(219,234,254,0.2);">
-            <td style="padding:5px 8px 5px 0;color:#6b7280;font-weight:600;white-space:nowrap;">受注日</td>
-            <td style="padding:5px 0;color:#111827;">${p.orderdate || '-'}</td>
-            <td style="padding:5px 8px;color:#6b7280;font-weight:600;white-space:nowrap;">数　量</td>
-            <td style="padding:5px 0;color:#1d4ed8;font-weight:700;font-size:13px;">${p.quantity != null ? p.quantity : '-'}　${p.unit || ''}</td>
-          </tr>
-          <tr>
-            <td style="padding:5px 8px 5px 0;color:#6b7280;font-weight:600;white-space:nowrap;">単　価</td>
-            <td style="padding:5px 0;color:#111827;font-weight:600;">¥ ${p.price != null ? Number(p.price).toLocaleString() : '-'}</td>
-            <td style="padding:5px 8px;color:#6b7280;font-weight:600;white-space:nowrap;">出荷場所</td>
-            <td style="padding:5px 0;color:#111827;">${p.delivery_destination || '-'}</td>
-          </tr>
-          <tr style="background:rgba(219,234,254,0.2);">
-            <td style="padding:5px 8px 5px 0;color:#6b7280;font-weight:600;white-space:nowrap;">希望納期</td>
-            <td style="padding:5px 0;color:${isNearDeadline(p.deliverydate)?'#ea580c':'#111827'};font-weight:${isNearDeadline(p.deliverydate)?'700':'500'};">
-              ${p.deliverydate || '-'}${isNearDeadline(p.deliverydate)?' ⚠️':''}
-            </td>
-            <td style="padding:5px 8px;color:#6b7280;font-weight:600;white-space:nowrap;">納　期</td>
-            <td style="padding:5px 0;color:#111827;">${childDeliveryDatesHtml}</td>
-          </tr>
-        </table>
+      <div class="dfields">
+        <div class="dfield">
+          <div class="dfield-l">製番</div>
+          <div class="dfield-v mono" style="color:#7c3aed;font-weight:800;">${p.productno || '-'}</div>
+        </div>
+        <div class="dfield">
+          <div class="dfield-l">原番</div>
+          <div class="dfield-v mono">${p.originalno || '-'}</div>
+        </div>
+        <div class="dfield">
+          <div class="dfield-l">受注日</div>
+          <div class="dfield-v">${p.orderdate || '-'}</div>
+        </div>
+        <div class="dfield">
+          <div class="dfield-l">数量</div>
+          <div class="dfield-v accent" style="font-size:14px;">${p.quantity != null ? p.quantity : '-'}${p.unit ? ' ' + p.unit : ''}</div>
+        </div>
+        <div class="dfield">
+          <div class="dfield-l">単価</div>
+          <div class="dfield-v money">${p.price != null ? '¥ ' + Number(p.price).toLocaleString() : '-'}</div>
+        </div>
+        <div class="dfield">
+          <div class="dfield-l">出荷場所</div>
+          <div class="dfield-v">${p.delivery_destination || '-'}</div>
+        </div>
+        <div class="dfield">
+          <div class="dfield-l">希望納期</div>
+          <div class="dfield-v ${isNearDeadline(p.deliverydate)?'warn':''}">${p.deliverydate || '-'}${isNearDeadline(p.deliverydate)?' ⚠️':''}</div>
+        </div>
+        <div class="dfield">
+          <div class="dfield-l">納期</div>
+          <div class="dfield-v">${childDeliveryDatesHtml}</div>
+        </div>
       </div>
     </div>
 
     <!-- 進捗バー -->
-    <div style="margin-bottom:16px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-        <span style="font-size:12px;font-weight:600;color:#374151;">製作進捗</span>
-        <span style="font-size:12px;color:#6b7280;">${shippedCount} / ${totalCount} 件完了</span>
+    <div class="dsection">
+      <div class="dprogress-wrap">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:4px;">
+          <span style="font-size:12px;font-weight:700;color:#334155;">製作進捗</span>
+          <span style="font-size:12px;color:#64748b;font-variant-numeric:tabular-nums;"><strong style="color:${progress===100?'#059669':'#1d4ed8'};font-size:14px;">${shippedCount}</strong> / ${totalCount} 件完了（${progress}%）</span>
+        </div>
+        <div class="dprogress-bar">
+          <div class="dprogress-fill ${progress===100?'done':''}" style="width:${progress}%;"></div>
+        </div>
       </div>
-      <div style="height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden;">
-        <div style="height:100%;width:${progress}%;background:${progress===100?'#10b981':'#1d4ed8'};border-radius:4px;transition:width 0.4s;"></div>
-      </div>
-      <div style="text-align:right;font-size:11px;color:#6b7280;margin-top:3px;">${progress}%</div>
     </div>
 
     <!-- 子データ -->
-    <div class="detail-section-label child">子データ（シリアル一覧） — ${totalCount}件</div>
-    <div class="child-summary">
-      <div class="child-summary-item">製品番号: <strong>${p.productno || '-'}</strong></div>
-      <div class="child-summary-item">シール枚数: <strong>${totalCount}枚</strong></div>
-      <div class="child-summary-item">検査シート数: <strong>${shippedCount}枚</strong>
-        <button onclick="addChildRow()" title="子データ（シリアル）を1件追加します" style="display:inline-flex;align-items:center;gap:3px;margin-left:8px;padding:2px 9px;font-size:11px;font-weight:700;background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;border-radius:5px;cursor:pointer;vertical-align:middle;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>子データ追加
-        </button>
+    <div class="dsection">
+      <div class="dsection-head">
+        <span class="dsection-title green">子データ（シリアル一覧） — ${totalCount}件</span>
       </div>
-    </div>
-    <div class="child-table-wrap">
-      <table class="child-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>シールNo</th>
-            <th>納期</th>
-            <th>製品名</th>
-            <th>OT番号</th>
-            <th>進捗</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${buildChildRows(children)}
-        </tbody>
-      </table>
+      <div class="child-summary" style="flex-wrap:wrap;">
+        <div class="child-summary-item">製品番号: <strong>${p.productno || '-'}</strong></div>
+        <div class="child-summary-item">シール枚数: <strong>${totalCount}枚</strong></div>
+        <div class="child-summary-item">検査シート数: <strong>${shippedCount}枚</strong>
+          <button onclick="addChildRow()" title="子データ（シリアル）を1件追加します" style="display:inline-flex;align-items:center;gap:3px;margin-left:8px;padding:2px 9px;font-size:11px;font-weight:700;background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;border-radius:5px;cursor:pointer;vertical-align:middle;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>子データ追加
+          </button>
+        </div>
+      </div>
+      <div class="child-table-wrap" style="overflow-x:auto;">
+        <table class="child-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>シールNo</th>
+              <th>納期</th>
+              <th>製品名</th>
+              <th>OT番号</th>
+              <th>進捗</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${buildChildRows(children)}
+          </tbody>
+        </table>
+      </div>
     </div>
   `;
 
@@ -6389,37 +6546,126 @@ function openPdDetail(id) {
   document.getElementById('pd-detail-title').textContent = `製品詳細 (ID: ${id})`;
 
   const fmt = (v) => v != null && v !== '' ? v : '－';
-  const fmtPrice = (v) => v != null ? Number(v).toLocaleString() + ' 円' : '－';
-  const fmtUrl = (v) => v ? `<a href="${v}" target="_blank" style="color:#0891b2;word-break:break-all;">${v}</a>` : '－';
+  const fmtPrice = (v) => v != null ? '¥ ' + Number(v).toLocaleString() : '－';
   // OT番号のテキストカラーも品目区分の色に合わせる
   const otColor = rec.product_category ? categoryTextColor(rec.product_category) : '#111827';
 
   document.getElementById('pd-detail-body').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 20px;">
-      <div><div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:3px;">品目区分</div><div style="font-size:13px;">${categoryBadgeHtml(rec.product_category)}${secondCategoryBadgeHtml(rec.second_category, rec.part_number, rec.part_number_url)}</div></div>
-      <div><div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:3px;">取引先</div><div style="font-size:13px;color:#111827;">${fmt(rec.client)}</div></div>
-      <div><div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:3px;">OT番号</div><div style="font-size:13px;color:${otColor};font-family:monospace;font-weight:700;">${fmt(rec.ot_number)}</div></div>
-      <div><div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:3px;">客先図番</div><div style="font-size:13px;color:#111827;font-family:monospace;">${fmt(rec.customer_drawing_no)}</div></div>
-      <div style="grid-column:1/-1;"><div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:3px;">品名</div><div style="font-size:14px;font-weight:600;color:#111827;">${fmt(rec.product_name)}</div></div>
-      <div><div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:3px;">製品コード</div><div style="font-size:13px;color:#111827;">${fmt(rec.product_code)}</div></div>
-      <div><div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:3px;">最新見積日</div><div style="font-size:13px;color:#111827;">${fmt(rec.latest_quote_date)}</div></div>
-      <div><div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:3px;">現行価格</div><div style="font-size:13px;color:#111827;font-weight:600;">${fmtPrice(rec.current_price)}</div></div>
-      <div><div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:3px;">承認返却日</div><div style="font-size:13px;color:#111827;">${fmt(rec.approval_return_date)}</div></div>
-      <div style="grid-column:1/-1;"><div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:3px;">納入先</div><div style="font-size:13px;color:#111827;">${fmt(rec.delivery_destination)}</div></div>
-      <div style="grid-column:1/-1;"><div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:3px;">備考</div><div style="font-size:13px;color:#111827;">${fmt(rec.remarks)}</div></div>
-      <div style="grid-column:1/-1;border-top:1px solid #f3f4f6;padding-top:12px;margin-top:4px;">
-        <div style="font-size:11px;font-weight:600;color:#6b7280;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#0891b2" stroke-width="2" style="width:14px;height:14px;"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-          進捗ステータス（基本ルート）
+    <div class="pdd-columns">
+      <!-- 左: 製品情報 -->
+      <div class="pdd-main">
+
+        <!-- ヒーロー: 品名 + 品目区分バッジ -->
+        <div class="dhero pd" style="margin-bottom:10px;">
+          <div class="dhero-row">
+            <div style="min-width:0;flex:1;">
+              <div class="dhero-label">品名</div>
+              <div class="dhero-value">${fmt(rec.product_name)}</div>
+            </div>
+            <div class="dhero-badges">
+              ${categoryBadgeHtml(rec.product_category)}${secondCategoryBadgeHtml(rec.second_category, rec.part_number, rec.part_number_url)}
+            </div>
+          </div>
         </div>
-        <div id="pd-detail-route" style="font-size:12px;color:#9ca3af;">読み込み中...</div>
+
+        <!-- フィールドグリッド -->
+        <div class="dfields" style="margin-bottom:10px;">
+          <div class="dfield span2">
+            <div class="dfield-l">取引先</div>
+            <div class="dfield-v">${fmt(rec.client)}</div>
+          </div>
+          <div class="dfield">
+            <div class="dfield-l">OT番号</div>
+            <div class="dfield-v mono" style="color:${otColor};font-weight:800;">${fmt(rec.ot_number)}</div>
+          </div>
+          <div class="dfield">
+            <div class="dfield-l">客先図番</div>
+            <div class="dfield-v mono">${fmt(rec.customer_drawing_no)}</div>
+          </div>
+          <div class="dfield">
+            <div class="dfield-l">製品コード</div>
+            <div class="dfield-v mono">${fmt(rec.product_code)}</div>
+          </div>
+          <div class="dfield">
+            <div class="dfield-l">現行価格</div>
+            <div class="dfield-v money">${fmtPrice(rec.current_price)}</div>
+          </div>
+          <div class="dfield">
+            <div class="dfield-l">最新見積日</div>
+            <div class="dfield-v">${fmt(rec.latest_quote_date)}</div>
+          </div>
+          <div class="dfield">
+            <div class="dfield-l">承認返却日</div>
+            <div class="dfield-v">${fmt(rec.approval_return_date)}</div>
+          </div>
+          <div class="dfield span2">
+            <div class="dfield-l">納入先</div>
+            <div class="dfield-v">${fmt(rec.delivery_destination)}</div>
+          </div>
+          ${rec.remarks ? `
+          <div class="dfield span2" style="background:#fffbeb;">
+            <div class="dfield-l" style="color:#d97706;">備考</div>
+            <div class="dfield-v" style="color:#b45309;">${rec.remarks}</div>
+          </div>` : ''}
+        </div>
+
+        <!-- 関連URL -->
+        <div class="durl-pills" style="margin:0 0 14px;">
+          <span style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;">関連URL</span>
+          ${rec.approved_url ? `<a class="durl-pill" href="${rec.approved_url}" target="_blank" style="background:#7c3aed;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>承認図</a>` : ''}
+          ${rec.drawing_url ? `<a class="durl-pill" href="${rec.drawing_url}" target="_blank" style="background:#1d4ed8;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>図面</a>` : ''}
+          ${rec.old_drawing_url ? `<a class="durl-pill" href="${rec.old_drawing_url}" target="_blank" style="background:#64748b;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>旧図面</a>` : ''}
+          ${rec.component_url ? `<a class="durl-pill" href="${rec.component_url}" target="_blank" style="background:#059669;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>構成パーツ</a>` : ''}
+          ${!rec.approved_url && !rec.drawing_url && !rec.old_drawing_url && !rec.component_url ? '<span style="font-size:11px;color:#cbd5e1;">なし</span>' : ''}
+        </div>
+
+        <!-- 進捗ステータス（基本ルート） -->
+        <div class="dsection" style="margin-bottom:0;">
+          <div class="dsection-head">
+            <span class="dsection-title cyan">進捗ステータス（基本ルート）</span>
+          </div>
+          <div class="dprogress-wrap">
+            <div id="pd-detail-route" style="font-size:12px;color:#9ca3af;">読み込み中...</div>
+          </div>
+        </div>
       </div>
+
+      <!-- 右: 製品マスタメモ -->
+      <div class="pdd-memo" id="pd-detail-memo-panel"></div>
     </div>`;
 
   // 進捗ステータス（基本ルート）を読み込んで表示
   renderDetailRoute(id);
+  // 製品マスタメモパネルを描画（受注詳細と同じ機能を共有）
+  renderPdDetailMemoPanel(rec);
 
   document.getElementById('pd-detail-overlay').classList.add('open');
+}
+
+// 製品詳細モーダル内のメモパネル。受注詳細のメモ機能（loadPdMemos / postPdMemo）を共有する。
+function renderPdDetailMemoPanel(rec) {
+  const el = document.getElementById('pd-detail-memo-panel');
+  if (!el) return;
+  el.innerHTML = `
+    <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:8px;display:flex;align-items:center;gap:5px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      製品マスタ メモ
+    </div>
+    <div style="font-size:10px;color:#b45309;background:#fef3c7;border:1px solid #fde68a;border-radius:5px;padding:4px 8px;margin-bottom:8px;">
+      ${rec.product_name || ''}<br>
+      <span style="font-family:monospace;">${rec.ot_number || ''}</span>
+    </div>
+    <div id="pd-memo-list" style="min-height:120px;max-height:340px;overflow-y:auto;margin-bottom:8px;display:flex;flex-direction:column;gap:5px;">
+      <div style="text-align:center;color:#9ca3af;font-size:11px;padding:10px 0;">読込中...</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      <textarea id="pd-memo-input" placeholder="製品マスタへのメモ... (Enterで送信)" maxlength="1000" rows="2"
+        style="width:100%;font-size:11px;padding:6px 8px;border:1px solid #fde68a;border-radius:6px;outline:none;resize:none;font-family:inherit;box-sizing:border-box;line-height:1.5;background:#fffdf0;"
+        onkeydown="handlePdMemoKeydown(event, ${rec.designid})"></textarea>
+      <button onclick="postPdMemo(${rec.designid})"
+        style="align-self:flex-end;padding:5px 14px;background:#d97706;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">送信</button>
+    </div>`;
+  loadPdMemos(rec.designid);
 }
 
 function closePdDetail() {
@@ -7645,16 +7891,16 @@ async function saveRoute() {
       </div>
     </div>
     <div class="detail-modal-body" id="detail-modal-body">
-      <div style="display:flex;gap:0;min-height:400px;">
+      <div class="detail-columns">
         <!-- 左: 作業指示書 + 受注メモ -->
-        <div id="detail-work-order" style="width:300px;min-width:280px;border-right:1px solid #e5e7eb;padding:14px;background:#fafafa;flex-shrink:0;"></div>
+        <div id="detail-work-order" class="detail-col-left"></div>
         <!-- 中: 受注詳細 -->
-        <div style="flex:1.4;overflow-y:auto;max-height:calc(90vh - 60px);border-right:1px solid #e5e7eb;">
+        <div class="detail-col-center">
           <div class="detail-view-mode" id="detail-view-content" style="padding:20px;"></div>
           <div class="detail-edit-mode" id="detail-edit-content" style="padding:20px;"></div>
         </div>
         <!-- 右: 製品マスタメモ -->
-        <div id="detail-pd-memo" style="width:270px;min-width:250px;padding:14px;background:#fffbf0;flex-shrink:0;overflow-y:auto;max-height:calc(90vh - 60px);"></div>
+        <div id="detail-pd-memo" class="detail-col-right"></div>
       </div>
     </div>
   </div>
