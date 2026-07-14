@@ -1100,7 +1100,7 @@
           <button class="client-filter-btn" data-client="ニデックオーケーケー株式会社" onclick="setClientFilter('ニデックオーケーケー株式会社')">OKK</button>
           <button class="client-filter-btn" onclick="setClientFilter('マシンツール')">マシンツール</button>
           <button class="client-filter-btn" onclick="setClientFilter('ユアサ')">ユアサ</button>
-          <button class="client-filter-btn" onclick="setClientFilter('IZUSHI')">IZUSHI</button>
+          <button class="client-filter-btn" data-client="株式会社ＩＺＵＳＨＩ" onclick="setClientFilter('株式会社ＩＺＵＳＨＩ')">IZUSHI</button>
           <button class="client-filter-btn" onclick="setClientFilter('キタムラ')">キタムラ</button>
           <button class="client-filter-btn" onclick="setClientFilter('安田工業')">安田工業</button>
           <button class="client-filter-btn" onclick="setClientFilter('TAKISAWA')">TAKISAWA</button>
@@ -2742,59 +2742,86 @@ function extractNomuraRows(full, lines) {
 function extractIzushiRows(full, lines) {
   const rows = [];
 
-  // 発行日: "発 行 日 2026年06月03日"
+  // 発行日: "発 行 日 2026年06月02日"
   let orderDate = '';
   const odm = full.match(/発\s*行\s*日\s*(\d{4})年(\d{2})月(\d{2})日/);
   if (odm) orderDate = `${odm[1]}/${odm[2]}/${odm[3]}`;
 
+  // 図番抽出: 大阪ﾃｯｸ行(cust)を最優先。純図番(U/H系)→FAC付→7桁品番→商品名側 の順
+  function extractDrawing(custLine, nameLine) {
+    const pats = [
+      /\b(\d?[UH]\d{5,6}[A-Z]\d{2})\b/,        // U33215A04 / H09782A01 / 2H0500258A
+      /\b(FAC-?[A-Z]?\d{4,6}[A-Z]?\d{0,2})\b/, // FACU30439B02 / FAC-011446
+    ];
+    for (const p of pats) { const m = custLine.match(p); if (m) return m[1]; }
+    // 大阪ﾃｯｸ行に無ければ商品名側
+    let m = nameLine.match(/\b(\d{7})\b/);          // 7桁品番 (5671098 等)
+    if (m) return m[1];
+    for (const p of pats) { m = nameLine.match(p); if (m) return m[1]; }
+    return '';
+  }
+
+  // OT番号抽出（丸数字枝番も許容）: OT-013280-2 / OT-11998-⑦ / OT017136→OT-017136
+  function extractOt(txt) {
+    const m = txt.match(/OT-?\d{3,6}(?:-[\d\u2460-\u2473]+)?/);
+    if (!m) return '';
+    return m[0].replace(/^OT(?=\d)/, 'OT-');
+  }
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    // 注文番号パターン:
-    // G+11桁: G26001151003 U33678A01 OT-015113 1.0 P 248,800
-    // RF+6桁: RF008440 NLX2500/1250Ge B軸 10.0 P 14,000
-    // 共通: [A-Z]{1,3}\d{5,} で始まり 数量 P 単価 で終わる
+    // 明細1行目: 注文番号 + 商品名 + 数量 + P + 単価
+    //   G26001075230 NHX-6300 X軸 5段ﾌﾟﾛﾃｸﾀｰ 1.0 P 228,600
     const m = line.match(/^([A-Z]{1,3}\d{5,})\s+(.+?)\s+([\d.]+)\s+P\s+([\d,]+)$/);
     if (!m) continue;
 
-    const orderno      = m[1];
-    const productRaw   = m[2];
-    const quantity     = parseFloat(m[3]) || 1;
-    const price        = parseInt(m[4].replace(/,/g, ''));
+    const orderno    = m[1];
+    const productName = m[2].trim();          // 商品名（表示補完用・ordersには保存しない）
+    const quantity   = parseFloat(m[3]) || 1;
+    const price      = parseInt(m[4].replace(/,/g, ''));
 
-    const productParts = [productRaw];
-    let deliverydate = '';
-
-    for (let j = i + 1; j < Math.min(i + 6, lines.length); j++) {
+    // 続く行から 大阪ﾃｯｸ行（図番/OT）と 明細備考（部品番号/納期）を取得
+    let custLine = '', partNo = '', deliverydate = '';
+    for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
       const nxt = lines[j].trim();
-      if (/^\d+$/.test(nxt)) continue;        // 行番号スキップ
-      if (/^[\d,]+$/.test(nxt)) continue;     // 金額のみスキップ
-
-      // 大阪テック行: 品名部分のみ取得（末尾の金額・数字は除外）
-      const mm = nxt.match(/^大阪[テﾃ][ッｯ][クｸ]\s+(.*)/);
-      if (mm) {
-        const name = mm[1].replace(/\s+[\d,]+$/, '').trim();
-        if (name && !/^[\d,]+$/.test(name)) productParts.push(name);
+      const mc = nxt.match(/^大阪[テﾃ][ッｯ][クｸ]\s+(.*)/);
+      if (mc) {
+        // 末尾の金額（合計）を除去して図番/OT部分だけ残す
+        custLine = mc[1].replace(/\s+[\d,]+$/, '').trim();
         continue;
       }
-      // 品名続き行（英数字・カタカナ等）
-      if (/^[A-Z0-9]/.test(nxt) && !nxt.includes('明細備考') && !nxt.includes('合 計') &&
-          !nxt.includes('■') && !nxt.includes('FAX')) {
-        productParts.push(nxt);
-        continue;
-      }
-      // 明細備考から納期（末尾の日付を取得）
-      const mm2 = nxt.match(/明細備考[：:]\s*.*?(\d{4}\/\d{1,2}\/\d{1,2})\s*$/);
-      if (mm2) {
-        const d = mm2[1].split('/');
-        deliverydate = `${d[0]}/${d[1].padStart(2,'0')}/${d[2].padStart(2,'0')}`;
+      const mb = nxt.match(/^明細備考[：:]\s*(.*)/);
+      if (mb) {
+        const memo = mb[1].trim();
+        const dm = memo.match(/(\d{4}\/\d{1,2}\/\d{1,2})\s*$/);
+        if (dm) {
+          const d = dm[1].split('/');
+          deliverydate = `${d[0]}/${d[1].padStart(2,'0')}/${d[2].padStart(2,'0')}`;
+          partNo = memo.slice(0, dm.index).trim();   // 日付より前が部品番号
+        } else {
+          partNo = memo;
+        }
         break;
       }
     }
 
-    const drawingno = productParts.join(' ').trim();
-    rows.push({ orderdate: orderDate, orderno, drawingno, quantity, unit: 'P',
-                price, originalno: '', deliverydate,
-                delivery_destination: null, shippingdate: null });
+    const drawingno = extractDrawing(custLine, productName);
+    const otNumber  = extractOt(custLine) || extractOt(productName);
+
+    rows.push({
+      orderdate:            orderDate,
+      orderno,
+      drawingno,                        // ← 図番のみ（productdate照合キー）
+      quantity,
+      unit:                 'P',
+      price,
+      originalno:           partNo,     // 明細備考の部品番号（他社と同じ枠）
+      deliverydate,
+      delivery_destination: null,
+      shippingdate:         null,
+      _productName:         productName, // 参考: 商品名（保存されない・ログ/確認用）
+      _otNumber:            otNumber,    // 参考: OT番号（保存されない・productdateから補完）
+    });
   }
   return rows;
 }
@@ -3410,6 +3437,8 @@ async function doSaveNewRows(rows, silent = false) {
   const dateFields = ['orderdate','deliverydate','shippingdate'];
   const sanitized = rows.map(r => {
     const { _isChange, _sealCount, _modelNo, ...row } = r;
+    // アンダースコア始まりの補助フィールド（_productName/_otNumber 等）は保存対象外
+    Object.keys(row).forEach(k => { if (k.startsWith('_')) delete row[k]; });
     dateFields.forEach(f => { if (!row[f]) row[f] = null; });
     return row;
   });
@@ -4420,7 +4449,9 @@ function filterOrders() {
       if (r.pd_product_category === 'カバー') return false;
     }
     if (clientFilterValue) {
-      if (!(r.pd_client || '').includes(clientFilterValue)) return false;
+      // 全角英数を半角化し小文字化して比較（「株式会社ＩＺＵＳＨＩ」と「IZUSHI」等の表記揺れを吸収）
+      const normClient = s => (s || '').replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).toLowerCase();
+      if (!normClient(r.pd_client).includes(normClient(clientFilterValue))) return false;
     }
     if (unregisteredFilterActive) {
       if (r.pd_client) return false; // pd_clientが空＝productdate未登録の受注のみ表示
