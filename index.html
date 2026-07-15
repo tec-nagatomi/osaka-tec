@@ -3983,7 +3983,7 @@ window.addEventListener('beforeunload', () => { stopRealtime(); });
 // ---- Orders List ----
 let allOrders = [], filteredOrders = [], sortKey = 'orderdate', sortAsc = false;
 let currentPage = 1;
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 50;
 
     // Supabaseは1リクエストで最大1000行のため、全件取得にはページネーションが必要
     async function fetchAllRows(url) {
@@ -4456,12 +4456,20 @@ function filterOrders() {
     if (unregisteredFilterActive) {
       if (r.pd_client) return false; // pd_clientが空＝productdate未登録の受注のみ表示
     }
-    // 出荷日フィルター
-    if (shipFrom && (r.shippingdate || '') < shipFrom) return false;
-    if (shipTo   && (r.shippingdate || '') > shipTo)   return false;
-    // 受注日フィルター
-    if (orderFrom && (r.orderdate || '') < orderFrom) return false;
-    if (orderTo   && (r.orderdate || '') > orderTo)   return false;
+    // 出荷日フィルター（未設定(null/空)はフィルター指定時に除外）
+    if (shipFrom || shipTo) {
+      const sd = r.shippingdate || '';
+      if (!sd) return false;                       // 出荷日未設定は範囲指定時に除外
+      if (shipFrom && sd < shipFrom) return false;
+      if (shipTo   && sd > shipTo)   return false;
+    }
+    // 受注日フィルター（未設定(null/空)はフィルター指定時に除外）
+    if (orderFrom || orderTo) {
+      const od = r.orderdate || '';
+      if (!od) return false;                       // 受注日未設定は範囲指定時に除外
+      if (orderFrom && od < orderFrom) return false;
+      if (orderTo   && od > orderTo)   return false;
+    }
     if (q) {
       const hit = (r.orderno||'').toLowerCase().includes(q)
                || (r.drawingno||'').toLowerCase().includes(q)
