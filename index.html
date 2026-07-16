@@ -815,7 +815,7 @@
   </div>
   <div class="nav-item" data-page="schedule" onclick="showPage('schedule',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-    スケジュール管理
+    出荷管理
   </div>
   <div class="nav-item" data-page="progress" onclick="showPage('progress',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -850,7 +850,7 @@
           </div>
           <div class="func-btn schedule" onclick="showPage('schedule', document.querySelector('[data-page=schedule]'))">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <div class="func-btn-label">スケジュール管理</div>
+            <div class="func-btn-label">出荷管理</div>
             <div class="func-btn-sub">納期・工程の管理</div>
           </div>
           <div class="func-btn progress" onclick="showPage('progress', document.querySelector('[data-page=progress]'))">
@@ -1154,7 +1154,7 @@
 <div id="page-schedule" class="page">
   <div class="coming-soon">
     <svg viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-    <h3>スケジュール管理</h3>
+    <h3>出荷管理</h3>
     <p>この機能は現在開発中です</p>
   </div>
 </div>
@@ -1288,6 +1288,15 @@
     </div>
     <div class="pd-toolbar">
       <input class="pd-search" id="pd-search" type="text" placeholder="OT番号・品名・図番・取引先で検索..." oninput="filterProductdate()">
+    </div>
+    <div class="pd-toolbar" style="flex-wrap:wrap;gap:4px;padding-top:0;">
+      <span style="font-size:11px;color:#9ca3af;align-self:center;margin-right:2px;">取引先:</span>
+      <button class="client-filter-btn active" data-client="" onclick="setPdClientFilter('')">すべて</button>
+      <button class="client-filter-btn" data-client="ヤマザキマザック株式会社" onclick="setPdClientFilter('ヤマザキマザック株式会社')">マザック</button>
+      <button class="client-filter-btn" data-client="オークマ株式会社" onclick="setPdClientFilter('オークマ株式会社')">オークマ</button>
+      <button class="client-filter-btn" data-client="ニデックオーケーケー株式会社" onclick="setPdClientFilter('ニデックオーケーケー株式会社')">OKK</button>
+      <button class="client-filter-btn" data-client="ニデックマシンツール株式会社" onclick="setPdClientFilter('ニデックマシンツール株式会社')">マシンツール</button>
+      <button class="client-filter-btn" data-client="株式会社ＩＺＵＳＨＩ" onclick="setPdClientFilter('株式会社ＩＺＵＳＨＩ')">IZUSHI</button>
     </div>
     <div class="pd-table-wrap">
       <table class="pd-table">
@@ -1510,21 +1519,19 @@
             <option value="ヤマザキマザック株式会社">ヤマザキマザック株式会社</option>
             <option value="オークマ株式会社">オークマ株式会社</option>
             <option value="ニデックオーケーケー株式会社">ニデックオーケーケー株式会社</option>
-            <option value="日本電産マシンツール株式会社">日本電産マシンツール株式会社</option>
-            <option value="DMG森精機株式会社">DMG森精機株式会社</option>
+            <option value="ニデックマシンツール株式会社">ニデックマシンツール株式会社</option>
+            <option value="株式会社ＩＺＵＳＨＩ">株式会社ＩＺＵＳＨＩ</option>
             <option value="キタムラ機械株式会社">キタムラ機械株式会社</option>
             <option value="安田工業株式会社">安田工業株式会社</option>
             <option value="株式会社TAKISAWA">株式会社TAKISAWA</option>
             <option value="株式会社野村製作所">株式会社野村製作所</option>
             <option value="中村留精密工業株式会社">中村留精密工業株式会社</option>
-            <option value="コマツNTC株式会社">コマツNTC株式会社</option>
-            <option value="ブラザー工業株式会社">ブラザー工業株式会社</option>
+            <option value="ユアサネオテック株式会社">ユアサネオテック株式会社</option>
             <option value="エンシュウ株式会社">エンシュウ株式会社</option>
             <option value="ニッシンコーポレーション株式会社">ニッシンコーポレーション株式会社</option>
             <option value="株式会社ツガミ">株式会社ツガミ</option>
             <option value="株式会社エグロ">株式会社エグロ</option>
             <option value="株式会社カシフジ">株式会社カシフジ</option>
-            <option value="株式会社ジェイテクト">株式会社ジェイテクト</option>
             <option value="豊和工業株式会社">豊和工業株式会社</option>
             <option value="三菱重工マシナリーテクノロジー株式会社">三菱重工マシナリーテクノロジー株式会社</option>
             <option value="大鳥機工株式会社">大鳥機工株式会社</option>
@@ -2218,11 +2225,15 @@ async function handleFiles(files) {
     const file = files[i];
     showStatus('processing', `解析中: ${file.name}`, Math.round(((i+0.5)/files.length)*70));
     try {
+      let parsed = [];
       if (file.name.toLowerCase().endsWith('.pdf')) {
-        extractedRows.push(...await parsePDF(file));
+        parsed = await parsePDF(file);
       } else if (file.name.toLowerCase().match(/\.xlsx?$/)) {
-        extractedRows.push(...await parseExcel(file));
+        parsed = await parseExcel(file);
       }
+      // 注文書の原本ファイルを各行に紐付け（_始まりなので保存時にDBへは送られない）
+      for (const r of parsed) r._sourceFile = file;
+      extractedRows.push(...parsed);
     } catch(e) {
       showStatus('error', 'エラー: ' + file.name + ' — ' + e.message);
       return;
@@ -2750,8 +2761,11 @@ function extractIzushiRows(full, lines) {
   // 図番抽出: 大阪ﾃｯｸ行(cust)を最優先。純図番(U/H系)→FAC付→7桁品番→商品名側 の順
   function extractDrawing(custLine, nameLine) {
     const pats = [
+      // FAC/FAL系（ワイパーセット等）: FACU30784BWS / FACU30658A02WS / FACU30633AW / FACU30457B04STK
+      /\b(FA[CL]-?U?\d{5,6}[A-Z]\d{0,2}(?:WS|STK|W)?)\b/,
       /\b(\d?[UH]\d{5,6}[A-Z]\d{2})\b/,        // U33215A04 / H09782A01 / 2H0500258A
-      /\b(FAC-?[A-Z]?\d{4,6}[A-Z]?\d{0,2})\b/, // FACU30439B02 / FAC-011446
+      /\b(FAC\d{4,6}[A-Z]{1,2}\d{0,2})\b/,     // FAC11511AB02 / FAC16505A
+      /\b(FAC-?[A-Z]?\d{4,6}[A-Z]?\d{0,2})\b/, // FAC-011446 等（旧形式）
     ];
     for (const p of pats) { const m = custLine.match(p); if (m) return m[1]; }
     // 大阪ﾃｯｸ行に無ければ商品名側
@@ -3388,6 +3402,151 @@ async function executeChangeSave() {
   }
 }
 
+// ---- 注文書原本を Supabase Storage にアップロード ----
+const ORDER_FILES_BUCKET = 'order-files';
+
+// 社名 → ファイル名用ラベル（表示用・日本語のまま）
+function clientToFileLabel(client) {
+  if (!client) return '不明';
+  let s = String(client)
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+    .replace(/株式会社|有限会社|\(株\)|（株）/g, '')
+    .replace(/[\/\\?%*:|"'<>#\s]/g, '');
+  return s || '不明';
+}
+
+// Storageのキーは英数字のみ許可のため、社名をローマ字コードへ変換する
+// （画面表示は source_file_name の日本語を使うのでユーザーには見えない）
+const CLIENT_KEY_MAP = [
+  [/IZUSHI/i,            'IZUSHI'],
+  [/ニデックオーケーケー|OKK/, 'NIDEC-OKK'],
+  [/ニデックマシンツール/,    'NIDEC-MACHINETOOL'],
+  [/ヤマザキマザック|マザック/, 'MAZAK'],
+  [/オークマ/,             'OKUMA'],
+  [/キタムラ/,             'KITAMURA'],
+  [/野村/,                'NOMURA'],
+  [/安田/,                'YASUDA'],
+  [/TAKISAWA|滝沢/i,      'TAKISAWA'],
+  [/中村留/,              'NAKAMURA'],
+  [/エグロ/,              'EGURO'],
+  [/DMG|森精機/i,         'DMG-MORI'],
+  [/豊和/,                'HOWA'],
+  [/三菱重工/,            'MHI'],
+];
+function clientToKeyLabel(client) {
+  if (!client) return 'UNKNOWN';
+  for (const [re, code] of CLIENT_KEY_MAP) if (re.test(client)) return code;
+  // 未知の社名は英数字のみ抽出、無ければ CLIENT にフォールバック
+  const ascii = String(client)
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+    .replace(/[^A-Za-z0-9]/g, '');
+  return ascii || 'CLIENT';
+}
+
+// 受注日 → YYYY_MM_DD
+function dateToFileLabel(d) {
+  const m = String(d || '').match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+  if (!m) {
+    const t = new Date();
+    return `${t.getFullYear()}_${String(t.getMonth()+1).padStart(2,'0')}_${String(t.getDate()).padStart(2,'0')}`;
+  }
+  return `${m[1]}_${m[2].padStart(2,'0')}_${m[3].padStart(2,'0')}`;
+}
+
+// 図番から取引先名を引く（保存前に必要なため先に照合する）
+async function fetchClientMap(drawingNos) {
+  const map = new Map();
+  const list = [...new Set(drawingNos.filter(Boolean))];
+  if (list.length === 0) return map;
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${list.map(d => `"${d}"`).join(',')})&select=customer_drawing_no,client`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }
+    );
+    if (res.ok) {
+      for (const pd of await res.json()) map.set(pd.customer_drawing_no, pd.client);
+    }
+  } catch(e) { console.warn('[storage] 取引先の取得に失敗', e); }
+  return map;
+}
+
+// 同名ファイルが既にある場合に連番を付けて衝突を避ける
+async function resolveUniquePath(folder, base, ext) {
+  let candidate = `${folder}/${base}${ext}`;
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/storage/v1/object/list/${ORDER_FILES_BUCKET}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+        body: JSON.stringify({ prefix: folder + '/', limit: 1000, search: base })
+      }
+    );
+    if (res.ok) {
+      const existing = new Set((await res.json()).map(o => o.name));
+      if (!existing.has(`${base}${ext}`)) return candidate;
+      for (let i = 2; i < 100; i++) {
+        if (!existing.has(`${base}_${i}${ext}`)) return `${folder}/${base}_${i}${ext}`;
+      }
+    }
+  } catch(e) { console.warn('[storage] 既存ファイル確認に失敗', e); }
+  return candidate;
+}
+
+// 同じFileは一度だけアップロードし、URLを返す（同一注文書の複数明細で重複させない）
+async function uploadSourceFiles(rows) {
+  const files = [...new Set(rows.map(r => r._sourceFile).filter(Boolean))];
+  if (files.length === 0) return new Map();
+
+  // 図番→取引先名 を先に取得（ファイル名に使うため）
+  const clientMap = await fetchClientMap(rows.map(r => r.drawingno));
+
+  const urlMap = new Map(); // File → {url, name}
+  for (const file of files) {
+    try {
+      // このファイル由来の行から取引先・受注日を決定
+      const own = rows.filter(r => r._sourceFile === file);
+      const client = own.map(r => clientMap.get(r.drawingno)).find(Boolean) || '';
+      const orderdate = own.map(r => r.orderdate).find(Boolean) || '';
+      const dateLabel = dateToFileLabel(orderdate);
+      const ext = (file.name.match(/\.[^.]+$/) || ['.pdf'])[0].toLowerCase();
+      const folder = dateLabel.slice(0, 7); // 例: 2026_07（年月フォルダ）
+
+      // Storageキーは英数字のみ（日本語キーは不可）
+      const keyBase = `${clientToKeyLabel(client)}_${dateLabel}`;
+      const path = await resolveUniquePath(folder, keyBase, ext);
+      // 画面表示用は日本語（例: ニデックマシンツール_2026_07_01.pdf）
+      const seq = (path.match(/_(\d+)\.[^.]+$/) || [])[1];
+      const displayName = `${clientToFileLabel(client)}_${dateLabel}${seq ? '_' + seq : ''}${ext}`;
+
+      const res = await fetch(
+        `${SUPABASE_URL}/storage/v1/object/${ORDER_FILES_BUCKET}/${encodeURI(path)}`,
+        {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_KEY,
+            'Content-Type': file.type || 'application/octet-stream',
+            'x-upsert': 'true'
+          },
+          body: file
+        }
+      );
+      if (!res.ok) {
+        const t = await res.text();
+        console.warn('[storage] アップロード失敗:', file.name, res.status, t);
+        continue; // 失敗しても受注登録自体は継続する
+      }
+      const url = `${SUPABASE_URL}/storage/v1/object/public/${ORDER_FILES_BUCKET}/${encodeURI(path)}`;
+      urlMap.set(file, { url, name: displayName });
+      console.log('[storage] アップロード成功:', file.name, '→', path);
+    } catch(e) {
+      console.warn('[storage] アップロード例外:', file.name, e);
+    }
+  }
+  return urlMap;
+}
+
 async function doSaveNewRows(rows, silent = false) {
   if (!rows.length) return;
   rtSuppress();  // 自分の受注保存による再読込を抑制
@@ -3434,10 +3593,19 @@ async function doSaveNewRows(rows, silent = false) {
     } catch(e) { console.warn('[doSaveNewRows] 型式フォールバック確認失敗', e); }
   }
 
+  // 注文書の原本ファイルをStorageへアップロードし、URLを各行に付与
+  const fileUrlMap = await uploadSourceFiles(rows);
+
   const dateFields = ['orderdate','deliverydate','shippingdate'];
   const sanitized = rows.map(r => {
     const { _isChange, _sealCount, _modelNo, ...row } = r;
-    // アンダースコア始まりの補助フィールド（_productName/_otNumber 等）は保存対象外
+    // 原本ファイルのURLを保存対象に含める
+    const info = r._sourceFile ? fileUrlMap.get(r._sourceFile) : null;
+    if (info) {
+      row.source_file_url  = info.url;
+      row.source_file_name = info.name;
+    }
+    // アンダースコア始まりの補助フィールド（_productName/_otNumber/_sourceFile 等）は保存対象外
     Object.keys(row).forEach(k => { if (k.startsWith('_')) delete row[k]; });
     dateFields.forEach(f => { if (!row[f]) row[f] = null; });
     return row;
@@ -4325,8 +4493,8 @@ function setCalBase(mode) {
 function applyListFilters() {
   const client = document.getElementById('filter-client-select')?.value || '';
   clientFilterValue = client;
-  // 取引先ボタンの状態も同期
-  document.querySelectorAll('.client-filter-btn').forEach(btn => {
+  // 取引先ボタンの状態も同期（受注一覧ページ内のボタンのみ）
+  document.querySelectorAll('#page-orders .client-filter-btn').forEach(btn => {
     const btnValue = btn.dataset.client != null ? btn.dataset.client : btn.textContent;
     const isAll = client === '' && btn.textContent === 'すべて';
     const isMatch = client !== '' && btnValue === client;
@@ -4349,8 +4517,8 @@ function clearListFilters() {
   if (tBtn) { tBtn.style.background='#eff6ff'; tBtn.style.borderColor='#bfdbfe'; tBtn.style.color='#1d4ed8'; }
   setDeliveryStatusFilterUI('');
   setCategoryFilterUI('');
-  document.querySelectorAll('.client-filter-btn').forEach(btn => btn.classList.remove('active'));
-  const allBtn = document.querySelector('.client-filter-btn');
+  document.querySelectorAll('#page-orders .client-filter-btn').forEach(btn => btn.classList.remove('active'));
+  const allBtn = document.querySelector('#page-orders .client-filter-btn');
   if (allBtn) allBtn.classList.add('active');
   filteredOrders = [...allOrders];
   currentPage = 1;
@@ -4371,14 +4539,14 @@ function buildClientSelect() {
 
 function setClientFilter(client) {
   clientFilterValue = client;
-  document.querySelectorAll('.client-filter-btn').forEach(btn => {
+  document.querySelectorAll('#page-orders .client-filter-btn').forEach(btn => {
     const btnValue = btn.dataset.client != null ? btn.dataset.client : btn.textContent;
     const isAll = client === '' && btn.textContent === 'すべて';
     const isMatch = client !== '' && btnValue === client;
     btn.classList.toggle('active', isAll || isMatch);
   });
   if (client === '') {
-    const allBtn = document.querySelector('.client-filter-btn');
+    const allBtn = document.querySelector('#page-orders .client-filter-btn');
     if (allBtn) allBtn.classList.add('active');
   }
   filterOrders();
@@ -4584,6 +4752,7 @@ function renderOrdersTable() {
         <span style="display:inline-flex;align-items:center;gap:2px;">
           ${newBadgeHtml(r.created_at)}
           <span style="display:inline-flex;width:18px;height:18px;align-items:center;justify-content:center;flex-shrink:0;">${memoIconHtml(r)}</span>
+          ${sourceFileIconHtml(r)}
           ${r.has_child ? (r.has_unset_delivery ? deliveryBadgeHtml() : deliveryConfirmedBadgeHtml()) : ''}
         </span>
       </td>
@@ -4968,6 +5137,14 @@ function renderDetailModal(p, children) {
         <div class="dfield">
           <div class="dfield-l">納期</div>
           <div class="dfield-v">${childDeliveryDatesHtml}</div>
+        </div>
+        <div class="dfield">
+          <div class="dfield-l">注文書原本</div>
+          <div class="dfield-v">${p.source_file_url
+            ? `<a href="${p.source_file_url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;color:#1d4ed8;font-weight:600;text-decoration:none;font-size:11px;">
+                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                 ${p.source_file_name || '注文書を開く'}</a>`
+            : '<span style="color:#9ca3af;">-</span>'}</div>
         </div>
       </div>
     </div>
@@ -5514,6 +5691,20 @@ function secondCategoryBadgeHtml(secondCat, partNo, partNoUrl) {
     return '<a href="' + partNoUrl + '" target="_blank" rel="noopener" title="' + title + '（クリックで参照先を開く）" onclick="event.stopPropagation()" style="' + badgeStyle + 'text-decoration:none;cursor:pointer;">' + inner + '</a>';
   }
   return '<span title="' + title + '" style="' + badgeStyle + 'cursor:default;">' + inner + '</span>';
+}
+
+// 注文書の原本ファイル（Storage）を開くアイコン
+function sourceFileIconHtml(r) {
+  if (!r.source_file_url) return '';
+  const name = (r.source_file_name || '注文書').replace(/"/g, '&quot;');
+  return `<a href="${r.source_file_url}" target="_blank" rel="noopener"
+     onclick="event.stopPropagation();"
+     title="注文書の原本を開く: ${name}"
+     style="display:inline-flex;width:18px;height:18px;align-items:center;justify-content:center;flex-shrink:0;color:#1d4ed8;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+    </svg></a>`;
 }
 
 function memoIconHtml(r) {
@@ -6636,10 +6827,9 @@ async function loadProductdate() {
     allProductdate = await fetchAllRows(
       `${SUPABASE_URL}/rest/v1/productdate?select=*&order=designid.desc`
     );
-    filteredProductdate = [...allProductdate];
     document.getElementById('pd-count').textContent = allProductdate.length + '件';
     pdCurrentPage = 1;
-    renderProductdateTable();
+    filterProductdate(); // 更新後も取引先フィルター／検索を維持する
   } catch(e) {
     document.getElementById('pd-tbody').innerHTML =
       `<tr><td colspan="9"><div class="empty-state"><p>エラー: ${e.message}</p></div></td></tr>`;
@@ -6647,16 +6837,43 @@ async function loadProductdate() {
   }
 }
 
+// 製品登録ページの取引先フィルター
+let pdClientFilterValue = '';
+
+function setPdClientFilter(client) {
+  pdClientFilterValue = client;
+  document.querySelectorAll('#page-productdate .client-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', (btn.dataset.client || '') === client);
+  });
+  filterProductdate();
+}
+
 function filterProductdate() {
   const q = document.getElementById('pd-search').value.trim().toLowerCase();
-  filteredProductdate = q
-    ? allProductdate.filter(r =>
-        (r.ot_number||'').toLowerCase().includes(q) ||
-        (r.product_name||'').toLowerCase().includes(q) ||
-        (r.customer_drawing_no||'').toLowerCase().includes(q) ||
-        (r.product_category||'').toLowerCase().includes(q) ||
-        (r.client||'').toLowerCase().includes(q))
-    : [...allProductdate];
+  // 全角英数を半角化し小文字化して比較（表記揺れを吸収）
+  const normClient = s => (s || '').replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).toLowerCase();
+  filteredProductdate = allProductdate.filter(r => {
+    if (pdClientFilterValue && !normClient(r.client).includes(normClient(pdClientFilterValue))) return false;
+    if (!q) return true;
+    return (r.ot_number||'').toLowerCase().includes(q) ||
+           (r.product_name||'').toLowerCase().includes(q) ||
+           (r.customer_drawing_no||'').toLowerCase().includes(q) ||
+           (r.product_category||'').toLowerCase().includes(q) ||
+           (r.client||'').toLowerCase().includes(q);
+  });
+  // 件数表示（フィルター時は絞り込み件数を強調）
+  const countEl = document.getElementById('pd-count');
+  if (countEl) {
+    if (pdClientFilterValue || q) {
+      countEl.textContent = `${filteredProductdate.length}件 / 全${allProductdate.length}件`;
+      countEl.style.color = '#1d4ed8';
+      countEl.style.fontWeight = '600';
+    } else {
+      countEl.textContent = allProductdate.length + '件';
+      countEl.style.color = '';
+      countEl.style.fontWeight = '';
+    }
+  }
   pdCurrentPage = 1;
   renderProductdateTable();
 }
