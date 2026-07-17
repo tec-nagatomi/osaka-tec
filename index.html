@@ -256,6 +256,128 @@
   .search-input:focus { border-color: #1d4ed8; box-shadow: 0 0 0 3px rgba(29,78,216,0.1); }
   .client-filter-bar { display:flex; flex-wrap:wrap; gap:5px; padding:8px 14px 10px; border-bottom:1px solid #f3f4f6; flex-shrink: 0; }
   .client-filter-btn { padding:3px 10px; font-size:11px; font-weight:600; border-radius:20px; border:1px solid #d1d5db; background:#f9fafb; color:#374151; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+  /* ===== 出荷管理 ===== */
+  .ship-layout { display:grid; grid-template-columns:400px 1fr; gap:16px; height:calc(100vh - 130px); padding:16px; align-items:start; }
+  .ship-pool-card, .ship-frames-card { background:#fff; border:1px solid #e5e7eb; border-radius:10px; display:flex; flex-direction:column; height:100%; overflow:hidden; }
+  .ship-card-head { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:12px 14px; border-bottom:1px solid #e5e7eb; flex-shrink:0; }
+  .ship-card-head h3 { margin:0; font-size:14px; font-weight:700; color:#1e3a5f; display:flex; align-items:center; gap:7px; }
+  .ship-card-head h3 svg { width:16px; height:16px; }
+  .ship-count { font-size:12px; color:#6b7280; font-weight:600; }
+  .ship-toolbar { display:flex; gap:6px; padding:10px 14px; flex-shrink:0; }
+  .ship-pool-hint { font-size:10.5px; color:#9ca3af; padding:0 14px 8px; flex-shrink:0; }
+  .ship-pool-list { flex:1; overflow-y:auto; padding:0 8px; min-height:0; }
+  .ship-pool-foot { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 14px; border-top:1px solid #e5e7eb; flex-shrink:0; background:#f9fafb; }
+  .ship-selall { font-size:11px; color:#374151; display:flex; align-items:center; gap:5px; cursor:pointer; }
+  .ship-item { display:flex; align-items:flex-start; gap:8px; padding:7px 8px; border-radius:6px; border:1px solid #f3f4f6; margin-bottom:4px; cursor:grab; transition:background .12s; }
+  .ship-item:active { cursor:grabbing; }
+  .ship-item.dragging { opacity:.4; }
+  .ship-drag-ghost { position:fixed; top:-1000px; left:-1000px; background:#1d4ed8; color:#fff; font-size:12px; font-weight:700; padding:6px 12px; border-radius:6px; white-space:nowrap; }
+  .ship-frames.drop-ready .ship-frame { border-style:dashed; border-color:#93c5fd; }
+  .ship-frame.drag-over { border-color:#1d4ed8 !important; border-style:solid !important; background:#eff6ff; box-shadow:0 0 0 3px rgba(29,78,216,.15); }
+  .ship-frame.drag-over .ship-frame-body { background:#eff6ff; }
+  .ship-item:hover { background:#f9fafb; }
+  .ship-item.checked { background:#eff6ff; border-color:#bfdbfe; }
+  .ship-item input { margin-top:2px; flex-shrink:0; }
+  .ship-item-main { flex:1; min-width:0; }
+  .ship-seal { font-weight:700; font-size:12px; color:#1d4ed8; font-family:monospace; }
+  .ship-item-sub { font-size:10.5px; color:#6b7280; margin-top:1px; word-break:break-all; }
+  .ship-item-meta { font-size:10px; color:#9ca3af; margin-top:1px; }
+  .ship-frames { flex:1; overflow-x:auto; overflow-y:hidden; padding:14px; min-height:0; display:flex; flex-direction:row; gap:14px; align-items:stretch; background:#f3f4f6; }
+  .ship-col { display:flex; flex-direction:column; gap:8px; flex:0 0 262px; min-width:262px; height:100%; min-height:0; }
+  .ship-col-date { font-size:26px; font-weight:800; color:#1f2937; text-align:center; letter-spacing:1px; flex-shrink:0; line-height:1.15; }
+  .ship-col-date small { display:block; font-size:11px; font-weight:600; color:#9ca3af; letter-spacing:0; margin-top:2px; }
+  /* 便が何件あってもフレームの大きさは変えない（カラム側をスクロールさせる） */
+  .ship-col-body { flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; display:flex; flex-direction:column; gap:10px; padding-right:2px; }
+  .ship-frame { border:2px solid #1e3a5f; border-radius:14px; overflow:hidden; background:#fff; display:flex; flex-direction:column; flex:0 0 auto; height:440px; }
+  /* 1便だけのカラムは高さいっぱいに広げる */
+  .ship-col-body:has(> .ship-frame:only-child) > .ship-frame { height:100%; min-height:440px; }
+  .ship-frame-head { padding:9px 11px; background:#f9fafb; border-bottom:2px solid #1e3a5f; flex-shrink:0; display:flex; flex-direction:column; gap:5px; }
+  .ship-frame-topline { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .ship-frame-no { font-weight:700; font-size:11.5px; color:#1e3a5f; font-family:monospace; }
+  .ship-chip { font-size:10.5px; padding:2px 8px; border-radius:20px; background:#eff6ff; color:#1d4ed8; font-weight:600; white-space:nowrap; }
+  .ship-chip.gray { background:#f3f4f6; color:#6b7280; }
+  .ship-badge { font-size:10px; padding:2px 8px; border-radius:20px; font-weight:700; }
+  .ship-badge.準備中 { background:#fef3c7; color:#92400e; }
+  .ship-badge.確定 { background:#dbeafe; color:#1e40af; }
+  .ship-badge.出荷済 { background:#dcfce7; color:#166534; }
+  .ship-frame-body { padding:8px; flex:1; overflow-y:auto; min-height:0; display:flex; flex-direction:column; gap:6px; }
+  .ship-frame-foot { border-top:2px solid #1e3a5f; background:#f9fafb; padding:7px 9px; flex-shrink:0; display:flex; gap:5px; align-items:center; justify-content:space-between; }
+  .ship-frame-actions { display:flex; gap:4px; }
+  .ship-row { position:relative; background:#f3f4f6; border-radius:7px; padding:8px 9px; font-size:11px; flex-shrink:0; }
+  .ship-row .seal { font-family:monospace; font-weight:700; color:#1d4ed8; font-size:11.5px; }
+  .ship-row .nm { color:#374151; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ship-row .dt { color:#9ca3af; font-size:10px; margin-top:1px; }
+  .ship-row .rm { position:absolute; top:5px; right:5px; border:none; background:transparent; color:#9ca3af; cursor:pointer; font-size:14px; line-height:1; padding:2px 4px; border-radius:4px; }
+  .ship-row .rm:hover { background:#e5e7eb; color:#dc2626; }
+  .ship-col-add { border:2px dashed #d1d5db; border-radius:14px; background:transparent; color:#6b7280; font-size:12px; font-weight:700; cursor:pointer; flex:1; min-height:120px; }
+  .ship-col-add:hover { border-color:#1d4ed8; color:#1d4ed8; background:#eff6ff; }
+  .ship-empty { text-align:center; color:#9ca3af; font-size:11px; padding:14px; }
+  .btn-sm { padding:4px 10px; font-size:11px; font-weight:600; border-radius:6px; border:1px solid #d1d5db; background:#fff; color:#374151; cursor:pointer; white-space:nowrap; }
+  .btn-sm:hover { background:#f3f4f6; }
+  .btn-primary-sm { padding:5px 12px; font-size:11px; font-weight:700; border-radius:6px; border:1px solid #1d4ed8; background:#1d4ed8; color:#fff; cursor:pointer; white-space:nowrap; }
+  .btn-primary-sm:hover { background:#1e40af; }
+  .btn-primary-sm:disabled { background:#d1d5db; border-color:#d1d5db; cursor:not-allowed; }
+  .btn-danger-sm { padding:4px 9px; font-size:11px; font-weight:600; border-radius:6px; border:1px solid #fecaca; background:#fff; color:#dc2626; cursor:pointer; }
+  .btn-danger-sm:hover { background:#fef2f2; }
+  .mform-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .mform-row { display:flex; flex-direction:column; gap:4px; }
+  .mform-row.full { grid-column:1 / -1; }
+  .mform-row label { font-size:11px; font-weight:600; color:#374151; }
+  .mform-row input, .mform-row select { padding:7px 9px; border:1px solid #d1d5db; border-radius:6px; font-size:12px; width:100%; }
+  .mform-row .req { color:#dc2626; }
+  .mform-error { color:#dc2626; font-size:11px; margin-top:10px; min-height:14px; }
+  /* 便作成ウィザード */
+  .sf-steps { display:flex; align-items:center; gap:4px; margin-bottom:16px; flex-wrap:wrap; }
+  .sf-step { font-size:10px; padding:3px 9px; border-radius:20px; background:#f3f4f6; color:#9ca3af; font-weight:700; white-space:nowrap; }
+  .sf-step.done { background:#dbeafe; color:#1d4ed8; cursor:pointer; }
+  .sf-step.current { background:#1d4ed8; color:#fff; }
+  .sf-stage { min-height:210px; }
+  .sf-q { font-size:15px; font-weight:700; color:#1e3a5f; margin-bottom:3px; }
+  .sf-hint { font-size:11px; color:#9ca3af; margin-bottom:12px; }
+  .sf-opts { display:flex; flex-direction:column; gap:6px; max-height:260px; overflow-y:auto; }
+  .sf-opt { text-align:left; padding:10px 12px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; cursor:pointer; font-size:12.5px; color:#374151; transition:all .12s; }
+  .sf-opt:hover { border-color:#1d4ed8; background:#eff6ff; }
+  .sf-opt.selected { border-color:#1d4ed8; background:#1d4ed8; color:#fff; font-weight:700; }
+  .sf-opt .sub { display:block; font-size:10.5px; color:#9ca3af; margin-top:2px; }
+  .sf-opt.selected .sub { color:#dbeafe; }
+  .sf-field { padding:9px 11px; border:1px solid #d1d5db; border-radius:8px; font-size:13px; width:100%; }
+  .sf-summary { background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:12px; font-size:12px; }
+  .sf-summary div { display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px dashed #e5e7eb; }
+  .sf-summary div:last-child { border-bottom:none; }
+  .sf-summary .k { color:#9ca3af; }
+  .sf-summary .v { font-weight:700; color:#1e3a5f; text-align:right; }
+  .sf-price { background:#eff6ff; border:2px solid #1d4ed8; border-radius:8px; padding:12px; margin-top:10px; text-align:center; }
+  .sf-price .amt { font-size:24px; font-weight:800; color:#1d4ed8; }
+  .sf-price .lbl { font-size:10.5px; color:#6b7280; }
+  /* 運送会社ごとのカードヘッダー色 */
+  .ship-frame.c-tsukishiro       { border-color:#0e7490; }
+  .ship-frame.c-tsukishiro       .ship-frame-head, .ship-frame.c-tsukishiro .ship-frame-foot { background:#cffafe; border-color:#0e7490; }
+  .ship-frame.c-tsukishiro       .ship-frame-no { color:#0e7490; }
+  .ship-frame.c-akita     { border-color:#b45309; }
+  .ship-frame.c-akita     .ship-frame-head, .ship-frame.c-akita .ship-frame-foot { background:#fef3c7; border-color:#b45309; }
+  .ship-frame.c-akita     .ship-frame-no { color:#b45309; }
+  .ship-frame.c-sagawa       { border-color:#15803d; }
+  .ship-frame.c-sagawa       .ship-frame-head, .ship-frame.c-sagawa .ship-frame-foot { background:#dcfce7; border-color:#15803d; }
+  .ship-frame.c-sagawa       .ship-frame-no { color:#15803d; }
+  .ship-frame.c-koei       { border-color:#7e22ce; }
+  .ship-frame.c-koei       .ship-frame-head, .ship-frame.c-koei .ship-frame-foot { background:#f3e8ff; border-color:#7e22ce; }
+  .ship-frame.c-koei       .ship-frame-no { color:#7e22ce; }
+  .ship-frame.c-fujioka   { border-color:#be123c; }
+  .ship-frame.c-fujioka   .ship-frame-head, .ship-frame.c-fujioka .ship-frame-foot { background:#ffe4e6; border-color:#be123c; }
+  .ship-frame.c-fujioka   .ship-frame-no { color:#be123c; }
+  .ship-frame.c-bclogi { border-color:#1d4ed8; }
+  .ship-frame.c-bclogi .ship-frame-head, .ship-frame.c-bclogi .ship-frame-foot { background:#dbeafe; border-color:#1d4ed8; }
+  .ship-frame.c-bclogi .ship-frame-no { color:#1d4ed8; }
+  @media (max-width:1100px) { .ship-layout { grid-template-columns:1fr; height:auto; } }
+  /* 出荷管理モーダル */
+  #shipment-form-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:300; align-items:center; justify-content:center; padding:20px; }
+  #shipment-form-overlay.open { display:flex; }
+  #shipment-form-overlay .modal { background:#fff; border-radius:14px; width:100%; box-shadow:0 24px 80px rgba(0,0,0,0.25); overflow:hidden; }
+  #shipment-form-overlay .modal-head { background:linear-gradient(135deg,#1d4ed8,#1e40af); padding:14px 18px; display:flex; align-items:center; justify-content:space-between; }
+  #shipment-form-overlay .modal-head h3 { margin:0; color:#fff; font-size:15px; font-weight:700; }
+  #shipment-form-overlay .modal-close { background:rgba(255,255,255,0.2); border:none; border-radius:6px; width:28px; height:28px; color:#fff; font-size:18px; cursor:pointer; line-height:1; }
+  #shipment-form-overlay .modal-body { padding:18px; max-height:calc(100vh - 200px); overflow-y:auto; }
+  #shipment-form-overlay .modal-foot { padding:12px 18px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:8px; background:#f9fafb; }
   .client-filter-btn:hover { background:#e5e7eb; }
   .client-filter-btn.active { background:#1d4ed8; border-color:#1d4ed8; color:#fff; }
   /* 受注一覧：未納期／納期確定 ワンタッチ切替セグメントコントロール */
@@ -1152,10 +1274,67 @@
 
 <!-- ==================== OTHER PAGES ==================== -->
 <div id="page-schedule" class="page">
-  <div class="coming-soon">
-    <svg viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-    <h3>出荷管理</h3>
-    <p>この機能は現在開発中です</p>
+  <div class="ship-layout">
+    <!-- 左: 出荷候補（納期確定・未割当） -->
+    <div class="ship-pool-card">
+      <div class="ship-card-head">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
+          出荷候補
+        </h3>
+        <span class="ship-count" id="ship-pool-count">0件</span>
+      </div>
+      <div class="ship-toolbar">
+        <input class="pd-search" id="ship-pool-search" type="text" placeholder="封印番号・図番・P番号・品名で検索..." oninput="renderShipPool()">
+      </div>
+      <div class="ship-toolbar" style="padding-top:0;">
+        <select class="pd-search" id="ship-pool-client" onchange="renderShipPool()" style="min-width:0;">
+          <option value="">全取引先</option>
+        </select>
+        <input class="pd-search" id="ship-pool-date" type="date" onchange="renderShipPool()" style="min-width:0;" title="納期で絞り込み">
+        <button class="btn-sm" onclick="clearShipPoolFilter()">クリア</button>
+      </div>
+      <div class="ship-pool-hint">納期が確定した封印番号です。便のカードへドラッグ＆ドロップして追加します。</div>
+      <div class="ship-pool-list" id="ship-pool-list"></div>
+    </div>
+
+    <!-- 右: 出荷便（フレーム） -->
+    <div class="ship-frames-card">
+      <div class="ship-card-head">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          出荷便
+        </h3>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input class="pd-search" id="ship-filter-date" type="date" onchange="loadShipments()" style="min-width:0;padding:4px 8px;" title="出荷日で絞り込み">
+          <button class="btn-sm" onclick="document.getElementById('ship-filter-date').value='';loadShipments()">全期間</button>
+          <button class="btn-primary-sm" onclick="openShipmentForm()">+ 便を作成</button>
+        </div>
+      </div>
+      <div class="ship-frames" id="ship-frames"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 便の作成/編集モーダル（1項目ずつ順番に入力するウィザード） -->
+<div class="overlay" id="shipment-form-overlay">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-head">
+      <h3 id="shipment-form-title">便を作成</h3>
+      <button class="modal-close" onclick="closeShipmentForm()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="sf-id">
+      <div class="sf-steps" id="sf-steps"></div>
+      <div class="sf-stage" id="sf-stage"></div>
+      <div id="sf-error" class="mform-error"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-sm" id="sf-back" onclick="sfPrev()">戻る</button>
+      <div style="flex:1;"></div>
+      <button class="btn-sm" onclick="closeShipmentForm()">キャンセル</button>
+      <button class="btn-primary-sm" id="sf-next" onclick="sfNext()">次へ</button>
+    </div>
   </div>
 </div>
 <div id="page-progress" class="page">
@@ -1658,6 +1837,521 @@ function floorIconSvg(name) {
 }
 
 let _activeFloorCard = null;  // クリックで選択中の現場名（null=未選択）
+
+// ==================== 出荷管理 ====================
+let shipPool = [];        // 出荷候補（納期確定・未割当）
+let shipments = [];       // 便一覧
+let shipRates = [];       // 運賃マスタ（受注元→区分→荷降し先→運送会社→トラック）
+let shipSelected = new Set();
+
+// Supabaseのデフォルト1000行上限を超えても全件取得する（出荷管理用のグローバル版）
+async function shipFetchAll(url) {
+  const PAGE = 1000;
+  let all = [], offset = 0;
+  while (true) {
+    const res = await fetch(`${url}&limit=${PAGE}&offset=${offset}`, { headers: sbHeaders() });
+    if (!res.ok) break;
+    const rows = await res.json();
+    all = all.concat(rows);
+    if (rows.length < PAGE) break;
+    offset += PAGE;
+  }
+  return all;
+}
+
+async function loadShippingPage() {
+  await loadShipMasters();
+  await Promise.all([loadShipPool(), loadShipments()]);
+}
+
+async function loadShipMasters() {
+  try {
+    shipRates = await shipFetchAll(`${SUPABASE_URL}/rest/v1/shipping_rates?select=*&active=eq.true&order=id.asc`);
+  } catch(e) { console.error('[ship] 運賃マスタ取得失敗', e); shipRates = []; }
+}
+
+function sbHeaders() {
+  return { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' };
+}
+
+async function loadShipPool() {
+  try {
+    shipPool = await shipFetchAll(
+      `${SUPABASE_URL}/rest/v1/v_shippable_items?select=*&shipment_id=is.null&order=delivery.asc,sealno.asc`
+    );
+  } catch(e) { console.error('[ship] 出荷候補取得失敗', e); shipPool = []; }
+  // 取引先セレクトを更新
+  const sel = document.getElementById('ship-pool-client');
+  if (sel) {
+    const cur = sel.value;
+    const clients = [...new Set(shipPool.map(r => r.client).filter(Boolean))].sort();
+    sel.innerHTML = '<option value="">全取引先</option>' + clients.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    sel.value = cur;
+  }
+  shipSelected.clear();
+  renderShipPool();
+}
+
+function clearShipPoolFilter() {
+  document.getElementById('ship-pool-search').value = '';
+  document.getElementById('ship-pool-client').value = '';
+  document.getElementById('ship-pool-date').value = '';
+  renderShipPool();
+}
+
+function shipPoolFiltered() {
+  const q = (document.getElementById('ship-pool-search')?.value || '').trim().toLowerCase();
+  const cl = document.getElementById('ship-pool-client')?.value || '';
+  const dt = document.getElementById('ship-pool-date')?.value || '';
+  return shipPool.filter(r => {
+    if (cl && r.client !== cl) return false;
+    if (dt && r.delivery !== dt) return false;
+    if (!q) return true;
+    return (r.sealno||'').toLowerCase().includes(q)
+        || (r.drawingno||'').toLowerCase().includes(q)
+        || (r.productno||'').toLowerCase().includes(q)
+        || (r.product_name||'').toLowerCase().includes(q)
+        || (r.orderno||'').toLowerCase().includes(q);
+  });
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function renderShipPool() {
+  const list = document.getElementById('ship-pool-list');
+  const cnt  = document.getElementById('ship-pool-count');
+  if (!list) return;
+  const rows = shipPoolFiltered();
+  if (cnt) cnt.textContent = rows.length === shipPool.length ? `${rows.length}件` : `${rows.length}件 / 全${shipPool.length}件`;
+  if (rows.length === 0) {
+    list.innerHTML = '<div class="ship-empty">該当する出荷候補がありません</div>';
+  } else {
+    list.innerHTML = rows.map(r => `
+      <div class="ship-item ${shipSelected.has(r.child_id) ? 'checked' : ''}"
+             draggable="true" data-child="${r.child_id}"
+             onclick="toggleShipItem(${r.child_id})"
+             ondragstart="onShipDragStart(event, ${r.child_id})"
+             ondragend="onShipDragEnd(event)"
+             title="ドラッグして便へ追加（クリックで複数選択）">
+        <div class="ship-item-main">
+          <div><span class="ship-seal">${esc(r.sealno)}</span>
+            <span class="ship-item-meta"> / ${esc(r.productno || '')}</span></div>
+          <div class="ship-item-sub">${esc(r.product_name || r.drawingno || '')}</div>
+          <div class="ship-item-meta">${esc(r.client || '')} ｜ 納期 ${esc(r.delivery || '')}</div>
+        </div>
+      </div>`).join('');
+  }
+}
+
+function toggleShipItem(childId) {
+  if (shipSelected.has(childId)) shipSelected.delete(childId); else shipSelected.add(childId);
+  renderShipPool();
+}
+
+// ---- ドラッグ＆ドロップ ----
+let shipDragIds = [];   // ドラッグ中の child_id
+
+function onShipDragStart(ev, childId) {
+  // 選択済みの項目をドラッグしたら選択分すべて、未選択ならその1件だけ運ぶ
+  shipDragIds = shipSelected.has(childId) ? [...shipSelected] : [childId];
+  ev.dataTransfer.effectAllowed = 'move';
+  try { ev.dataTransfer.setData('text/plain', shipDragIds.join(',')); } catch(e) {}
+  ev.currentTarget.classList.add('dragging');
+  document.getElementById('ship-frames')?.classList.add('drop-ready');
+  // 複数まとめてドラッグしていることが分かるゴースト
+  if (shipDragIds.length > 1) {
+    const ghost = document.createElement('div');
+    ghost.className = 'ship-drag-ghost';
+    ghost.textContent = `${shipDragIds.length}件を移動`;
+    document.body.appendChild(ghost);
+    try { ev.dataTransfer.setDragImage(ghost, 10, 10); } catch(e) {}
+    setTimeout(() => ghost.remove(), 0);
+  }
+}
+
+function onShipDragEnd(ev) {
+  ev.currentTarget.classList.remove('dragging');
+  document.getElementById('ship-frames')?.classList.remove('drop-ready');
+  document.querySelectorAll('.ship-frame.drag-over').forEach(el => el.classList.remove('drag-over'));
+}
+
+function onShipDragOver(ev, el) {
+  if (shipDragIds.length === 0) return;
+  ev.preventDefault();                  // これが無いとdropが発火しない
+  ev.dataTransfer.dropEffect = 'move';
+  el.classList.add('drag-over');
+}
+
+function onShipDragLeave(ev, el) {
+  // 子要素間の移動で誤って外れないようにする
+  if (!el.contains(ev.relatedTarget)) el.classList.remove('drag-over');
+}
+
+async function onShipDrop(ev, shipmentId, el) {
+  ev.preventDefault();
+  el.classList.remove('drag-over');
+  document.getElementById('ship-frames')?.classList.remove('drop-ready');
+  let ids = shipDragIds;
+  if (ids.length === 0) {
+    const raw = ev.dataTransfer.getData('text/plain') || '';
+    ids = raw.split(',').map(x => parseInt(x, 10)).filter(Boolean);
+  }
+  shipDragIds = [];
+  if (ids.length === 0) return;
+  await addChildrenToShipment(ids, shipmentId);
+}
+
+async function loadShipments() {
+  const dt = document.getElementById('ship-filter-date')?.value || '';
+  let url = `${SUPABASE_URL}/rest/v1/shipments?select=*&order=shipping_date.asc,id.asc`;
+  if (dt) url += `&shipping_date=eq.${dt}`;
+  try {
+    shipments = await shipFetchAll(url);
+    // 各便の明細を取得
+    const items = await shipFetchAll(`${SUPABASE_URL}/rest/v1/v_shippable_items?select=*&shipment_id=not.is.null`);
+    for (const s of shipments) s._items = items.filter(i => i.shipment_id === s.id);
+  } catch(e) { console.error('[ship] 便取得失敗', e); shipments = []; }
+  renderShipments();
+}
+
+// 運送会社 → CSSクラス（ヘッダー色分け）
+const CARRIER_CLASS = {
+  '月城':'tsukishiro', 'アキタ':'akita', '佐川':'sagawa',
+  '広栄':'koei', '藤岡運送':'fujioka', 'ビーシーロジスティクス':'bclogi',
+};
+
+// 便カード1枚分のHTML
+function shipFrameHtml(s) {
+  const items = s._items || [];
+  const cc = CARRIER_CLASS[s.carrier] ? ' c-' + CARRIER_CLASS[s.carrier] : '';
+  return `
+    <div class="ship-frame${cc}" data-shipment="${s.id}"
+         ondragover="onShipDragOver(event, this)"
+         ondragleave="onShipDragLeave(event, this)"
+         ondrop="onShipDrop(event, ${s.id}, this)">
+      <div class="ship-frame-head">
+        <div class="ship-frame-topline">
+          <span class="ship-frame-no">${esc(s.shipment_no || '(未採番)')}</span>
+          <span class="ship-badge ${esc(s.status || '準備中')}">${esc(s.status || '準備中')}</span>
+          ${s.depart_time ? `<span class="ship-chip gray">${esc(s.depart_time)}</span>` : ''}
+        </div>
+        <div class="ship-frame-topline">
+          <span class="ship-chip" title="荷降し先">${esc(s.destination || '行先未設定')}</span>
+        </div>
+        <div class="ship-frame-topline">
+          <span class="ship-chip gray" title="運送会社">${esc(s.carrier || '業者未設定')}</span>
+          <span class="ship-chip gray" title="トラック">${esc(s.truck || 'トラック未設定')}</span>
+          ${s.kind && s.kind !== '通常' ? `<span class="ship-chip gray">${esc(s.kind)}</span>` : ''}
+        </div>
+        ${(s.order_source || s.price != null) ? `<div class="ship-frame-topline">
+          ${s.order_source ? `<span class="ship-chip gray" title="受注元">${esc(s.order_source)}</span>` : ''}
+          ${s.price != null ? `<span class="ship-chip" title="運賃">¥${Number(s.price).toLocaleString()}</span>` : ''}
+        </div>` : ''}
+      </div>
+      <div class="ship-frame-body">
+        ${items.length === 0
+          ? '<div class="ship-empty">空です<br>左からドラッグして追加</div>'
+          : items.map(i => `
+            <div class="ship-row">
+              <button class="rm" onclick="removeShipItem(${i.child_id})" title="この便から外す">&times;</button>
+              <div class="seal">${esc(i.sealno || '(未採番)')}</div>
+              <div class="nm" title="${esc(i.product_name || i.drawingno || '')}">${esc(i.product_name || i.drawingno || '')}</div>
+              <div class="dt">${esc(i.productno || '')} ｜ 納期 ${esc(i.delivery || '')}</div>
+            </div>`).join('')}
+        ${s.note ? `<div style="font-size:10px;color:#6b7280;padding-top:2px;">備考: ${esc(s.note)}</div>` : ''}
+      </div>
+      <div class="ship-frame-foot">
+        <span class="ship-chip gray">${items.length}件</span>
+        <div class="ship-frame-actions">
+          <button class="btn-sm" onclick="openShipmentForm(${s.id})">編集</button>
+          <button class="btn-danger-sm" onclick="deleteShipment(${s.id})">削除</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+// 出荷日ごとに縦カラムで横並び表示
+function renderShipments() {
+  const wrap = document.getElementById('ship-frames');
+  if (!wrap) return;
+  if (shipments.length === 0) {
+    wrap.innerHTML = '<div class="ship-empty" style="margin:auto;">便がありません。「+ 便を作成」から追加してください。</div>';
+    return;
+  }
+  // 日付でグループ化（古い順に左から並べる）
+  const byDate = new Map();
+  for (const s of shipments) {
+    const d = s.shipping_date || '(日付なし)';
+    if (!byDate.has(d)) byDate.set(d, []);
+    byDate.get(d).push(s);
+  }
+  const dates = [...byDate.keys()].sort();
+  const WD = ['日','月','火','水','木','金','土'];
+  wrap.innerHTML = dates.map(d => {
+    const list = byDate.get(d);
+    let label = d, sub = '';
+    const m = d.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) {
+      label = `${parseInt(m[2],10)}/${parseInt(m[3],10)}`;
+      const wd = new Date(+m[1], +m[2]-1, +m[3]).getDay();
+      const total = list.reduce((n,s) => n + (s._items ? s._items.length : 0), 0);
+      sub = `(${WD[wd]}) ${list.length}便 / ${total}件`;
+    }
+    return `
+      <div class="ship-col">
+        <div class="ship-col-date">${esc(label)}<small>${esc(sub)}</small></div>
+        <div class="ship-col-body">${list.map(shipFrameHtml).join('')}</div>
+      </div>`;
+  }).join('') + `
+    <div class="ship-col">
+      <div class="ship-col-date" style="color:#d1d5db;">＋</div>
+      <div class="ship-col-body">
+        <button class="ship-col-add" onclick="openShipmentForm()">便を作成</button>
+      </div>
+    </div>`;
+}
+
+// ---- 便への追加/削除 ----
+// 指定の封印番号(child_id配列)を便へ追加する。ボタン操作・D&Dの共通処理
+async function addChildrenToShipment(childIds, shipmentId) {
+  if (!childIds || childIds.length === 0) return;
+  const payload = childIds.map(cid => ({ shipment_id: shipmentId, child_id: cid }));
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/shipment_items`, {
+      method: 'POST', headers: { ...sbHeaders(), 'Prefer': 'return=minimal' }, body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const t = await res.text();
+      if (t.includes('shipment_items_child_unique')) alert('選択した封印番号の中に、既に他の便に入っているものがあります。');
+      else alert('追加に失敗しました: ' + t);
+      return;
+    }
+    childIds.forEach(id => shipSelected.delete(id));
+    await Promise.all([loadShipPool(), loadShipments()]);
+  } catch(e) { alert('追加に失敗しました: ' + e.message); }
+}
+
+async function removeShipItem(childId) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/shipment_items?child_id=eq.${childId}`, { method: 'DELETE', headers: sbHeaders() });
+    if (!res.ok) { alert('削除に失敗しました'); return; }
+    await Promise.all([loadShipPool(), loadShipments()]);
+  } catch(e) { alert('削除に失敗しました: ' + e.message); }
+}
+
+// ---- 便の作成/編集（1項目ずつ順番に入力するウィザード）----
+// 順序: 受注元 → 区分 → 荷降し先 → 運送会社 → トラック → オプション → 出荷日/時刻 → 確認
+const SF_STEPS = ['order_source','kind','destination','carrier','truck','option','date','confirm'];
+const SF_LABEL = { order_source:'受注元', kind:'区分', destination:'荷降し先', carrier:'運送会社',
+                   truck:'トラック', option:'オプション', date:'出荷日', confirm:'確認' };
+let sfStep = 0;
+let sfData = {};
+
+// 現時点の選択に合う運賃行を絞り込む
+function sfMatches(upto) {
+  return shipRates.filter(r => {
+    for (const k of upto) {
+      if (sfData[k] == null || sfData[k] === '') continue;
+      if (k === 'order_source' && (r.order_source || '') !== sfData.order_source) return false;
+      if (k === 'kind'         && r.kind        !== sfData.kind)        return false;
+      if (k === 'destination'  && r.destination !== sfData.destination) return false;
+      if (k === 'carrier'      && r.carrier     !== sfData.carrier)     return false;
+      if (k === 'truck'        && r.truck       !== sfData.truck)       return false;
+    }
+    return true;
+  });
+}
+
+function sfUniq(field, upto) {
+  const seen = new Map();
+  for (const r of sfMatches(upto)) {
+    const v = r[field] == null ? '' : r[field];
+    if (!seen.has(v)) seen.set(v, 0);
+    seen.set(v, seen.get(v) + 1);
+  }
+  return [...seen.entries()].sort((a,b) => String(a[0]).localeCompare(String(b[0]), 'ja'));
+}
+
+function openShipmentForm(id) {
+  const s = id ? shipments.find(x => x.id === id) : null;
+  sfData = s ? {
+    id: s.id, order_source: s.order_source || '', kind: s.kind || '通常',
+    destination: s.destination || '', carrier: s.carrier || '', truck: s.truck || '',
+    option: s.option_label || '', date: s.shipping_date || '', time: s.depart_time || '',
+    status: s.status || '準備中', note: s.note || '', price: s.price ?? null,
+  } : { kind:'通常', date:new Date().toISOString().slice(0,10), status:'準備中' };
+  document.getElementById('shipment-form-title').textContent = s ? `便を編集 (${s.shipment_no})` : '便を作成';
+  document.getElementById('sf-id').value = s ? s.id : '';
+  sfStep = 0;
+  document.getElementById('sf-error').textContent = '';
+  document.getElementById('shipment-form-overlay').classList.add('open');
+  sfRender();
+}
+
+function closeShipmentForm() {
+  document.getElementById('shipment-form-overlay').classList.remove('open');
+}
+
+function sfGoto(i) { if (i <= sfStep) { sfStep = i; sfRender(); } }
+
+function sfRender() {
+  const key = SF_STEPS[sfStep];
+  // ステップ表示
+  document.getElementById('sf-steps').innerHTML = SF_STEPS.map((k,i) =>
+    `<span class="sf-step ${i===sfStep?'current':(i<sfStep?'done':'')}"
+       ${i<sfStep?`onclick="sfGoto(${i})"`:''}>${i+1}. ${SF_LABEL[k]}</span>`).join('');
+
+  const stage = document.getElementById('sf-stage');
+  document.getElementById('sf-error').textContent = '';
+  document.getElementById('sf-back').style.visibility = sfStep === 0 ? 'hidden' : 'visible';
+  document.getElementById('sf-next').textContent = key === 'confirm' ? '保存' : '次へ';
+
+  const optBtn = (val, label, sub, sel) =>
+    `<button class="sf-opt ${sel?'selected':''}" onclick="sfPick(${JSON.stringify(val).replace(/"/g,'&quot;')})">${esc(label)}${sub?`<span class="sub">${esc(sub)}</span>`:''}</button>`;
+
+  if (key === 'order_source') {
+    // 「その他」は選択肢に出さない
+    const list = sfUniq('order_source', []).filter(([v]) => v !== 'その他');
+    stage.innerHTML = `<div class="sf-q">受注元は？</div><div class="sf-hint">運賃表の受注元を選びます</div>
+      <div class="sf-opts">${list.map(([v,n]) => optBtn(v, v || '(指定なし・共通)', `${n}件`, sfData.order_source === v)).join('')}</div>`;
+  } else if (key === 'kind') {
+    const list = sfUniq('kind', ['order_source']);
+    stage.innerHTML = `<div class="sf-q">区分は？</div><div class="sf-hint">通常出荷か引取か</div>
+      <div class="sf-opts">${list.map(([v,n]) => optBtn(v, v, `${n}件`, sfData.kind === v)).join('')}</div>`;
+  } else if (key === 'destination') {
+    const list = sfUniq('destination', ['order_source','kind']);
+    stage.innerHTML = `<div class="sf-q">荷降し先は？</div><div class="sf-hint">どこ行きの便か</div>
+      <div class="sf-opts">${list.map(([v,n]) => optBtn(v, v, `${n}件`, sfData.destination === v)).join('')}</div>`;
+  } else if (key === 'carrier') {
+    const list = sfUniq('carrier', ['order_source','kind','destination']);
+    stage.innerHTML = `<div class="sf-q">運送会社は？</div><div class="sf-hint">この行先に対応する会社</div>
+      <div class="sf-opts">${list.map(([v,n]) => optBtn(v, v, `${n}件`, sfData.carrier === v)).join('')}</div>`;
+  } else if (key === 'truck') {
+    const list = sfUniq('truck', ['order_source','kind','destination','carrier']);
+    stage.innerHTML = `<div class="sf-q">トラックは？</div><div class="sf-hint">何トン車を使うか</div>
+      <div class="sf-opts">${list.map(([v,n]) => {
+        const r = sfMatches(['order_source','kind','destination','carrier']).find(x => x.truck === v);
+        return optBtn(v, v, r && r.price ? `¥${Number(r.price).toLocaleString()}` : '', sfData.truck === v);
+      }).join('')}</div>`;
+  } else if (key === 'option') {
+    const rows = sfMatches(['order_source','kind','destination','carrier','truck']);
+    if (rows.length <= 1) { sfData.option = rows[0] ? (rows[0].option_label || '') : ''; sfStep++; return sfRender(); }
+    stage.innerHTML = `<div class="sf-q">オプションは？</div><div class="sf-hint">条件によって運賃が変わります</div>
+      <div class="sf-opts">${rows.map(r => optBtn(r.option_label || '',
+        r.option_label || '通常（オプションなし）',
+        `¥${Number(r.price).toLocaleString()}`, (sfData.option || '') === (r.option_label || ''))).join('')}</div>`;
+  } else if (key === 'date') {
+    stage.innerHTML = `<div class="sf-q">出荷日と時刻</div><div class="sf-hint">出発時刻は任意です</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div><label style="font-size:11px;font-weight:600;color:#374151;">出荷日 <span style="color:#dc2626;">*</span></label>
+          <input type="date" class="sf-field" id="sf-date" value="${esc(sfData.date || '')}"></div>
+        <div><label style="font-size:11px;font-weight:600;color:#374151;">出発時刻</label>
+          <input type="text" class="sf-field" id="sf-time" placeholder="例: 09:00" value="${esc(sfData.time || '')}"></div>
+        <div><label style="font-size:11px;font-weight:600;color:#374151;">ステータス</label>
+          <select class="sf-field" id="sf-status">
+            ${['準備中','確定','出荷済'].map(s => `<option ${sfData.status===s?'selected':''}>${s}</option>`).join('')}
+          </select></div>
+        <div><label style="font-size:11px;font-weight:600;color:#374151;">備考</label>
+          <input type="text" class="sf-field" id="sf-note" placeholder="任意" value="${esc(sfData.note || '')}"></div>
+      </div>`;
+  } else if (key === 'confirm') {
+    const rate = sfCurrentRate();
+    stage.innerHTML = `<div class="sf-q">この内容で登録します</div>
+      <div class="sf-summary">
+        <div><span class="k">受注元</span><span class="v">${esc(sfData.order_source || '(指定なし)')}</span></div>
+        <div><span class="k">区分</span><span class="v">${esc(sfData.kind || '')}</span></div>
+        <div><span class="k">荷降し先</span><span class="v">${esc(sfData.destination || '')}</span></div>
+        <div><span class="k">運送会社</span><span class="v">${esc(sfData.carrier || '')}</span></div>
+        <div><span class="k">トラック</span><span class="v">${esc(sfData.truck || '')}</span></div>
+        ${sfData.option ? `<div><span class="k">オプション</span><span class="v">${esc(sfData.option)}</span></div>` : ''}
+        <div><span class="k">出荷日</span><span class="v">${esc(sfData.date || '')} ${esc(sfData.time || '')}</span></div>
+        <div><span class="k">ステータス</span><span class="v">${esc(sfData.status || '')}</span></div>
+      </div>
+      ${rate && rate.price != null ? `<div class="sf-price"><div class="lbl">運賃（マスタ自動判定）</div>
+        <div class="amt">¥${Number(rate.price).toLocaleString()}</div>
+        ${rate.base_price ? `<div class="lbl">基本 ¥${Number(rate.base_price).toLocaleString()} + サーチャージ ¥${Number(rate.surcharge||0).toLocaleString()}</div>` : ''}</div>`
+        : `<div class="sf-price" style="border-color:#d1d5db;background:#f9fafb;"><div class="lbl">該当する運賃がマスタにありません</div></div>`}`;
+  }
+}
+
+function sfCurrentRate() {
+  const rows = sfMatches(['order_source','kind','destination','carrier','truck']);
+  return rows.find(r => (r.option_label || '') === (sfData.option || '')) || rows[0] || null;
+}
+
+function sfPick(val) {
+  const key = SF_STEPS[sfStep];
+  sfData[key] = val;
+  // 上位を変えたら下位の選択をクリア（不整合防止）
+  const idx = SF_STEPS.indexOf(key);
+  for (const k of SF_STEPS.slice(idx + 1)) {
+    if (['order_source','kind','destination','carrier','truck','option'].includes(k)) sfData[k] = '';
+  }
+  sfStep++;
+  sfRender();
+}
+
+function sfPrev() { if (sfStep > 0) { sfStep--; sfRender(); } }
+
+function sfNext() {
+  const key = SF_STEPS[sfStep];
+  const err = document.getElementById('sf-error');
+  if (key === 'date') {
+    sfData.date   = document.getElementById('sf-date').value;
+    sfData.time   = document.getElementById('sf-time').value;
+    sfData.status = document.getElementById('sf-status').value;
+    sfData.note   = document.getElementById('sf-note').value;
+    if (!sfData.date) { err.textContent = '出荷日を入力してください'; return; }
+  } else if (key === 'confirm') {
+    return saveShipment();
+  } else if (!sfData[key] && sfData[key] !== '') {
+    err.textContent = `${SF_LABEL[key]}を選んでください`; return;
+  }
+  sfStep++;
+  sfRender();
+}
+
+async function saveShipment() {
+  const id   = document.getElementById('sf-id').value;
+  const err  = document.getElementById('sf-error');
+  const rate = sfCurrentRate();
+  if (!sfData.destination) { err.textContent = '荷降し先を選んでください'; return; }
+  if (!sfData.date)        { err.textContent = '出荷日を入力してください'; return; }
+  const body = {
+    shipping_date: sfData.date,
+    order_source : sfData.order_source || null,
+    kind         : sfData.kind || '通常',
+    destination  : sfData.destination,
+    carrier      : sfData.carrier || null,
+    truck        : sfData.truck || null,
+    option_label : sfData.option || null,
+    rate_id      : rate ? rate.id : null,
+    price        : rate ? rate.price : null,
+    depart_time  : sfData.time || null,
+    status       : sfData.status || '準備中',
+    note         : sfData.note || null,
+  };
+  try {
+    const url = id ? `${SUPABASE_URL}/rest/v1/shipments?id=eq.${id}` : `${SUPABASE_URL}/rest/v1/shipments`;
+    const res = await fetch(url, { method: id ? 'PATCH' : 'POST', headers: { ...sbHeaders(), 'Prefer': 'return=minimal' }, body: JSON.stringify(body) });
+    if (!res.ok) { err.textContent = '保存に失敗: ' + await res.text(); return; }
+    closeShipmentForm();
+    await loadShipments();
+  } catch(e) { err.textContent = '保存に失敗: ' + e.message; }
+}
+
+async function deleteShipment(id) {
+  const s = shipments.find(x => x.id === id);
+  const n = (s && s._items) ? s._items.length : 0;
+  if (!confirm(`便 ${s ? s.shipment_no : ''} を削除しますか？\n${n > 0 ? `中の${n}件は出荷候補に戻ります。` : ''}`)) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/shipments?id=eq.${id}`, { method: 'DELETE', headers: sbHeaders() });
+    if (!res.ok) { alert('削除に失敗しました'); return; }
+    await Promise.all([loadShipPool(), loadShipments()]);
+  } catch(e) { alert('削除に失敗しました: ' + e.message); }
+}
 
 function renderFloors() {
   const grid = document.getElementById('floor-grid');
@@ -2168,6 +2862,7 @@ function showPage(name, navEl) {
   if (name === 'orders') { loadOrders(); renderCalendar(); }
   if (name === 'productdate') loadProductdate();
   if (name === 'progress') renderFloors();
+  if (name === 'schedule') loadShippingPage();
 }
 
 // ---- Drop zone ----
