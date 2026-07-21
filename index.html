@@ -257,8 +257,18 @@
   .client-filter-bar { display:flex; flex-wrap:wrap; gap:5px; padding:8px 14px 10px; border-bottom:1px solid #f3f4f6; flex-shrink: 0; }
   .client-filter-btn { padding:3px 10px; font-size:11px; font-weight:600; border-radius:20px; border:1px solid #d1d5db; background:#f9fafb; color:#374151; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
   /* ===== 出荷管理 ===== */
-  .ship-layout { display:grid; grid-template-columns:400px 1fr; gap:16px; height:calc(100vh - 130px); padding:16px; align-items:start; }
-  .ship-pool-card, .ship-frames-card { background:#fff; border:1px solid #e5e7eb; border-radius:10px; display:flex; flex-direction:column; height:100%; overflow:hidden; }
+  .ship-layout { display:grid; grid-template-columns:330px 300px 1fr; gap:14px; height:calc(100vh - 130px); padding:16px; align-items:start; }
+  .ship-pool-card, .ship-frames-card, .ship-pallets-card { background:#fff; border:1px solid #e5e7eb; border-radius:10px; display:flex; flex-direction:column; height:100%; overflow:hidden; }
+  .ship-pallet-list { flex:1; overflow-y:auto; padding:10px; min-height:0; display:flex; flex-direction:column; gap:10px; }
+  .pallet-card { border:2px solid #92400e; border-radius:10px; background:#fffbeb; overflow:hidden; cursor:grab; }
+  .pallet-card.dragging { opacity:.4; }
+  .pallet-card-head { padding:7px 9px; background:#fef3c7; border-bottom:1px solid #fcd34d; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .pallet-no { font-family:monospace; font-weight:700; font-size:11.5px; color:#92400e; }
+  .pallet-mini { padding:8px; display:flex; justify-content:center; }
+  .pallet-mini svg { border:1px solid #d1d5db; background:#fff; }
+  .pallet-card-foot { padding:6px 9px; background:#fef3c7; border-top:1px solid #fcd34d; display:flex; gap:5px; align-items:center; justify-content:space-between; }
+  .pallet-chip { font-size:10px; padding:2px 7px; border-radius:20px; background:#fff; color:#92400e; font-weight:700; border:1px solid #fcd34d; }
+  .pallet-card.drag-over { border-color:#1d4ed8; background:#eff6ff; box-shadow:0 0 0 3px rgba(29,78,216,.15); }
   .ship-card-head { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:12px 14px; border-bottom:1px solid #e5e7eb; flex-shrink:0; }
   .ship-card-head h3 { margin:0; font-size:14px; font-weight:700; color:#1e3a5f; display:flex; align-items:center; gap:7px; }
   .ship-card-head h3 svg { width:16px; height:16px; }
@@ -326,7 +336,28 @@
   .mform-row input, .mform-row select { padding:7px 9px; border:1px solid #d1d5db; border-radius:6px; font-size:12px; width:100%; }
   .mform-row .req { color:#dc2626; }
   .mform-error { color:#dc2626; font-size:11px; margin-top:10px; min-height:14px; }
-  /* 便作成ウィザード */
+  /* パレット積み付けシミュレーター */
+  #pallet-sim-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:300; align-items:center; justify-content:center; padding:20px; }
+  #pallet-sim-overlay.open { display:flex; }
+  #pallet-sim-overlay .modal { background:#fff; border-radius:14px; width:100%; box-shadow:0 24px 80px rgba(0,0,0,0.25); overflow:hidden; }
+  #pallet-sim-overlay .modal-head { background:linear-gradient(135deg,#b45309,#92400e); padding:14px 18px; display:flex; align-items:center; justify-content:space-between; }
+  #pallet-sim-overlay .modal-head h3 { margin:0; color:#fff; font-size:15px; font-weight:700; }
+  #pallet-sim-overlay .modal-close { background:rgba(255,255,255,0.2); border:none; border-radius:6px; width:28px; height:28px; color:#fff; font-size:18px; cursor:pointer; line-height:1; }
+  #pallet-sim-overlay .modal-body { padding:16px; max-height:calc(100vh - 190px); overflow-y:auto; }
+  #pallet-sim-overlay .modal-foot { padding:12px 18px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:8px; background:#f9fafb; }
+  .psim-wrap { display:grid; grid-template-columns:1fr 260px; gap:14px; }
+  .psim-toolbar { display:flex; gap:6px; align-items:center; margin-bottom:8px; }
+  .psim-stat { font-size:11px; color:#6b7280; margin-left:auto; }
+  .psim-hint { font-size:10.5px; color:#9ca3af; margin-top:8px; }
+  .psim-side-title { font-size:11px; font-weight:700; color:#374151; margin-bottom:6px; }
+  .psim-items { display:flex; flex-direction:column; gap:5px; max-height:430px; overflow-y:auto; }
+  .psim-item { border:1px solid #e5e7eb; border-radius:6px; padding:6px 8px; font-size:10.5px; }
+  .psim-item.err { border-color:#fecaca; background:#fef2f2; }
+  .psim-item .s { font-family:monospace; font-weight:700; color:#1d4ed8; font-size:11px; }
+  .psim-item .d { color:#6b7280; }
+  .psim-item .warn { color:#dc2626; font-weight:700; }
+  .psim-box { cursor:move; }
+  .psim-box.bad rect { stroke:#dc2626 !important; stroke-width:3 !important; fill:#fee2e2 !important; }
   .sf-steps { display:flex; align-items:center; gap:4px; margin-bottom:16px; flex-wrap:wrap; }
   .sf-step { font-size:10px; padding:3px 9px; border-radius:20px; background:#f3f4f6; color:#9ca3af; font-weight:700; white-space:nowrap; }
   .sf-step.done { background:#dbeafe; color:#1d4ed8; cursor:pointer; }
@@ -1294,8 +1325,23 @@
         <input class="pd-search" id="ship-pool-date" type="date" onchange="renderShipPool()" style="min-width:0;" title="納期で絞り込み">
         <button class="btn-sm" onclick="clearShipPoolFilter()">クリア</button>
       </div>
-      <div class="ship-pool-hint">納期が確定した封印番号です。便のカードへドラッグ＆ドロップして追加します。</div>
+      <div class="ship-pool-hint">納期が確定した封印番号です。パレットや便のカードへドラッグ＆ドロップして追加します。</div>
       <div class="ship-pool-list" id="ship-pool-list"></div>
+    </div>
+
+    <!-- 中央: パレット -->
+    <div class="ship-pallets-card">
+      <div class="ship-card-head">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+          パレット
+        </h3>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <select class="pd-search" id="pallet-size-select" style="min-width:0;padding:4px 8px;font-size:11px;"></select>
+          <button class="btn-primary-sm" onclick="createPallet()">+ パレット</button>
+        </div>
+      </div>
+      <div class="ship-pallet-list" id="ship-pallet-list"></div>
     </div>
 
     <!-- 右: 出荷便（フレーム） -->
@@ -1312,6 +1358,39 @@
         </div>
       </div>
       <div class="ship-frames" id="ship-frames"></div>
+    </div>
+  </div>
+</div>
+
+<!-- パレット積み付けシミュレーター -->
+<div class="overlay" id="pallet-sim-overlay">
+  <div class="modal" style="max-width:920px;">
+    <div class="modal-head">
+      <h3 id="pallet-sim-title">パレット積み付け</h3>
+      <button class="modal-close" onclick="closePalletSim()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="psim-wrap">
+        <div class="psim-left">
+          <div class="psim-toolbar">
+            <button class="btn-primary-sm" onclick="palletAutoPack()">自動配置</button>
+            <button class="btn-sm" onclick="palletClearPos()">配置クリア</button>
+            <span class="psim-stat" id="psim-stat"></span>
+          </div>
+          <div id="psim-canvas-wrap"></div>
+          <div class="psim-hint">四角をドラッグして移動／ダブルクリックで90°回転（回転可の製品のみ）。赤枠は はみ出し・重なりです。</div>
+        </div>
+        <div class="psim-right">
+          <div class="psim-side-title">このパレットの製品</div>
+          <div class="psim-items" id="psim-items"></div>
+        </div>
+      </div>
+      <div id="psim-error" class="mform-error"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-danger-sm" onclick="deletePallet()" style="margin-right:auto;">パレット削除</button>
+      <button class="btn-sm" onclick="closePalletSim()">閉じる</button>
+      <button class="btn-primary-sm" onclick="savePalletLayout()">配置を保存</button>
     </div>
   </div>
 </div>
@@ -1458,6 +1537,10 @@
         <button class="pd-btn-new" onclick="openPdImportModal()" style="background:#059669;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
           Excelインポート
+        </button>
+        <button class="pd-btn-new" onclick="openDimImportModal()" style="background:#b45309;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M9 3v18"/></svg>
+          寸法一括登録
         </button>
         <button class="refresh-btn" onclick="loadProductdate()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
@@ -1645,6 +1728,44 @@
   </div>
 </div>
 
+<!-- 寸法一括登録モーダル -->
+<div class="pd-modal-overlay" id="dim-import-overlay" onclick="if(event.target===this)closeDimImportModal()">
+  <div class="pd-modal" style="width:min(640px,95vw);">
+    <div class="pd-modal-header">
+      <span class="pd-modal-title">製品寸法 一括登録</span>
+      <button class="pd-modal-close" onclick="closeDimImportModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="pd-modal-body">
+      <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#92400e;">
+        <b>寸法登録テンプレート</b>に横W・縦D・高さH・重量・回転可否を記入してアップロードしてください。<br>
+        <b>客先図番</b>をキーに、既存の製品マスタの寸法を<b>更新</b>します（新規追加はしません）。空欄の寸法は更新しません。
+      </div>
+      <div class="drop-zone" id="dim-import-drop" onclick="document.getElementById('dim-import-file').click()" style="margin-bottom:12px;">
+        <input type="file" id="dim-import-file" accept=".xlsx,.xls" style="display:none" onchange="handleDimImportFile(this.files[0])">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:36px;height:36px;color:#9ca3af;display:block;margin:0 auto 10px;"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M9 3v18"/></svg>
+        <div class="drop-zone-title">記入済みテンプレートをドロップ または クリックして選択</div>
+        <div class="drop-zone-sub">.xlsx / .xls</div>
+      </div>
+      <div id="dim-import-status" class="status-box"></div>
+      <div id="dim-import-preview" style="display:none;">
+        <div class="preview-label" style="margin-bottom:8px;font-size:12px;font-weight:600;color:#374151;">更新対象 (<span id="dim-import-count">0</span>件)</div>
+        <div style="overflow-x:auto;border-radius:6px;border:1px solid #e5e7eb;max-height:220px;overflow-y:auto;">
+          <table class="preview-table">
+            <thead><tr><th>客先図番</th><th>品名</th><th>横W</th><th>縦D</th><th>高さH</th><th>重量</th><th>回転</th></tr></thead>
+            <tbody id="dim-import-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="pd-modal-footer">
+      <button class="pd-cancel-btn" onclick="closeDimImportModal()">キャンセル</button>
+      <button class="pd-save-btn" id="dim-import-save-btn" onclick="saveDimImport()" disabled style="opacity:0.5;">寸法を更新</button>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== PRODUCTDATE MODAL ==================== -->
 <div class="pd-modal-overlay" id="pd-modal-overlay" onclick="if(event.target===this)closePdModal()">
   <div class="pd-modal">
@@ -1690,6 +1811,29 @@
         <div class="pd-form-group">
           <label class="pd-form-label">部品番号URL</label>
           <input class="pd-form-input" id="pd-part_number_url" type="text">
+        </div>
+        <div class="pd-form-group">
+          <label class="pd-form-label">横 W (mm)</label>
+          <input class="pd-form-input" id="pd-width_mm" type="number" min="0" placeholder="例: 800">
+        </div>
+        <div class="pd-form-group">
+          <label class="pd-form-label">縦 D (mm)</label>
+          <input class="pd-form-input" id="pd-depth_mm" type="number" min="0" placeholder="例: 500">
+        </div>
+        <div class="pd-form-group">
+          <label class="pd-form-label">高さ H (mm)</label>
+          <input class="pd-form-input" id="pd-height_mm" type="number" min="0" placeholder="例: 300">
+        </div>
+        <div class="pd-form-group">
+          <label class="pd-form-label">重量 (kg)</label>
+          <input class="pd-form-input" id="pd-weight_kg" type="number" min="0" step="0.1" placeholder="任意">
+        </div>
+        <div class="pd-form-group">
+          <label class="pd-form-label">パレット上で90°回転</label>
+          <select class="pd-form-input" id="pd-rotatable">
+            <option value="true">可（向きを変えてよい）</option>
+            <option value="false">不可（向き固定）</option>
+          </select>
         </div>
         <div class="pd-form-group">
           <label class="pd-form-label">取引先</label>
@@ -1842,6 +1986,8 @@ let _activeFloorCard = null;  // クリックで選択中の現場名（null=未
 let shipPool = [];        // 出荷候補（納期確定・未割当）
 let shipments = [];       // 便一覧
 let shipRates = [];       // 運賃マスタ（受注元→区分→荷降し先→運送会社→トラック）
+let shipPallets = [];     // パレット一覧
+let palletSizes = [];     // パレットサイズマスタ
 let shipSelected = new Set();
 
 // Supabaseのデフォルト1000行上限を超えても全件取得する（出荷管理用のグローバル版）
@@ -1861,13 +2007,20 @@ async function shipFetchAll(url) {
 
 async function loadShippingPage() {
   await loadShipMasters();
-  await Promise.all([loadShipPool(), loadShipments()]);
+  await loadShipPool();
+  await loadPallets();      // 便カードにパレットを出すため先に読む
+  await loadShipments();
 }
 
 async function loadShipMasters() {
   try {
     shipRates = await shipFetchAll(`${SUPABASE_URL}/rest/v1/shipping_rates?select=*&active=eq.true&order=id.asc`);
   } catch(e) { console.error('[ship] 運賃マスタ取得失敗', e); shipRates = []; }
+  try {
+    palletSizes = await shipFetchAll(`${SUPABASE_URL}/rest/v1/pallet_sizes?select=*&active=eq.true&order=sort_order.asc`);
+    const sel = document.getElementById('pallet-size-select');
+    if (sel) sel.innerHTML = palletSizes.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  } catch(e) { console.error('[ship] パレットサイズ取得失敗', e); palletSizes = []; }
 }
 
 function sbHeaders() {
@@ -1877,7 +2030,7 @@ function sbHeaders() {
 async function loadShipPool() {
   try {
     shipPool = await shipFetchAll(
-      `${SUPABASE_URL}/rest/v1/v_shippable_items?select=*&shipment_id=is.null&order=delivery.asc,sealno.asc`
+      `${SUPABASE_URL}/rest/v1/v_shippable_items?select=*&shipment_id=is.null&pallet_id=is.null&order=delivery.asc,sealno.asc`
     );
   } catch(e) { console.error('[ship] 出荷候補取得失敗', e); shipPool = []; }
   // 取引先セレクトを更新
@@ -1978,7 +2131,6 @@ function onShipDragEnd(ev) {
 }
 
 function onShipDragOver(ev, el) {
-  if (shipDragIds.length === 0) return;
   ev.preventDefault();                  // これが無いとdropが発火しない
   ev.dataTransfer.dropEffect = 'move';
   el.classList.add('drag-over');
@@ -1993,11 +2145,25 @@ async function onShipDrop(ev, shipmentId, el) {
   ev.preventDefault();
   el.classList.remove('drag-over');
   document.getElementById('ship-frames')?.classList.remove('drop-ready');
-  let ids = shipDragIds;
-  if (ids.length === 0) {
-    const raw = ev.dataTransfer.getData('text/plain') || '';
-    ids = raw.split(',').map(x => parseInt(x, 10)).filter(Boolean);
+  const raw = (() => { try { return ev.dataTransfer.getData('text/plain') || ''; } catch(e) { return ''; } })();
+  // パレットごと便へ載せる
+  if (raw.startsWith('pallet:')) {
+    const pid = parseInt(raw.slice(7), 10);
+    shipDragIds = [];
+    if (!pid) return;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/pallets?id=eq.${pid}`, {
+        method:'PATCH', headers:{ ...sbHeaders(), 'Prefer':'return=minimal' },
+        body: JSON.stringify({ shipment_id: shipmentId })
+      });
+      if (!res.ok) { alert('便への追加に失敗: ' + await res.text()); return; }
+      await Promise.all([loadPallets(), loadShipments()]);
+    } catch(e) { alert('便への追加に失敗: ' + e.message); }
+    return;
   }
+  // 封印番号を直接便へ
+  let ids = shipDragIds;
+  if (ids.length === 0) ids = raw.split(',').map(x => parseInt(x, 10)).filter(Boolean);
   shipDragIds = [];
   if (ids.length === 0) return;
   await addChildrenToShipment(ids, shipmentId);
@@ -2011,9 +2177,25 @@ async function loadShipments() {
     shipments = await shipFetchAll(url);
     // 各便の明細を取得
     const items = await shipFetchAll(`${SUPABASE_URL}/rest/v1/v_shippable_items?select=*&shipment_id=not.is.null`);
-    for (const s of shipments) s._items = items.filter(i => i.shipment_id === s.id);
+    for (const s of shipments) {
+      s._items   = items.filter(i => i.shipment_id === s.id);
+      s._pallets = shipPallets.filter(p => p.shipment_id === s.id);
+    }
   } catch(e) { console.error('[ship] 便取得失敗', e); shipments = []; }
   renderShipments();
+  renderPallets();
+}
+
+// パレットを便から外す
+async function unloadPallet(palletId) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/pallets?id=eq.${palletId}`, {
+      method:'PATCH', headers:{ ...sbHeaders(), 'Prefer':'return=minimal' },
+      body: JSON.stringify({ shipment_id: null })
+    });
+    if (!res.ok) { alert('外すのに失敗'); return; }
+    await Promise.all([loadPallets(), loadShipments()]);
+  } catch(e) { alert('外すのに失敗: ' + e.message); }
 }
 
 // 運送会社 → CSSクラス（ヘッダー色分け）
@@ -2051,7 +2233,14 @@ function shipFrameHtml(s) {
         </div>` : ''}
       </div>
       <div class="ship-frame-body">
-        ${items.length === 0
+        ${(s._pallets || []).map(p => `
+          <div class="ship-row" style="background:#fef3c7;border:1px solid #fcd34d;">
+            <button class="rm" onclick="unloadPallet(${p.id})" title="この便から外す">&times;</button>
+            <div class="seal" style="color:#92400e;">${esc(p.pallet_no)}</div>
+            <div class="nm">パレット ${esc(palletSize(p).name)}</div>
+            <div class="dt">${(p._items||[]).length}件積載</div>
+          </div>`).join('')}
+        ${items.length === 0 && (s._pallets || []).length === 0
           ? '<div class="ship-empty">空です<br>左からドラッグして追加</div>'
           : items.map(i => `
             <div class="ship-row">
@@ -2063,7 +2252,7 @@ function shipFrameHtml(s) {
         ${s.note ? `<div style="font-size:10px;color:#6b7280;padding-top:2px;">備考: ${esc(s.note)}</div>` : ''}
       </div>
       <div class="ship-frame-foot">
-        <span class="ship-chip gray">${items.length}件</span>
+        <span class="ship-chip gray">${items.length}件${(s._pallets||[]).length ? ` +P${(s._pallets||[]).length}` : ''}</span>
         <div class="ship-frame-actions">
           <button class="btn-sm" onclick="openShipmentForm(${s.id})">編集</button>
           <button class="btn-danger-sm" onclick="deleteShipment(${s.id})">削除</button>
@@ -2351,6 +2540,340 @@ async function deleteShipment(id) {
     if (!res.ok) { alert('削除に失敗しました'); return; }
     await Promise.all([loadShipPool(), loadShipments()]);
   } catch(e) { alert('削除に失敗しました: ' + e.message); }
+}
+
+// ==================== パレット ====================
+function palletSize(p) {
+  return palletSizes.find(s => s.id === p.size_id) || { name:'?', width_mm:1100, depth_mm:1100 };
+}
+
+async function loadPallets() {
+  try {
+    shipPallets = await shipFetchAll(`${SUPABASE_URL}/rest/v1/pallets?select=*&order=id.asc`);
+    const items = await shipFetchAll(`${SUPABASE_URL}/rest/v1/v_shippable_items?select=*&pallet_id=not.is.null`);
+    const pos   = await shipFetchAll(`${SUPABASE_URL}/rest/v1/pallet_items?select=*`);
+    for (const p of shipPallets) {
+      p._items = items.filter(i => i.pallet_id === p.id).map(i => {
+        const q = pos.find(x => x.child_id === i.child_id) || {};
+        return { ...i, x_mm: q.x_mm ?? 0, y_mm: q.y_mm ?? 0, rot: !!q.rot };
+      });
+    }
+  } catch(e) { console.error('[ship] パレット取得失敗', e); shipPallets = []; }
+  renderPallets();
+}
+
+async function createPallet() {
+  const sizeId = parseInt(document.getElementById('pallet-size-select').value, 10);
+  if (!sizeId) { alert('パレットサイズを選んでください'); return; }
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/pallets`, {
+      method:'POST', headers:{ ...sbHeaders(), 'Prefer':'return=minimal' },
+      body: JSON.stringify({ size_id: sizeId })
+    });
+    if (!res.ok) { alert('パレット作成に失敗: ' + await res.text()); return; }
+    await loadPallets();
+  } catch(e) { alert('パレット作成に失敗: ' + e.message); }
+}
+
+// パレットの縮小プレビュー（カード内）
+function palletMiniSvg(p) {
+  const s = palletSize(p);
+  const SC = 150 / Math.max(s.width_mm, s.depth_mm);
+  const boxes = (p._items || []).map(i => {
+    const w = (i.rot ? i.depth_mm : i.width_mm) || 0;
+    const d = (i.rot ? i.width_mm : i.depth_mm) || 0;
+    if (!w || !d) return '';
+    return `<rect x="${i.x_mm*SC}" y="${i.y_mm*SC}" width="${w*SC}" height="${d*SC}"
+      fill="#bfdbfe" stroke="#1d4ed8" stroke-width="1"/>`;
+  }).join('');
+  return `<svg width="${s.width_mm*SC}" height="${s.depth_mm*SC}" viewBox="0 0 ${s.width_mm*SC} ${s.depth_mm*SC}">${boxes}</svg>`;
+}
+
+function renderPallets() {
+  const wrap = document.getElementById('ship-pallet-list');
+  if (!wrap) return;
+  if (shipPallets.length === 0) {
+    wrap.innerHTML = '<div class="ship-empty">パレットがありません。<br>「+ パレット」で作成し、<br>左から製品をドラッグしてください。</div>';
+    return;
+  }
+  wrap.innerHTML = shipPallets.map(p => {
+    const s = palletSize(p);
+    const items = p._items || [];
+    const noDim = items.filter(i => !i.width_mm || !i.depth_mm).length;
+    const ship = p.shipment_id ? shipments.find(x => x.id === p.shipment_id) : null;
+    return `
+      <div class="pallet-card" data-pallet="${p.id}" draggable="true"
+           ondragstart="onPalletDragStart(event, ${p.id})" ondragend="onShipDragEnd(event)"
+           ondragover="onPalletDragOver(event, this)" ondragleave="onShipDragLeave(event, this)"
+           ondrop="onPalletDrop(event, ${p.id}, this)">
+        <div class="pallet-card-head">
+          <span class="pallet-no">${esc(p.pallet_no || '(未採番)')}</span>
+          <span class="pallet-chip">${esc(s.name)}</span>
+          ${ship ? `<span class="pallet-chip" style="background:#dbeafe;color:#1d4ed8;border-color:#93c5fd;">${esc(ship.shipment_no)}</span>` : ''}
+        </div>
+        <div class="pallet-mini" onclick="openPalletSim(${p.id})" style="cursor:pointer;" title="クリックして積み付け">
+          ${palletMiniSvg(p)}
+        </div>
+        <div class="pallet-card-foot">
+          <span class="pallet-chip">${items.length}件${noDim ? ` / 寸法なし${noDim}` : ''}</span>
+          <div style="display:flex;gap:4px;">
+            <button class="btn-sm" onclick="openPalletSim(${p.id})">積み付け</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ---- パレットへのD&D ----
+function onPalletDragStart(ev, palletId) {
+  shipDragIds = [];
+  ev.dataTransfer.effectAllowed = 'move';
+  try { ev.dataTransfer.setData('text/plain', 'pallet:' + palletId); } catch(e) {}
+  ev.currentTarget.classList.add('dragging');
+  document.getElementById('ship-frames')?.classList.add('drop-ready');
+}
+
+function onPalletDragOver(ev, el) {
+  if (shipDragIds.length === 0) return;   // パレット自体のドラッグは受けない
+  ev.preventDefault();
+  ev.dataTransfer.dropEffect = 'move';
+  el.classList.add('drag-over');
+}
+
+async function onPalletDrop(ev, palletId, el) {
+  ev.preventDefault();
+  el.classList.remove('drag-over');
+  const ids = shipDragIds.slice();
+  shipDragIds = [];
+  if (ids.length === 0) return;
+  const payload = ids.map(cid => ({ pallet_id: palletId, child_id: cid }));
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/pallet_items`, {
+      method:'POST', headers:{ ...sbHeaders(), 'Prefer':'return=minimal' }, body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const t = await res.text();
+      if (t.includes('pallet_items_child_unique')) alert('既に他のパレットに載っている製品が含まれています。');
+      else alert('追加に失敗: ' + t);
+      return;
+    }
+    ids.forEach(i => shipSelected.delete(i));
+    await Promise.all([loadShipPool(), loadPallets()]);
+  } catch(e) { alert('追加に失敗: ' + e.message); }
+}
+
+// ==================== 積み付けシミュレーター ====================
+let psimPallet = null;
+let psimItems = [];   // {child_id, sealno, w, d, rotatable, x, y, rot}
+const PSIM_VIEW = 460;
+
+function psimScale() {
+  const s = palletSize(psimPallet);
+  return PSIM_VIEW / Math.max(s.width_mm, s.depth_mm);
+}
+
+function openPalletSim(palletId) {
+  psimPallet = shipPallets.find(p => p.id === palletId);
+  if (!psimPallet) return;
+  const s = palletSize(psimPallet);
+  psimItems = (psimPallet._items || []).map(i => ({
+    child_id: i.child_id, sealno: i.sealno, productno: i.productno,
+    product_name: i.product_name || i.drawingno || '',
+    w: i.width_mm || 0, d: i.depth_mm || 0, h: i.height_mm || 0,
+    rotatable: i.rotatable !== false,
+    x: i.x_mm || 0, y: i.y_mm || 0, rot: !!i.rot,
+  }));
+  document.getElementById('pallet-sim-title').textContent =
+    `パレット積み付け ${psimPallet.pallet_no}（${s.name}）`;
+  document.getElementById('psim-error').textContent = '';
+  document.getElementById('pallet-sim-overlay').classList.add('open');
+  psimRender();
+}
+
+function closePalletSim() {
+  document.getElementById('pallet-sim-overlay').classList.remove('open');
+  psimPallet = null;
+}
+
+// 実寸(回転考慮)
+function psimW(it) { return it.rot ? it.d : it.w; }
+function psimD(it) { return it.rot ? it.w : it.d; }
+
+// はみ出し・重なり判定
+function psimBad(i) {
+  const s = palletSize(psimPallet);
+  const a = psimItems[i];
+  if (!a.w || !a.d) return false;
+  if (a.x < 0 || a.y < 0 || a.x + psimW(a) > s.width_mm || a.y + psimD(a) > s.depth_mm) return true;
+  for (let j = 0; j < psimItems.length; j++) {
+    if (i === j) continue;
+    const b = psimItems[j];
+    if (!b.w || !b.d) continue;
+    if (a.x < b.x + psimW(b) && a.x + psimW(a) > b.x &&
+        a.y < b.y + psimD(b) && a.y + psimD(a) > b.y) return true;
+  }
+  return false;
+}
+
+function psimRender() {
+  const s = palletSize(psimPallet);
+  const SC = psimScale();
+  const W = s.width_mm * SC, D = s.depth_mm * SC;
+  const grid = [];
+  for (let g = 100; g < Math.max(s.width_mm, s.depth_mm); g += 100) {
+    if (g < s.width_mm) grid.push(`<line x1="${g*SC}" y1="0" x2="${g*SC}" y2="${D}" stroke="#f3f4f6" stroke-width="1"/>`);
+    if (g < s.depth_mm) grid.push(`<line x1="0" y1="${g*SC}" x2="${W}" y2="${g*SC}" stroke="#f3f4f6" stroke-width="1"/>`);
+  }
+  const boxes = psimItems.map((it, i) => {
+    if (!it.w || !it.d) return '';
+    const bad = psimBad(i);
+    return `<g class="psim-box ${bad?'bad':''}" data-i="${i}" transform="translate(${it.x*SC},${it.y*SC})">
+      <rect width="${psimW(it)*SC}" height="${psimD(it)*SC}" fill="#bfdbfe" stroke="#1d4ed8" stroke-width="2" rx="2"/>
+      <text x="4" y="13" font-size="10" font-family="monospace" fill="#1e3a5f">${esc(it.sealno||'')}</text>
+      <text x="4" y="25" font-size="9" fill="#475569">${psimW(it)}×${psimD(it)}${it.rot?' ↻':''}</text>
+    </g>`;
+  }).join('');
+  document.getElementById('psim-canvas-wrap').innerHTML =
+    `<svg id="psim-svg" width="${W}" height="${D}" viewBox="0 0 ${W} ${D}"
+        style="border:2px solid #92400e;background:#fffbeb;touch-action:none;">
+       ${grid.join('')}${boxes}
+     </svg>`;
+  psimBindDrag();
+
+  // 統計
+  const s2 = palletSize(psimPallet);
+  const area = psimItems.filter(it => it.w && it.d).reduce((a,it) => a + psimW(it)*psimD(it), 0);
+  const bad = psimItems.filter((_,i) => psimBad(i)).length;
+  document.getElementById('psim-stat').innerHTML =
+    `占有率 <b>${(area/(s2.width_mm*s2.depth_mm)*100).toFixed(1)}%</b>` +
+    (bad ? ` ／ <span style="color:#dc2626;font-weight:700;">問題 ${bad}件</span>` : ' ／ 問題なし');
+
+  // 右のリスト
+  document.getElementById('psim-items').innerHTML = psimItems.map((it,i) => `
+    <div class="psim-item ${psimBad(i)?'err':''}">
+      <div><span class="s">${esc(it.sealno||'(未採番)')}</span>
+        <button class="btn-sm" style="float:right;padding:1px 6px;" onclick="psimRemove(${it.child_id})">×</button></div>
+      <div class="d">${esc(it.product_name)}</div>
+      <div class="d">${it.w&&it.d ? `${it.w}×${it.d}${it.h?`×${it.h}`:''} mm` : '<span class="warn">寸法未登録</span>'}
+        ${it.rotatable ? '' : ' <span class="warn">回転不可</span>'}</div>
+    </div>`).join('') || '<div class="ship-empty">製品がありません</div>';
+}
+
+function psimBindDrag() {
+  const svg = document.getElementById('psim-svg');
+  if (!svg) return;
+  const SC = psimScale();
+  const s = palletSize(psimPallet);
+  let cur = null, offX = 0, offY = 0;
+  const pt = (ev) => {
+    const r = svg.getBoundingClientRect();
+    return { x: (ev.clientX - r.left) / SC, y: (ev.clientY - r.top) / SC };
+  };
+  svg.querySelectorAll('.psim-box').forEach(g => {
+    g.addEventListener('pointerdown', ev => {
+      cur = parseInt(g.dataset.i, 10);
+      const p = pt(ev);
+      offX = p.x - psimItems[cur].x; offY = p.y - psimItems[cur].y;
+      g.setPointerCapture(ev.pointerId);
+      ev.preventDefault();
+    });
+    g.addEventListener('pointermove', ev => {
+      if (cur == null) return;
+      const p = pt(ev);
+      const it = psimItems[cur];
+      // 10mm単位でスナップし、パレット内に収める
+      it.x = Math.max(0, Math.min(s.width_mm - psimW(it), Math.round((p.x - offX)/10)*10));
+      it.y = Math.max(0, Math.min(s.depth_mm - psimD(it), Math.round((p.y - offY)/10)*10));
+      psimRender();
+    });
+    g.addEventListener('pointerup', () => { cur = null; });
+    g.addEventListener('dblclick', () => {
+      const it = psimItems[parseInt(g.dataset.i,10)];
+      if (!it.rotatable) { document.getElementById('psim-error').textContent = `${it.sealno} は回転不可の製品です`; return; }
+      it.rot = !it.rot;
+      document.getElementById('psim-error').textContent = '';
+      psimRender();
+    });
+  });
+}
+
+// 自動配置（シェルフ法・面積の大きい順／回転可否を尊重）
+function palletAutoPack() {
+  const s = palletSize(psimPallet);
+  const PW = s.width_mm, PD = s.depth_mm;
+  const target = psimItems.filter(it => it.w && it.d);
+  const skipped = psimItems.filter(it => !it.w || !it.d);
+  target.sort((a,b) => (b.w*b.d) - (a.w*a.d));
+  let shelfY = 0, shelfH = 0, cursorX = 0;
+  const failed = [];
+  for (const it of target) {
+    const cands = it.rotatable ? [[it.w,it.d,false],[it.d,it.w,true]] : [[it.w,it.d,false]];
+    let done = false;
+    for (const [w,d,rot] of cands) {
+      if (w > PW || d > PD) continue;
+      if (cursorX + w <= PW && shelfY + Math.max(shelfH, d) <= PD) {
+        it.x = cursorX; it.y = shelfY; it.rot = rot;
+        cursorX += w; shelfH = Math.max(shelfH, d); done = true; break;
+      }
+    }
+    if (done) continue;
+    shelfY += shelfH; cursorX = 0; shelfH = 0;
+    for (const [w,d,rot] of cands) {
+      if (w <= PW && shelfY + d <= PD) {
+        it.x = 0; it.y = shelfY; it.rot = rot;
+        cursorX = w; shelfH = d; done = true; break;
+      }
+    }
+    if (!done) { it.x = 0; it.y = 0; failed.push(it); }
+  }
+  const msgs = [];
+  if (failed.length)  msgs.push(`${failed.length}件はパレットに収まりません（${failed.map(f=>f.sealno).join(', ')}）`);
+  if (skipped.length) msgs.push(`${skipped.length}件は寸法未登録のため配置対象外です`);
+  document.getElementById('psim-error').textContent = msgs.join(' / ');
+  psimRender();
+}
+
+function palletClearPos() {
+  psimItems.forEach(it => { it.x = 0; it.y = 0; it.rot = false; });
+  psimRender();
+}
+
+async function psimRemove(childId) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/pallet_items?child_id=eq.${childId}`, { method:'DELETE', headers: sbHeaders() });
+    if (!res.ok) { alert('削除に失敗'); return; }
+    psimItems = psimItems.filter(i => i.child_id !== childId);
+    await Promise.all([loadShipPool(), loadPallets()]);
+    psimPallet = shipPallets.find(p => p.id === psimPallet.id);
+    psimRender();
+  } catch(e) { alert('削除に失敗: ' + e.message); }
+}
+
+async function savePalletLayout() {
+  const err = document.getElementById('psim-error');
+  try {
+    for (const it of psimItems) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/pallet_items?child_id=eq.${it.child_id}`, {
+        method:'PATCH', headers:{ ...sbHeaders(), 'Prefer':'return=minimal' },
+        body: JSON.stringify({ x_mm: Math.round(it.x), y_mm: Math.round(it.y), rot: it.rot })
+      });
+      if (!res.ok) { err.textContent = '保存に失敗: ' + await res.text(); return; }
+    }
+    await loadPallets();
+    closePalletSim();
+  } catch(e) { err.textContent = '保存に失敗: ' + e.message; }
+}
+
+async function deletePallet() {
+  if (!psimPallet) return;
+  const n = (psimPallet._items || []).length;
+  if (!confirm(`${psimPallet.pallet_no} を削除しますか？\n${n>0?`載っている${n}件は出荷候補に戻ります。`:''}`)) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/pallets?id=eq.${psimPallet.id}`, { method:'DELETE', headers: sbHeaders() });
+    if (!res.ok) { alert('削除に失敗'); return; }
+    closePalletSim();
+    await Promise.all([loadShipPool(), loadPallets(), loadShipments()]);
+  } catch(e) { alert('削除に失敗: ' + e.message); }
 }
 
 function renderFloors() {
@@ -3462,6 +3985,17 @@ function extractIzushiRows(full, lines) {
       /\b(FAC\d{4,6}[A-Z]{1,2}\d{0,2})\b/,     // FAC11511AB02 / FAC16505A
       /\b(FAC-?[A-Z]?\d{4,6}[A-Z]?\d{0,2})\b/, // FAC-011446 等（旧形式）
     ];
+    // 「2U…」= 2U + 数字7桁 + 末尾1文字（英数）= 計10桁 を図番とする
+    //   ・「WIPER SET FOR 2U…」の場合は "WIPER SET FOR" を含めた全体を図番とする
+    //       例) WIPER SET FOR 2U3000966B → "WIPER SET FOR 2U3000966B"
+    //   ・"WIPER SET FOR" が無い場合は 2U コードのみを図番とする
+    //       例) 2U3000966B → "2U3000966B"
+    const wiperFull = /\bWIPER\s+SET\s+FOR\s+2U\d{7}[A-Z0-9]\b/i;
+    const wiperCode = /\b2U\d{7}[A-Z0-9]\b/;
+    let wm = nameLine.match(wiperFull) || custLine.match(wiperFull);
+    if (wm) return wm[0].replace(/\s+/g, ' ').trim();   // 空白を正規化して全体を返す
+    wm = nameLine.match(wiperCode) || custLine.match(wiperCode);
+    if (wm) return wm[0];
     for (const p of pats) { const m = custLine.match(p); if (m) return m[1]; }
     // 大阪ﾃｯｸ行に無ければ商品名側
     let m = nameLine.match(/\b(\d{7})\b/);          // 7桁品番 (5671098 等)
@@ -7512,6 +8046,129 @@ let filteredProductdate = [];
 let pdCurrentPage = 1;
 const PD_PAGE_SIZE = 20;
 let pdDetailCurrentId = null;
+// ==================== 寸法一括登録 ====================
+let dimImportRows = [];
+
+function openDimImportModal() {
+  dimImportRows = [];
+  document.getElementById('dim-import-file').value = '';
+  document.getElementById('dim-import-status').className = 'status-box';
+  document.getElementById('dim-import-status').innerHTML = '';
+  document.getElementById('dim-import-preview').style.display = 'none';
+  const btn = document.getElementById('dim-import-save-btn');
+  btn.disabled = true; btn.style.opacity = '0.5';
+  document.getElementById('dim-import-overlay').classList.add('open');
+}
+function closeDimImportModal() {
+  document.getElementById('dim-import-overlay').classList.remove('open');
+}
+
+(function(){
+  const dz = document.getElementById('dim-import-drop');
+  if (!dz) return;
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); if(e.dataTransfer.files[0]) handleDimImportFile(e.dataTransfer.files[0]); });
+})();
+
+async function handleDimImportFile(file) {
+  if (!file) return;
+  const statusEl = document.getElementById('dim-import-status');
+  statusEl.className = 'status-box processing show';
+  statusEl.innerHTML = '<div class="status-msg"><span>解析中...</span></div>';
+  document.getElementById('dim-import-preview').style.display = 'none';
+  try {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    // テンプレート: 行4(index3)=フィールド名, 行5=ラベル, 行6=記入例, 行7以降=データ
+    const fieldRow = rows[3] || [];
+    const colMap = {};
+    ['customer_drawing_no','product_name','width_mm','depth_mm','height_mm','weight_kg','rotatable']
+      .forEach(f => { const i = fieldRow.findIndex(h => String(h).trim() === f); if (i >= 0) colMap[f] = i; });
+    if (colMap.customer_drawing_no === undefined)
+      throw new Error('テンプレートの形式が違います（4行目のフィールド名が見つかりません）。配布したテンプレートをお使いください。');
+
+    const num = v => { const n = parseInt(String(v).replace(/[^\d.-]/g,''), 10); return isNaN(n) ? null : n; };
+    const fnum = v => { const n = parseFloat(String(v).replace(/[^\d.-]/g,'')); return isNaN(n) ? null : n; };
+    dimImportRows = [];
+    for (let i = 6; i < rows.length; i++) {   // 7行目以降
+      const row = rows[i];
+      if (!row) continue;
+      const draw = String(row[colMap.customer_drawing_no] || '').trim();
+      if (!draw || draw.startsWith('(例)')) continue;
+      const w = num(row[colMap.width_mm]), d = num(row[colMap.depth_mm]),
+            h = num(row[colMap.height_mm]), wt = fnum(row[colMap.weight_kg]);
+      const rotRaw = String(row[colMap.rotatable] || '').trim();
+      // 何も入力が無い行はスキップ
+      if (w == null && d == null && h == null && wt == null && !rotRaw) continue;
+      let rotatable = null;
+      if (rotRaw) rotatable = !(rotRaw.includes('不可') || rotRaw === 'false' || rotRaw === '×');
+      dimImportRows.push({
+        customer_drawing_no: draw,
+        product_name: String(row[colMap.product_name] || '').trim(),
+        width_mm: w, depth_mm: d, height_mm: h, weight_kg: wt, rotatable,
+      });
+    }
+    if (!dimImportRows.length) throw new Error('寸法が入力された行がありません。');
+
+    statusEl.className = 'status-box success show';
+    statusEl.innerHTML = `<div class="status-msg"><span>${dimImportRows.length}件の寸法データを読み込みました</span></div>`;
+    document.getElementById('dim-import-count').textContent = dimImportRows.length;
+    document.getElementById('dim-import-tbody').innerHTML = dimImportRows.slice(0,8).map(r =>
+      `<tr><td>${esc(r.customer_drawing_no)}</td><td>${esc(r.product_name)}</td>
+        <td>${r.width_mm??'-'}</td><td>${r.depth_mm??'-'}</td><td>${r.height_mm??'-'}</td>
+        <td>${r.weight_kg??'-'}</td><td>${r.rotatable===null?'-':(r.rotatable?'可':'不可')}</td></tr>`
+    ).join('') + (dimImportRows.length > 8 ? `<tr><td colspan="7" style="text-align:center;color:#9ca3af;font-size:11px;">...他${dimImportRows.length-8}件</td></tr>` : '');
+    document.getElementById('dim-import-preview').style.display = 'block';
+    const btn = document.getElementById('dim-import-save-btn');
+    btn.disabled = false; btn.style.opacity = '1';
+  } catch(e) {
+    statusEl.className = 'status-box error show';
+    statusEl.innerHTML = `<div class="status-msg"><span>エラー: ${esc(e.message)}</span></div>`;
+  }
+}
+
+async function saveDimImport() {
+  if (!dimImportRows.length) return;
+  const btn = document.getElementById('dim-import-save-btn');
+  btn.disabled = true; btn.textContent = '更新中...';
+  const statusEl = document.getElementById('dim-import-status');
+  let ok = 0, miss = 0;
+  try {
+    for (const r of dimImportRows) {
+      // 空欄の寸法は上書きしない（入力された項目だけPATCH）
+      const body = {};
+      if (r.width_mm  != null) body.width_mm  = r.width_mm;
+      if (r.depth_mm  != null) body.depth_mm  = r.depth_mm;
+      if (r.height_mm != null) body.height_mm = r.height_mm;
+      if (r.weight_kg != null) body.weight_kg = r.weight_kg;
+      if (r.rotatable != null) body.rotatable = r.rotatable;
+      if (Object.keys(body).length === 0) continue;
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=eq.${encodeURIComponent(r.customer_drawing_no)}`,
+        { method:'PATCH', headers:{ 'apikey':SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY,
+          'Content-Type':'application/json', 'Prefer':'return=headers-only,count=exact' },
+          body: JSON.stringify(body) }
+      );
+      if (!res.ok) { miss++; continue; }
+      // 更新件数を Content-Range から取得（0件ならマスタ未登録）
+      const cr = res.headers.get('content-range') || '';
+      const cnt = parseInt((cr.split('/')[1] || '0'), 10);
+      if (cnt > 0) ok++; else miss++;
+    }
+    statusEl.className = 'status-box success show';
+    statusEl.innerHTML = `<div class="status-msg"><span>${ok}件の製品に寸法を登録しました${miss?`（${miss}件は図番がマスタに見つからず未反映）`:''}</span></div>`;
+    setTimeout(() => { closeDimImportModal(); loadProductdate(); }, 1600);
+  } catch(e) {
+    statusEl.className = 'status-box error show';
+    statusEl.innerHTML = `<div class="status-msg"><span>更新エラー: ${esc(e.message)}</span></div>`;
+    btn.disabled = false; btn.textContent = '寸法を更新';
+  }
+}
+
+// ==================== 寸法一括登録 ここまで ====================
 let pdImportRows = [];
 
 async function loadProductdate() {
@@ -7771,7 +8428,8 @@ function openPdModal(id) {
   const modal = document.getElementById('pd-modal-overlay');
   const fields = ['ot_number','customer_drawing_no','product_category','second_category','part_number','part_number_url','client',
     'product_name','latest_quote_date','current_price','approval_return_date',
-    'delivery_destination','remarks','approved_url','drawing_url','old_drawing_url','component_url'];
+    'delivery_destination','remarks','approved_url','drawing_url','old_drawing_url','component_url',
+    'width_mm','depth_mm','height_mm','weight_kg','rotatable'];
 
   const childSection = document.getElementById('pd-child-section');
 
@@ -7812,6 +8470,7 @@ function openPdModal(id) {
       const el = document.getElementById('pd-' + f);
       if (el) el.value = '';
     });
+    document.getElementById('pd-rotatable').value = 'true'; // 新規は回転可を既定に
     // 新規時は子セクション非表示（保存後に再度開いて追加可能）
     childSection.style.display = 'none';
     document.getElementById('pd-child-rows').innerHTML = '';
@@ -8079,6 +8738,11 @@ async function savePdRecord() {
     second_category:        document.getElementById('pd-second_category').value.trim() || null,
     part_number:            document.getElementById('pd-part_number').value.trim() || null,
     part_number_url:        document.getElementById('pd-part_number_url').value.trim() || null,
+    width_mm:               document.getElementById('pd-width_mm').value  !== '' ? parseInt(document.getElementById('pd-width_mm').value)  : null,
+    depth_mm:               document.getElementById('pd-depth_mm').value  !== '' ? parseInt(document.getElementById('pd-depth_mm').value)  : null,
+    height_mm:              document.getElementById('pd-height_mm').value !== '' ? parseInt(document.getElementById('pd-height_mm').value) : null,
+    weight_kg:              document.getElementById('pd-weight_kg').value !== '' ? parseFloat(document.getElementById('pd-weight_kg').value) : null,
+    rotatable:              document.getElementById('pd-rotatable').value === 'true',
     client:                 document.getElementById('pd-client').value.trim() || null,
     product_name:           document.getElementById('pd-product_name').value.trim() || null,
     latest_quote_date:      document.getElementById('pd-latest_quote_date').value.trim() || null,
