@@ -7024,6 +7024,17 @@ async function openPdfEditor(url, name, orderId) {
           <option value="note">注釈（枠付き）</option>
         </select>
         <span style="width:1px;height:20px;background:#e5e7eb;margin:0 4px;"></span>
+        <button id="pdfed-tjuryo" class="pdfed-btn" title="3段の受領印を押します">受領印</button>
+        <select id="pdfed-juryo-name" title="受領印の担当者"
+          style="padding:4px 6px;border:1px solid #d1d5db;border-radius:5px;font-size:12px;">
+          <option value="冨田">冨田</option>
+          <option value="岡本">岡本</option>
+          <option value="下岡">下岡</option>
+          <option value="瀧本">瀧本</option>
+        </select>
+        <button id="pdfed-tfax" class="pdfed-btn" title="FAX済みスタンプを押します">FAX済み</button>
+        <button id="pdfed-tsumi" class="pdfed-btn" title="済スタンプを押します">済</button>
+        <span style="width:1px;height:20px;background:#e5e7eb;margin:0 4px;"></span>
         <button id="pdfed-delpage" class="pdfed-btn" style="color:#dc2626;border-color:#fecaca;">ページ削除</button>
         <span style="width:1px;height:20px;background:#e5e7eb;margin:0 4px;"></span>
         <button id="pdfed-zout" class="pdfed-btn">−</button>
@@ -7031,6 +7042,7 @@ async function openPdfEditor(url, name, orderId) {
         <button id="pdfed-zin" class="pdfed-btn">＋</button>
         <button id="pdfed-zfit" class="pdfed-btn">幅に合わせる</button>
         <span id="pdfed-hint" style="margin-left:auto;font-size:11px;color:#6b7280;">読み込み中...</span>
+        <button id="pdfed-print" class="pdfed-btn">印刷</button>
         <button id="pdfed-saveas" class="pdfed-btn">別名で保存</button>
         <button id="pdfed-save" class="pdfed-btn pdfed-primary">保存して更新</button>
       </div>
@@ -7113,6 +7125,10 @@ function _pdfedBind() {
   $('pdfed-tnone').onclick = () => _pdfedSetTool('none');
   $('pdfed-ttext').onclick = () => _pdfedSetTool('text');
   $('pdfed-thl').onclick   = () => _pdfedSetTool('hl');
+  $('pdfed-tjuryo').onclick = () => _pdfedSetTool('juryo');
+  $('pdfed-tfax').onclick   = () => _pdfedSetTool('fax');
+  $('pdfed-tsumi').onclick  = () => _pdfedSetTool('sumi');
+  $('pdfed-print').onclick  = () => _pdfedPrint();
   $('pdfed-delpage').onclick = () => _pdfedRemovePage(PDFED.cur);
   $('pdfed-zin').onclick  = () => _pdfedZoom(1.25);
   $('pdfed-zout').onclick = () => _pdfedZoom(1/1.25);
@@ -7127,15 +7143,66 @@ function _pdfedBind() {
   }, { passive: false });
 }
 
+const _PDFED_TOOLS = ['none','text','hl','juryo','fax','sumi'];
 function _pdfedSetTool(t) {
   PDFED.tool = t;
-  ['none','text','hl'].forEach(k =>
-    document.getElementById('pdfed-t' + (k === 'none' ? 'none' : k)).classList.toggle('pdfed-on', k === t));
+  _PDFED_TOOLS.forEach(k => {
+    const b = document.getElementById('pdfed-t' + k);
+    if (b) b.classList.toggle('pdfed-on', k === t);
+  });
   document.getElementById('pdfed-layer').classList.toggle('pdfed-draw', t !== 'none');
+  const msg = {
+    text:  'クリックした位置に文字を追加します',
+    hl:    'ドラッグして範囲をハイライトします',
+    juryo: 'クリックした位置に受領印を押します（ドラッグで移動・×で削除）',
+    fax:   'クリックした位置にFAX済みスタンプを押します',
+    sumi:  'クリックした位置に済スタンプを押します'
+  }[t];
   document.getElementById('pdfed-hint').textContent =
-    t === 'text' ? 'クリックした位置に文字を追加します'
-    : t === 'hl' ? 'ドラッグして範囲をハイライトします'
-    : `ページ ${PDFED.cur+1} / ${PDFED.order.length}`;
+    msg || `ページ ${PDFED.cur+1} / ${PDFED.order.length}`;
+}
+
+// 今日の日付（受領印2段目用）
+function _pdfedToday() {
+  const d = new Date();
+  return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// スタンプ定義（mm相当のpt値。朱色の枠線＋文字）
+const PDFED_STAMP = {
+  juryo: { w: 62, h: 62, color: '#d81b28', kind: 'juryo' },
+  fax:   { w: 96, h: 30, color: '#d81b28', kind: 'fax',  label: 'FAX済み' },
+  sumi:  { w: 40, h: 40, color: '#d81b28', kind: 'sumi', label: '済' }
+};
+
+// スタンプを画面表示用のHTMLに変換（PDF出力と同じ見た目になるよう寸法を合わせる）
+function _pdfedStampHtml(a, sc) {
+  const c = a.color;
+  if (a.stamp === 'juryo') {
+    const rowH = a.h / 3;
+    const fs1 = rowH * 0.60, fs2 = rowH * 0.46, fs3 = rowH * 0.60;
+    return `<div style="width:${a.w*sc}px;height:${a.h*sc}px;border:${Math.max(1,a.h*0.045*sc)}px solid ${c};
+      border-radius:${a.h*0.06*sc}px;box-sizing:border-box;display:flex;flex-direction:column;
+      background:rgba(255,255,255,0.01);overflow:hidden;">
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;color:${c};
+        font-size:${fs1*sc}px;font-weight:700;line-height:1;">${a.name || ''}</div>
+      <div style="height:${Math.max(1,a.h*0.03*sc)}px;background:${c};"></div>
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;color:${c};
+        font-size:${fs2*sc}px;font-weight:700;line-height:1;white-space:nowrap;">${a.date || ''}</div>
+      <div style="height:${Math.max(1,a.h*0.03*sc)}px;background:${c};"></div>
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;color:${c};
+        font-size:${fs3*sc}px;font-weight:700;line-height:1;">受領</div>
+    </div>`;
+  }
+  if (a.stamp === 'sumi') {
+    return `<div style="width:${a.w*sc}px;height:${a.h*sc}px;border:${Math.max(1,a.h*0.07*sc)}px solid ${c};
+      border-radius:50%;box-sizing:border-box;display:flex;align-items:center;justify-content:center;
+      color:${c};font-size:${a.h*0.58*sc}px;font-weight:700;line-height:1;">済</div>`;
+  }
+  // fax
+  return `<div style="width:${a.w*sc}px;height:${a.h*sc}px;border:${Math.max(1,a.h*0.09*sc)}px solid ${c};
+    border-radius:${a.h*0.13*sc}px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;
+    color:${c};font-size:${a.h*0.50*sc}px;font-weight:700;letter-spacing:0.04em;line-height:1;">FAX済み</div>`;
 }
 
 async function _pdfedCalcFit() {
@@ -7202,6 +7269,10 @@ function _pdfedDrawAnns() {
       d.style.background = a.color;
       d.style.opacity = .38;
       d.style.border = 'none';
+    } else if (a.kind === 'stamp') {
+      d.style.border = 'none';
+      d.style.padding = '0';
+      d.innerHTML = _pdfedStampHtml(a, sc);
     } else {
       d.textContent = a.text;
       d.style.fontSize = (a.size * sc) + 'px';
@@ -7253,6 +7324,24 @@ function _pdfedLayerDown(ev) {
   const x = (ev.clientX - r.left) / sc, y = (ev.clientY - r.top) / sc;
   const key = PDFED.order[PDFED.cur];
   PDFED.anns[key] = PDFED.anns[key] || [];
+
+  if (PDFED.tool === 'juryo' || PDFED.tool === 'fax' || PDFED.tool === 'sumi') {
+    const def = PDFED_STAMP[PDFED.tool];
+    const a = {
+      kind: 'stamp', stamp: PDFED.tool,
+      x: x - def.w / 2, y: y - def.h / 2,   // クリック位置がスタンプの中心になるように
+      w: def.w, h: def.h, color: def.color
+    };
+    if (PDFED.tool === 'juryo') {
+      a.name = document.getElementById('pdfed-juryo-name').value;
+      a.date = _pdfedToday();
+    }
+    PDFED.anns[key].push(a);
+    PDFED.dirty = true;
+    _pdfedSetTool('none');
+    _pdfedDrawAnns();
+    return;
+  }
 
   if (PDFED.tool === 'text') {
     const t = prompt('追加するテキスト:');
@@ -7338,6 +7427,76 @@ function _pdfedTextToPng(a) {
   return c.toDataURL('image/png');
 }
 
+// スタンプを高解像度Canvasに描く（8倍で作るので拡大・印刷してもにじまない）
+function _pdfedStampToPng(a) {
+  const R = 8;
+  const c = document.createElement('canvas');
+  c.width = Math.round(a.w * R);
+  c.height = Math.round(a.h * R);
+  const g = c.getContext('2d');
+  const col = a.color;
+  const W = c.width, Hh = c.height;
+  const FF = '"Hiragino Sans","Yu Gothic","Noto Sans JP","MS Gothic",sans-serif';
+
+  g.strokeStyle = col; g.fillStyle = col;
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+
+  const centerText = (txt, cx, cy, size, maxW) => {
+    g.font = `bold ${size}px ${FF}`;
+    let sz = size;
+    while (maxW && g.measureText(txt).width > maxW && sz > 6) {
+      sz -= 1; g.font = `bold ${sz}px ${FF}`;
+    }
+    g.fillText(txt, cx, cy);
+  };
+
+  if (a.stamp === 'juryo') {
+    const lw = Math.max(2, Hh * 0.045);
+    g.lineWidth = lw;
+    const r = Hh * 0.06;
+    // 角丸の外枠
+    g.beginPath();
+    g.moveTo(lw/2 + r, lw/2);
+    g.arcTo(W - lw/2, lw/2, W - lw/2, Hh - lw/2, r);
+    g.arcTo(W - lw/2, Hh - lw/2, lw/2, Hh - lw/2, r);
+    g.arcTo(lw/2, Hh - lw/2, lw/2, lw/2, r);
+    g.arcTo(lw/2, lw/2, W - lw/2, lw/2, r);
+    g.closePath(); g.stroke();
+    // 2本の横罫線で3段に区切る
+    const rowH = Hh / 3;
+    g.lineWidth = Math.max(2, Hh * 0.03);
+    [rowH, rowH * 2].forEach(yy => {
+      g.beginPath(); g.moveTo(lw/2, yy); g.lineTo(W - lw/2, yy); g.stroke();
+    });
+    const pad = W * 0.10;
+    centerText(a.name || '', W/2, rowH * 0.5,  rowH * 0.60, W - pad);
+    centerText(a.date || '', W/2, rowH * 1.5,  rowH * 0.46, W - pad);
+    centerText('受領',        W/2, rowH * 2.5,  rowH * 0.60, W - pad);
+
+  } else if (a.stamp === 'sumi') {
+    const lw = Math.max(2, Hh * 0.07);
+    g.lineWidth = lw;
+    g.beginPath();
+    g.arc(W/2, Hh/2, Math.min(W, Hh)/2 - lw/2, 0, Math.PI * 2);
+    g.stroke();
+    centerText('済', W/2, Hh/2 + Hh*0.02, Hh * 0.58, W * 0.72);
+
+  } else { // fax
+    const lw = Math.max(2, Hh * 0.09);
+    g.lineWidth = lw;
+    const r = Hh * 0.13;
+    g.beginPath();
+    g.moveTo(lw/2 + r, lw/2);
+    g.arcTo(W - lw/2, lw/2, W - lw/2, Hh - lw/2, r);
+    g.arcTo(W - lw/2, Hh - lw/2, lw/2, Hh - lw/2, r);
+    g.arcTo(lw/2, Hh - lw/2, lw/2, lw/2, r);
+    g.arcTo(lw/2, lw/2, W - lw/2, lw/2, r);
+    g.closePath(); g.stroke();
+    centerText('FAX済み', W/2, Hh/2, Hh * 0.50, W * 0.82);
+  }
+  return c.toDataURL('image/png');
+}
+
 async function _pdfedJpFont() {
   if (PDFED.jpFont) return PDFED.jpFont;
   const urls = [
@@ -7379,7 +7538,7 @@ async function _pdfedBuild() {
     else jpOK = false;
   }
 
-  const jobs = [];
+  const jobs = [], stamps = [];
   PDFED.order.forEach((srcIdx, i) => {
     const list = PDFED.anns[srcIdx];
     if (!list || !list.length) return;
@@ -7389,6 +7548,8 @@ async function _pdfedBuild() {
       if (a.kind === 'hl') {
         page.drawRectangle({ x:a.x, y:H-a.y-a.h, width:a.w, height:a.h,
           color:_pdfedHex2rgb(a.color), opacity:0.38 });
+      } else if (a.kind === 'stamp') {
+        stamps.push({ page, H, a });
       } else if (!jpOK && /[^\x00-\x7F]/.test(a.text)) {
         jobs.push({ page, H, a });
       } else {
@@ -7411,6 +7572,15 @@ async function _pdfedBuild() {
     });
   });
 
+  // スタンプは高解像度のPNGに描き起こして貼る（日本語フォント環境に依存しない）
+  for (const st of stamps) {
+    const png = await out.embedPng(_pdfedStampToPng(st.a));
+    st.page.drawImage(png, {
+      x: st.a.x, y: st.H - st.a.y - st.a.h,
+      width: st.a.w, height: st.a.h
+    });
+  }
+
   for (const j of jobs) {
     const png = await out.embedPng(_pdfedTextToPng(j.a));
     const sc = j.a.size / 64;
@@ -7425,6 +7595,58 @@ async function _pdfedBuild() {
   }
 
   return await out.save();
+}
+
+// 編集内容（スタンプ・注釈込み）を反映したPDFをそのまま印刷する
+async function _pdfedPrint() {
+  const btn = document.getElementById('pdfed-print');
+  const label = btn.textContent;
+  btn.disabled = true; btn.textContent = '準備中...';
+  let url = null, frame = null;
+  try {
+    const bytes = await _pdfedBuild();
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    url = URL.createObjectURL(blob);
+
+    frame = document.createElement('iframe');
+    frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
+    frame.src = url;
+    document.body.appendChild(frame);
+
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('PDFの読み込みがタイムアウトしました')), 20000);
+      frame.onload = () => { clearTimeout(timer); resolve(); };
+      frame.onerror = () => { clearTimeout(timer); reject(new Error('PDFの読み込みに失敗しました')); };
+    });
+
+    // 内蔵ビューアの印刷ダイアログを呼び出す
+    let printed = false;
+    try {
+      frame.contentWindow.focus();
+      frame.contentWindow.print();
+      printed = true;
+    } catch(e) {
+      console.warn('[pdfed] iframe印刷に失敗、別タブで開きます', e);
+    }
+    if (!printed) {
+      const w = window.open(url, '_blank');
+      if (!w) throw new Error('ポップアップがブロックされました。ブラウザの設定をご確認ください。');
+      _pdfedToast('別タブで開きました。Ctrl+P で印刷してください', '#1d4ed8');
+    }
+
+    // ダイアログが閉じられた後に片付ける
+    setTimeout(() => {
+      if (frame && frame.parentNode) frame.remove();
+      if (url) URL.revokeObjectURL(url);
+    }, 60000);
+
+  } catch(e) {
+    if (frame && frame.parentNode) frame.remove();
+    if (url) URL.revokeObjectURL(url);
+    alert('印刷の準備に失敗しました: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = label;
+  }
 }
 
 // overwrite=true: Storageの原本を上書き / false: ローカルへ別名保存
