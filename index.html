@@ -6370,9 +6370,13 @@ function renderDetailModal(p, children) {
         <div class="dfield">
           <div class="dfield-l">注文書原本</div>
           <div class="dfield-v">${p.source_file_url
-            ? `<a href="${p.source_file_url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;color:#1d4ed8;font-weight:600;text-decoration:none;font-size:11px;">
+            ? (/\.pdf(\?|$)/i.test(p.source_file_url)
+              ? `<a href="javascript:void(0)" onclick="openPdfEditor('${String(p.source_file_url).replace(/'/g,"\\'")}','${String(p.source_file_name||'注文書').replace(/'/g,"\\'")}',${p.id})" style="display:inline-flex;align-items:center;gap:5px;color:#1d4ed8;font-weight:600;text-decoration:none;font-size:11px;cursor:pointer;">
                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                 ${p.source_file_name || '注文書を開く'}</a>`
+                 ${p.source_file_name || '注文書を開く'}<span style="font-size:10px;color:#6b7280;font-weight:500;">（編集）</span></a>`
+              : `<a href="${p.source_file_url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;color:#1d4ed8;font-weight:600;text-decoration:none;font-size:11px;">
+                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                 ${p.source_file_name || '注文書を開く'}</a>`)
             : '<span style="color:#9ca3af;">-</span>'}</div>
         </div>
       </div>
@@ -6922,18 +6926,577 @@ function secondCategoryBadgeHtml(secondCat, partNo, partNoUrl) {
   return '<span title="' + title + '" style="' + badgeStyle + 'cursor:default;">' + inner + '</span>';
 }
 
-// 注文書の原本ファイル（Storage）を開くアイコン
+// 注文書の原本ファイル（Storage）を開くアイコン → PDF編集画面を開く
 function sourceFileIconHtml(r) {
   if (!r.source_file_url) return '';
-  const name = (r.source_file_name || '注文書').replace(/"/g, '&quot;');
-  return `<a href="${r.source_file_url}" target="_blank" rel="noopener"
-     onclick="event.stopPropagation();"
-     title="注文書の原本を開く: ${name}"
-     style="display:inline-flex;width:18px;height:18px;align-items:center;justify-content:center;flex-shrink:0;color:#1d4ed8;">
+  const esc = v => String(v).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  const name = esc(r.source_file_name || '注文書');
+  const url  = esc(r.source_file_url);
+  const isPdf = /\.pdf(\?|$)/i.test(r.source_file_url);
+  if (!isPdf) {
+    // PDF以外（Excel等）は従来どおり新規タブで開く
+    return `<a href="${r.source_file_url}" target="_blank" rel="noopener"
+       onclick="event.stopPropagation();"
+       title="注文書の原本を開く: ${name}"
+       style="display:inline-flex;width:18px;height:18px;align-items:center;justify-content:center;flex-shrink:0;color:#1d4ed8;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+      </svg></a>`;
+  }
+  return `<a href="javascript:void(0)"
+     onclick="event.stopPropagation();openPdfEditor('${url}','${name}',${r.id});"
+     title="注文書の原本を編集: ${name}"
+     style="display:inline-flex;width:18px;height:18px;align-items:center;justify-content:center;flex-shrink:0;color:#1d4ed8;cursor:pointer;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;">
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
       <polyline points="14 2 14 8 20 8"/>
     </svg></a>`;
+}
+
+// ==================== 注文書PDF 編集画面 ====================
+// 原本アイコンから起動。テキスト/注釈追加・ハイライト・ページ削除・保存（上書き/別名）に対応。
+const PDFED = {
+  libsReady: false, srcBytes: null, doc: null, order: [], cur: 0,
+  anns: {}, scale: 1.4, fitScale: 1.4, tool: 'none',
+  url: '', name: '', orderId: null, task: null, jpFont: null, dirty: false
+};
+
+function _pdfedLoadScript(src) {
+  return new Promise((resolve, reject) => {
+    const el = document.createElement('script');
+    el.src = src;
+    el.onload = resolve;
+    el.onerror = () => reject(new Error('読み込み失敗: ' + src));
+    document.head.appendChild(el);
+  });
+}
+
+// pdf-lib と fontkit は編集画面を開いた時だけ読み込む（起動を遅くしないため）
+async function _pdfedEnsureLibs() {
+  if (PDFED.libsReady) return;
+  if (!window.PDFLib) {
+    await _pdfedLoadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js');
+  }
+  if (!window.fontkit) {
+    try { await _pdfedLoadScript('https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js'); }
+    catch(e) { console.warn('[pdfed] fontkit読み込み失敗（日本語は画像化で対応）', e); }
+  }
+  PDFED.libsReady = true;
+}
+
+function _pdfedToast(msg, color) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:'
+    + (color || '#111827') + ';color:#fff;padding:10px 20px;border-radius:8px;font-size:12px;'
+    + 'font-weight:600;z-index:100001;box-shadow:0 4px 12px rgba(0,0,0,0.2);';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+async function openPdfEditor(url, name, orderId) {
+  const ov = document.createElement('div');
+  ov.id = 'pdfed-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:100000;display:flex;align-items:center;justify-content:center;';
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:12px;width:96vw;height:94vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #e5e7eb;background:#f9fafb;flex-shrink:0;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" style="width:17px;height:17px;flex-shrink:0;">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span style="font-size:13px;font-weight:700;color:#111827;">注文書の編集</span>
+        <span id="pdfed-name" style="font-size:11px;color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:40vw;"></span>
+        <button onclick="closePdfEditor()" style="margin-left:auto;padding:6px 14px;border-radius:6px;border:1px solid #e5e7eb;background:#fff;color:#374151;font-size:12px;font-weight:600;cursor:pointer;">閉じる</button>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:6px;padding:8px 16px;border-bottom:1px solid #e5e7eb;flex-wrap:wrap;flex-shrink:0;">
+        <button id="pdfed-tnone" class="pdfed-btn pdfed-on">選択</button>
+        <button id="pdfed-ttext" class="pdfed-btn">テキスト追加</button>
+        <button id="pdfed-thl" class="pdfed-btn">ハイライト</button>
+        <span style="width:1px;height:20px;background:#e5e7eb;margin:0 4px;"></span>
+        <label style="font-size:11px;color:#6b7280;">サイズ</label>
+        <input type="number" id="pdfed-size" value="14" min="6" max="96"
+          style="width:56px;padding:4px 6px;border:1px solid #d1d5db;border-radius:5px;font-size:12px;">
+        <input type="color" id="pdfed-color" value="#c62828"
+          style="width:32px;height:28px;padding:0;border:1px solid #d1d5db;border-radius:5px;cursor:pointer;background:#fff;">
+        <select id="pdfed-type" style="padding:4px 6px;border:1px solid #d1d5db;border-radius:5px;font-size:12px;">
+          <option value="text">テキスト</option>
+          <option value="note">注釈（枠付き）</option>
+        </select>
+        <span style="width:1px;height:20px;background:#e5e7eb;margin:0 4px;"></span>
+        <button id="pdfed-delpage" class="pdfed-btn" style="color:#dc2626;border-color:#fecaca;">ページ削除</button>
+        <span style="width:1px;height:20px;background:#e5e7eb;margin:0 4px;"></span>
+        <button id="pdfed-zout" class="pdfed-btn">−</button>
+        <span id="pdfed-zlabel" style="font-size:11px;color:#6b7280;min-width:42px;text-align:center;">100%</span>
+        <button id="pdfed-zin" class="pdfed-btn">＋</button>
+        <button id="pdfed-zfit" class="pdfed-btn">幅に合わせる</button>
+        <span id="pdfed-hint" style="margin-left:auto;font-size:11px;color:#6b7280;">読み込み中...</span>
+        <button id="pdfed-saveas" class="pdfed-btn">別名で保存</button>
+        <button id="pdfed-save" class="pdfed-btn pdfed-primary">保存して更新</button>
+      </div>
+
+      <div style="flex:1;display:flex;overflow:hidden;">
+        <div id="pdfed-thumbs" style="width:150px;flex-shrink:0;overflow-y:auto;background:#f9fafb;border-right:1px solid #e5e7eb;padding:8px;display:flex;flex-direction:column;gap:8px;"></div>
+        <div id="pdfed-stage" style="flex:1;overflow:auto;background:#e5e7eb;padding:20px;display:flex;justify-content:center;align-items:flex-start;">
+          <div id="pdfed-wrap" style="position:relative;box-shadow:0 2px 14px rgba(0,0,0,0.2);background:#fff;">
+            <canvas id="pdfed-cv" style="display:block;"></canvas>
+            <div id="pdfed-layer" style="position:absolute;inset:0;"></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+
+  if (!document.getElementById('pdfed-style')) {
+    const st = document.createElement('style');
+    st.id = 'pdfed-style';
+    st.textContent = `
+      .pdfed-btn{font:inherit;font-size:12px;padding:5px 11px;border:1px solid #d1d5db;background:#fff;
+        color:#374151;border-radius:6px;cursor:pointer;font-weight:600;}
+      .pdfed-btn:hover:not(:disabled){background:#eff6ff;border-color:#1d4ed8;}
+      .pdfed-btn:disabled{opacity:.45;cursor:not-allowed;}
+      .pdfed-on{background:#1d4ed8!important;color:#fff!important;border-color:#1d4ed8!important;}
+      .pdfed-primary{background:#1d4ed8;color:#fff;border-color:#1d4ed8;}
+      .pdfed-primary:hover:not(:disabled){filter:brightness(1.12);background:#1d4ed8!important;color:#fff!important;}
+      #pdfed-layer.pdfed-draw{cursor:crosshair;}
+      .pdfed-ann{position:absolute;white-space:pre;cursor:move;user-select:none;line-height:1.15;
+        padding:1px 2px;border:1px dashed transparent;}
+      .pdfed-ann:hover{border-color:#1d4ed8;}
+      .pdfed-ann .pdfed-x{position:absolute;top:-9px;right:-9px;width:17px;height:17px;border-radius:50%;
+        background:#dc2626;color:#fff;font-size:11px;line-height:17px;text-align:center;display:none;cursor:pointer;}
+      .pdfed-ann:hover .pdfed-x{display:block;}
+      .pdfed-thumb{position:relative;border:2px solid transparent;border-radius:5px;cursor:pointer;background:#fff;padding:3px;}
+      .pdfed-thumb.sel{border-color:#1d4ed8;}
+      .pdfed-thumb canvas{width:100%;display:block;box-shadow:0 1px 3px rgba(0,0,0,0.15);}
+      .pdfed-thumb .n{position:absolute;left:5px;top:5px;background:rgba(0,0,0,0.6);color:#fff;
+        font-size:10px;padding:1px 5px;border-radius:3px;}
+      .pdfed-thumb .del{position:absolute;right:5px;top:5px;background:#dc2626;color:#fff;border:none;
+        border-radius:3px;padding:1px 5px;font-size:10px;cursor:pointer;}
+    `;
+    document.head.appendChild(st);
+  }
+
+  Object.assign(PDFED, {
+    url, name: name || '注文書.pdf', orderId,
+    anns: {}, cur: 0, tool: 'none', dirty: false, task: null
+  });
+  document.getElementById('pdfed-name').textContent = PDFED.name;
+
+  try {
+    await _pdfedEnsureLibs();
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('ファイル取得失敗 (' + res.status + ')');
+    PDFED.srcBytes = new Uint8Array(await res.arrayBuffer());
+    PDFED.doc = await pdfjsLib.getDocument({ data: PDFED.srcBytes.slice() }).promise;
+    PDFED.order = [...Array(PDFED.doc.numPages).keys()];
+    _pdfedBind();
+    await _pdfedCalcFit();
+    PDFED.scale = PDFED.fitScale;
+    await _pdfedThumbs();
+    await _pdfedRender();
+  } catch (e) {
+    document.getElementById('pdfed-hint').textContent = 'エラー: ' + e.message;
+    _pdfedToast('PDFを開けませんでした: ' + e.message, '#dc2626');
+  }
+}
+
+function closePdfEditor() {
+  if (PDFED.dirty && !confirm('保存していない編集内容があります。閉じますか？')) return;
+  if (PDFED.task) { try { PDFED.task.cancel(); } catch(e){} }
+  const ov = document.getElementById('pdfed-overlay');
+  if (ov) ov.remove();
+  PDFED.doc = null; PDFED.srcBytes = null; PDFED.anns = {}; PDFED.dirty = false;
+}
+
+function _pdfedBind() {
+  const $ = id => document.getElementById(id);
+  $('pdfed-tnone').onclick = () => _pdfedSetTool('none');
+  $('pdfed-ttext').onclick = () => _pdfedSetTool('text');
+  $('pdfed-thl').onclick   = () => _pdfedSetTool('hl');
+  $('pdfed-delpage').onclick = () => _pdfedRemovePage(PDFED.cur);
+  $('pdfed-zin').onclick  = () => _pdfedZoom(1.25);
+  $('pdfed-zout').onclick = () => _pdfedZoom(1/1.25);
+  $('pdfed-zfit').onclick = async () => { await _pdfedCalcFit(); PDFED.scale = PDFED.fitScale; _pdfedRender(); };
+  $('pdfed-save').onclick   = () => _pdfedSave(true);
+  $('pdfed-saveas').onclick = () => _pdfedSave(false);
+  $('pdfed-layer').onmousedown = _pdfedLayerDown;
+  $('pdfed-stage').addEventListener('wheel', e => {
+    if (!e.ctrlKey || !PDFED.doc) return;
+    e.preventDefault();
+    _pdfedZoom(e.deltaY < 0 ? 1.15 : 1/1.15);
+  }, { passive: false });
+}
+
+function _pdfedSetTool(t) {
+  PDFED.tool = t;
+  ['none','text','hl'].forEach(k =>
+    document.getElementById('pdfed-t' + (k === 'none' ? 'none' : k)).classList.toggle('pdfed-on', k === t));
+  document.getElementById('pdfed-layer').classList.toggle('pdfed-draw', t !== 'none');
+  document.getElementById('pdfed-hint').textContent =
+    t === 'text' ? 'クリックした位置に文字を追加します'
+    : t === 'hl' ? 'ドラッグして範囲をハイライトします'
+    : `ページ ${PDFED.cur+1} / ${PDFED.order.length}`;
+}
+
+async function _pdfedCalcFit() {
+  const page = await PDFED.doc.getPage(PDFED.order[PDFED.cur] + 1);
+  const vp = page.getViewport({ scale: 1 });
+  const avail = document.getElementById('pdfed-stage').clientWidth - 50;
+  PDFED.fitScale = Math.max(0.2, avail / vp.width);
+}
+
+function _pdfedZoom(m) {
+  PDFED.scale = Math.min(PDFED.fitScale * 8, Math.max(PDFED.fitScale * 0.25, PDFED.scale * m));
+  _pdfedRender();
+}
+
+// 拡大のたびに元データから再描画するため、図面の細線もぼやけない
+async function _pdfedRender() {
+  if (!PDFED.order.length) { document.getElementById('pdfed-hint').textContent = '全ページ削除済み'; return; }
+  if (PDFED.cur >= PDFED.order.length) PDFED.cur = PDFED.order.length - 1;
+  if (PDFED.task) { try { PDFED.task.cancel(); } catch(e){} }
+
+  const page = await PDFED.doc.getPage(PDFED.order[PDFED.cur] + 1);
+  const vp = page.getViewport({ scale: PDFED.scale });
+  const dpr = window.devicePixelRatio || 1;
+  const MAXPX = 16000000;
+  let ss = dpr * 2;
+  while (vp.width * ss * vp.height * ss > MAXPX && ss > dpr) ss -= 0.25;
+  if (ss < 1) ss = 1;
+
+  const rvp = page.getViewport({ scale: PDFED.scale * ss });
+  const cv = document.getElementById('pdfed-cv');
+  const ctx = cv.getContext('2d', { alpha: false });
+  cv.width = Math.floor(rvp.width); cv.height = Math.floor(rvp.height);
+  cv.style.width = vp.width + 'px'; cv.style.height = vp.height + 'px';
+  const wrap = document.getElementById('pdfed-wrap');
+  wrap.style.width = vp.width + 'px'; wrap.style.height = vp.height + 'px';
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+
+  PDFED.task = page.render({ canvasContext: ctx, viewport: rvp, intent: 'print' });
+  try { await PDFED.task.promise; }
+  catch(e) { if (e && e.name === 'RenderingCancelledException') return; }
+  PDFED.task = null;
+
+  _pdfedDrawAnns();
+  document.getElementById('pdfed-zlabel').textContent = Math.round(PDFED.scale / PDFED.fitScale * 100) + '%';
+  document.getElementById('pdfed-hint').textContent = `ページ ${PDFED.cur+1} / ${PDFED.order.length}`;
+  document.querySelectorAll('.pdfed-thumb').forEach((t,i) => t.classList.toggle('sel', i === PDFED.cur));
+}
+
+function _pdfedDrawAnns() {
+  const layer = document.getElementById('pdfed-layer');
+  layer.innerHTML = '';
+  const sc = PDFED.scale;
+  (PDFED.anns[PDFED.order[PDFED.cur]] || []).forEach((a, idx) => {
+    const d = document.createElement('div');
+    d.className = 'pdfed-ann';
+    d.style.left = (a.x * sc) + 'px';
+    d.style.top  = (a.y * sc) + 'px';
+    if (a.kind === 'hl') {
+      d.style.width = (a.w * sc) + 'px';
+      d.style.height = (a.h * sc) + 'px';
+      d.style.background = a.color;
+      d.style.opacity = .38;
+      d.style.border = 'none';
+    } else {
+      d.textContent = a.text;
+      d.style.fontSize = (a.size * sc) + 'px';
+      d.style.color = a.color;
+      if (a.kind === 'note') {
+        d.style.border = '1px solid ' + a.color;
+        d.style.background = 'rgba(255,249,196,0.85)';
+        d.style.padding = '3px 6px';
+        d.style.borderRadius = '3px';
+      }
+    }
+    const x = document.createElement('span');
+    x.className = 'pdfed-x'; x.textContent = '×';
+    x.onclick = ev => {
+      ev.stopPropagation();
+      PDFED.anns[PDFED.order[PDFED.cur]].splice(idx, 1);
+      PDFED.dirty = true; _pdfedDrawAnns();
+    };
+    d.appendChild(x);
+    d.onmousedown = ev => _pdfedDrag(ev, a, d);
+    layer.appendChild(d);
+  });
+}
+
+function _pdfedDrag(ev, a, el) {
+  if (ev.target.className === 'pdfed-x') return;
+  ev.preventDefault(); ev.stopPropagation();
+  const sx = ev.clientX, sy = ev.clientY, ox = a.x, oy = a.y, sc = PDFED.scale;
+  const mv = e => {
+    a.x = ox + (e.clientX - sx) / sc;
+    a.y = oy + (e.clientY - sy) / sc;
+    el.style.left = a.x * sc + 'px';
+    el.style.top  = a.y * sc + 'px';
+    PDFED.dirty = true;
+  };
+  const up = () => {
+    document.removeEventListener('mousemove', mv);
+    document.removeEventListener('mouseup', up);
+  };
+  document.addEventListener('mousemove', mv);
+  document.addEventListener('mouseup', up);
+}
+
+function _pdfedLayerDown(ev) {
+  const layer = document.getElementById('pdfed-layer');
+  if (ev.target !== layer) return;
+  const sc = PDFED.scale;
+  const r = layer.getBoundingClientRect();
+  const x = (ev.clientX - r.left) / sc, y = (ev.clientY - r.top) / sc;
+  const key = PDFED.order[PDFED.cur];
+  PDFED.anns[key] = PDFED.anns[key] || [];
+
+  if (PDFED.tool === 'text') {
+    const t = prompt('追加するテキスト:');
+    if (t) {
+      PDFED.anns[key].push({
+        kind: document.getElementById('pdfed-type').value, text: t, x, y,
+        size: +document.getElementById('pdfed-size').value,
+        color: document.getElementById('pdfed-color').value
+      });
+      PDFED.dirty = true; _pdfedDrawAnns();
+    }
+    _pdfedSetTool('none');
+  } else if (PDFED.tool === 'hl') {
+    const color = document.getElementById('pdfed-color').value;
+    const box = document.createElement('div');
+    box.className = 'pdfed-ann';
+    box.style.cssText = `left:${x*sc}px;top:${y*sc}px;background:${color};opacity:.38;border:none;`;
+    layer.appendChild(box);
+    const mv = e => {
+      const w = (e.clientX - r.left)/sc - x, h = (e.clientY - r.top)/sc - y;
+      box.style.width = Math.abs(w)*sc + 'px'; box.style.height = Math.abs(h)*sc + 'px';
+      box.style.left = Math.min(x, x+w)*sc + 'px'; box.style.top = Math.min(y, y+h)*sc + 'px';
+    };
+    const up = e => {
+      document.removeEventListener('mousemove', mv);
+      document.removeEventListener('mouseup', up);
+      const w = (e.clientX - r.left)/sc - x, h = (e.clientY - r.top)/sc - y;
+      if (Math.abs(w) > 4 && Math.abs(h) > 4) {
+        PDFED.anns[key].push({ kind:'hl', x:Math.min(x,x+w), y:Math.min(y,y+h),
+          w:Math.abs(w), h:Math.abs(h), color });
+        PDFED.dirty = true;
+      }
+      _pdfedSetTool('none'); _pdfedDrawAnns();
+    };
+    document.addEventListener('mousemove', mv);
+    document.addEventListener('mouseup', up);
+  }
+}
+
+async function _pdfedThumbs() {
+  const box = document.getElementById('pdfed-thumbs');
+  box.innerHTML = '';
+  for (let i = 0; i < PDFED.order.length; i++) {
+    const page = await PDFED.doc.getPage(PDFED.order[i] + 1);
+    const vp = page.getViewport({ scale: 0.22 });
+    const c = document.createElement('canvas');
+    c.width = vp.width; c.height = vp.height;
+    await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+    const d = document.createElement('div');
+    d.className = 'pdfed-thumb' + (i === PDFED.cur ? ' sel' : '');
+    d.appendChild(c);
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = i + 1;
+    const del = document.createElement('button'); del.className = 'del'; del.textContent = '削除';
+    del.onclick = e => { e.stopPropagation(); _pdfedRemovePage(i); };
+    d.append(n, del);
+    d.onclick = () => { PDFED.cur = i; _pdfedRender(); };
+    box.appendChild(d);
+  }
+}
+
+function _pdfedRemovePage(i) {
+  if (PDFED.order.length <= 1) { alert('最後の1ページは削除できません。'); return; }
+  if (!confirm(`ページ ${i+1} を削除しますか？`)) return;
+  delete PDFED.anns[PDFED.order[i]];
+  PDFED.order.splice(i, 1);
+  if (PDFED.cur >= PDFED.order.length) PDFED.cur = PDFED.order.length - 1;
+  PDFED.dirty = true;
+  _pdfedThumbs(); _pdfedRender();
+}
+
+// 日本語フォントの埋め込みに失敗した場合、Canvasで文字を画像化して貼る（文字化け回避）
+function _pdfedTextToPng(a) {
+  const S = 64, lines = String(a.text).split('\n');
+  const c = document.createElement('canvas');
+  const x = c.getContext('2d');
+  const fontSpec = `${S}px "Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif`;
+  x.font = fontSpec;
+  c.width = Math.ceil(Math.max(...lines.map(l => x.measureText(l).width))) + 4;
+  c.height = Math.ceil(S * 1.25 * lines.length) + 4;
+  const g = c.getContext('2d');
+  g.font = fontSpec; g.fillStyle = a.color; g.textBaseline = 'top';
+  lines.forEach((l, i) => g.fillText(l, 2, 2 + i * S * 1.25));
+  return c.toDataURL('image/png');
+}
+
+async function _pdfedJpFont() {
+  if (PDFED.jpFont) return PDFED.jpFont;
+  const urls = [
+    'https://cdn.jsdelivr.net/gh/googlefonts/noto-cjk@main/Sans/SubsetOTF/JP/NotoSansJP-Regular.otf',
+    'https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5.0.18/files/noto-sans-jp-japanese-400-normal.woff'
+  ];
+  for (const u of urls) {
+    try {
+      const r = await fetch(u);
+      if (r.ok) { PDFED.jpFont = new Uint8Array(await r.arrayBuffer()); return PDFED.jpFont; }
+    } catch(e) {}
+  }
+  return null;
+}
+
+const _pdfedHex2rgb = h => {
+  const n = parseInt(String(h).slice(1), 16);
+  return PDFLib.rgb(((n>>16)&255)/255, ((n>>8)&255)/255, (n&255)/255);
+};
+
+// 編集内容を焼き込んだPDFバイト列を生成
+async function _pdfedBuild() {
+  const { PDFDocument, StandardFonts } = PDFLib;
+  const src = await PDFDocument.load(PDFED.srcBytes);
+  const out = await PDFDocument.create();
+  const fk = window.fontkit || null;
+  if (fk) { try { out.registerFontkit(fk); } catch(e) {} }
+
+  const pages = await out.copyPages(src, PDFED.order);
+  pages.forEach(pg => out.addPage(pg));
+
+  const hasJP = Object.values(PDFED.anns).flat()
+    .some(a => a.kind !== 'hl' && /[^\x00-\x7F]/.test(a.text));
+  let font = await out.embedFont(StandardFonts.Helvetica);
+  let jpOK = true;
+  if (hasJP) {
+    const fb = fk ? await _pdfedJpFont() : null;
+    if (fb) { try { font = await out.embedFont(fb, { subset: true }); } catch(e) { jpOK = false; } }
+    else jpOK = false;
+  }
+
+  const jobs = [];
+  PDFED.order.forEach((srcIdx, i) => {
+    const list = PDFED.anns[srcIdx];
+    if (!list || !list.length) return;
+    const page = out.getPage(i);
+    const H = page.getHeight();
+    list.forEach(a => {
+      if (a.kind === 'hl') {
+        page.drawRectangle({ x:a.x, y:H-a.y-a.h, width:a.w, height:a.h,
+          color:_pdfedHex2rgb(a.color), opacity:0.38 });
+      } else if (!jpOK && /[^\x00-\x7F]/.test(a.text)) {
+        jobs.push({ page, H, a });
+      } else {
+        const lines = String(a.text).split('\n');
+        if (a.kind === 'note') {
+          const w = Math.max(...lines.map(l => font.widthOfTextAtSize(l, a.size))) + 10;
+          const h = a.size * 1.25 * lines.length + 8;
+          page.drawRectangle({ x:a.x, y:H-a.y-h, width:w, height:h,
+            color:PDFLib.rgb(1,.98,.77), borderColor:_pdfedHex2rgb(a.color),
+            borderWidth:1, opacity:.9 });
+        }
+        lines.forEach((l, k) => {
+          page.drawText(l, {
+            x: a.x + (a.kind === 'note' ? 5 : 0),
+            y: H - a.y - a.size - (a.kind === 'note' ? 6 : 1) - k * a.size * 1.25,
+            size: a.size, font, color: _pdfedHex2rgb(a.color)
+          });
+        });
+      }
+    });
+  });
+
+  for (const j of jobs) {
+    const png = await out.embedPng(_pdfedTextToPng(j.a));
+    const sc = j.a.size / 64;
+    const w = png.width * sc, h = png.height * sc;
+    if (j.a.kind === 'note') {
+      j.page.drawRectangle({ x:j.a.x, y:j.H-j.a.y-h-8, width:w+10, height:h+8,
+        color:PDFLib.rgb(1,.98,.77), borderColor:_pdfedHex2rgb(j.a.color),
+        borderWidth:1, opacity:.9 });
+    }
+    j.page.drawImage(png, { x:j.a.x + (j.a.kind === 'note' ? 5 : 0),
+      y:j.H-j.a.y-h-(j.a.kind === 'note' ? 4 : 0), width:w, height:h });
+  }
+
+  return await out.save();
+}
+
+// overwrite=true: Storageの原本を上書き / false: ローカルへ別名保存
+async function _pdfedSave(overwrite) {
+  const btn = document.getElementById(overwrite ? 'pdfed-save' : 'pdfed-saveas');
+  const label = btn.textContent;
+  btn.disabled = true; btn.textContent = '保存中...';
+  try {
+    const bytes = await _pdfedBuild();
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+
+    if (!overwrite) {
+      if (window.showSaveFilePicker) {
+        let handle;
+        try {
+          handle = await window.showSaveFilePicker({
+            suggestedName: PDFED.name.replace(/\.pdf$/i, '') + '_編集.pdf',
+            types: [{ description: 'PDFファイル', accept: { 'application/pdf': ['.pdf'] } }]
+          });
+        } catch(e) {
+          if (e.name === 'AbortError') return;
+          throw e;
+        }
+        const w = await handle.createWritable();
+        await w.write(blob); await w.close();
+        _pdfedToast('保存しました: ' + handle.name, '#059669');
+      } else {
+        const u = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = u; a.download = PDFED.name.replace(/\.pdf$/i, '') + '_編集.pdf'; a.click();
+        setTimeout(() => URL.revokeObjectURL(u), 3000);
+        _pdfedToast('ダウンロードしました', '#059669');
+      }
+      PDFED.dirty = false;
+      return;
+    }
+
+    // Storage の同じパスへ上書き（URLが変わらないのでDB更新は不要）
+    if (!confirm('Storage上の注文書原本を上書きします。よろしいですか？')) return;
+    const m = String(PDFED.url).match(/\/object\/public\/([^/]+)\/(.+)$/);
+    if (!m) throw new Error('保存先のパスを特定できませんでした');
+    const bucket = m[1], path = m[2];
+
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/pdf',
+        'x-upsert': 'true'
+      },
+      body: blob
+    });
+    if (!res.ok) throw new Error('アップロード失敗 (' + res.status + '): ' + await res.text());
+
+    PDFED.dirty = false;
+    _pdfedToast('✅ 注文書原本を更新しました', '#059669');
+
+    // 上書き後は元データを差し替え、キャッシュを避けて再取得できるようにする
+    PDFED.srcBytes = new Uint8Array(bytes.slice().buffer);
+    PDFED.anns = {};
+    PDFED.doc = await pdfjsLib.getDocument({ data: PDFED.srcBytes.slice() }).promise;
+    PDFED.order = [...Array(PDFED.doc.numPages).keys()];
+    if (PDFED.cur >= PDFED.order.length) PDFED.cur = PDFED.order.length - 1;
+    await _pdfedThumbs();
+    await _pdfedRender();
+
+  } catch(e) {
+    alert('保存に失敗しました: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = label;
+  }
 }
 
 function memoIconHtml(r) {
