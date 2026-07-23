@@ -7024,9 +7024,10 @@ async function openPdfEditor(url, name, orderId) {
           <option value="note">注釈（枠付き）</option>
         </select>
         <span style="width:1px;height:20px;background:#e5e7eb;margin:0 4px;"></span>
-        <button id="pdfed-tjuryo" class="pdfed-btn" title="3段の受領印を押します">受領印</button>
-        <select id="pdfed-juryo-name" title="受領印の担当者"
+        <button id="pdfed-tjuryo" class="pdfed-btn" title="丸型の受領印を押します">受領印</button>
+        <select id="pdfed-juryo-name" title="受領印の3段目"
           style="padding:4px 6px;border:1px solid #d1d5db;border-radius:5px;font-size:12px;">
+          <option value="大阪テック(株)" selected>大阪テック(株)</option>
           <option value="冨田">冨田</option>
           <option value="岡本">岡本</option>
           <option value="下岡">下岡</option>
@@ -7179,20 +7180,9 @@ const PDFED_STAMP = {
 function _pdfedStampHtml(a, sc) {
   const c = a.color;
   if (a.stamp === 'juryo') {
-    const rowH = a.h / 3;
-    const fs1 = rowH * 0.60, fs2 = rowH * 0.46, fs3 = rowH * 0.60;
-    return `<div style="width:${a.w*sc}px;height:${a.h*sc}px;border:${Math.max(1,a.h*0.045*sc)}px solid ${c};
-      border-radius:${a.h*0.06*sc}px;box-sizing:border-box;display:flex;flex-direction:column;
-      background:rgba(255,255,255,0.01);overflow:hidden;">
-      <div style="flex:1;display:flex;align-items:center;justify-content:center;color:${c};
-        font-size:${fs1*sc}px;font-weight:700;line-height:1;">${a.name || ''}</div>
-      <div style="height:${Math.max(1,a.h*0.03*sc)}px;background:${c};"></div>
-      <div style="flex:1;display:flex;align-items:center;justify-content:center;color:${c};
-        font-size:${fs2*sc}px;font-weight:700;line-height:1;white-space:nowrap;">${a.date || ''}</div>
-      <div style="height:${Math.max(1,a.h*0.03*sc)}px;background:${c};"></div>
-      <div style="flex:1;display:flex;align-items:center;justify-content:center;color:${c};
-        font-size:${fs3*sc}px;font-weight:700;line-height:1;">受領</div>
-    </div>`;
+    // 丸印は形が複雑なため、PDF出力と同じCanvas描画をそのまま画面表示にも使う
+    return `<img src="${_pdfedStampToPng(a)}" draggable="false"
+      style="width:${a.w*sc}px;height:${a.h*sc}px;display:block;pointer-events:none;">`;
   }
   if (a.stamp === 'sumi') {
     return `<div style="width:${a.w*sc}px;height:${a.h*sc}px;border:${Math.max(1,a.h*0.07*sc)}px solid ${c};
@@ -7444,34 +7434,62 @@ function _pdfedStampToPng(a) {
   const centerText = (txt, cx, cy, size, maxW) => {
     g.font = `bold ${size}px ${FF}`;
     let sz = size;
-    while (maxW && g.measureText(txt).width > maxW && sz > 6) {
+    // 少しだけ縮小して収まるならフォントを小さくする
+    while (maxW && g.measureText(txt).width > maxW && sz > size * 0.72) {
       sz -= 1; g.font = `bold ${sz}px ${FF}`;
+    }
+    // それでも収まらない場合は横方向だけ圧縮して高さを保つ（長い社名対策）
+    const w = g.measureText(txt).width;
+    if (maxW && w > maxW) {
+      g.save();
+      g.translate(cx, cy);
+      g.scale(Math.max(0.55, maxW / w), 1);
+      g.fillText(txt, 0, 0);
+      g.restore();
+      return;
     }
     g.fillText(txt, cx, cy);
   };
 
   if (a.stamp === 'juryo') {
-    const lw = Math.max(2, Hh * 0.045);
+    // 丸型の受領印（外周円＋2本の横罫線で3段）
+    const cx = W / 2, cy = Hh / 2;
+    const lw = Math.max(2, Hh * 0.05);
+    const R = Math.min(W, Hh) / 2 - lw / 2;
     g.lineWidth = lw;
-    const r = Hh * 0.06;
-    // 角丸の外枠
     g.beginPath();
-    g.moveTo(lw/2 + r, lw/2);
-    g.arcTo(W - lw/2, lw/2, W - lw/2, Hh - lw/2, r);
-    g.arcTo(W - lw/2, Hh - lw/2, lw/2, Hh - lw/2, r);
-    g.arcTo(lw/2, Hh - lw/2, lw/2, lw/2, r);
-    g.arcTo(lw/2, lw/2, W - lw/2, lw/2, r);
-    g.closePath(); g.stroke();
-    // 2本の横罫線で3段に区切る
-    const rowH = Hh / 3;
-    g.lineWidth = Math.max(2, Hh * 0.03);
-    [rowH, rowH * 2].forEach(yy => {
-      g.beginPath(); g.moveTo(lw/2, yy); g.lineTo(W - lw/2, yy); g.stroke();
+    g.arc(cx, cy, R, 0, Math.PI * 2);
+    g.stroke();
+
+    // 罫線は円の内側で止める（弦の半分の長さを三角比で求める）
+    // 上下段は文字が大きいので広めに、中央の日付段は狭めに配分する
+    const rowH = (R * 2) / 3;
+    const yTop = cy - rowH * 0.60;   // 1段目と2段目の境
+    const yBot = cy + rowH * 0.60;   // 2段目と3段目の境
+    g.lineWidth = Math.max(2, Hh * 0.032);
+    [yTop, yBot].forEach(yy => {
+      const dy = Math.abs(yy - cy);
+      const half = Math.sqrt(Math.max(0, R * R - dy * dy));
+      g.beginPath();
+      g.moveTo(cx - half, yy);
+      g.lineTo(cx + half, yy);
+      g.stroke();
     });
-    const pad = W * 0.10;
-    centerText(a.name || '', W/2, rowH * 0.5,  rowH * 0.60, W - pad);
-    centerText(a.date || '', W/2, rowH * 1.5,  rowH * 0.46, W - pad);
-    centerText('受領',        W/2, rowH * 2.5,  rowH * 0.60, W - pad);
+
+    // 各段の中央に文字を置く。円弧で狭くなるため段ごとに使える幅を計算する
+    const usableW = (yy) => {
+      const dy = Math.abs(yy - cy);
+      return 2 * Math.sqrt(Math.max(0, R * R - dy * dy)) * 0.86;
+    };
+    const y1 = (cy - R + yTop) / 2;   // 1段目の中央
+    const y2 = cy;                     // 2段目（日付）
+    const y3 = (yBot + cy + R) / 2;    // 3段目の中央
+    // 上下段は円弧側の幅も見て、はみ出さない方を採用する
+    const w1 = Math.min(usableW(y1), usableW(yTop - (yTop - y1) * 0.15));
+    const w3 = Math.min(usableW(y3), usableW(yBot + (y3 - yBot) * 0.15));
+    centerText('受領',        cx, y1, rowH * 0.66, w1);
+    centerText(a.date || '', cx, y2, rowH * 0.46, usableW(y2) * 0.98);
+    centerText(a.name || '', cx, y3, rowH * 0.60, w3);
 
   } else if (a.stamp === 'sumi') {
     const lw = Math.max(2, Hh * 0.07);
