@@ -265,7 +265,8 @@
   .ship-pallet-list.drop-here { background:#eff6ff; outline:2px solid #1d4ed8; outline-offset:-4px; }
   .bed-plan.dragging, .bed-tag.dragging { opacity:.45; }
   .bed-tag { cursor:grab; }
-  .pallet-card { border:2px solid #9ca3af; border-radius:10px; background:#e5e7eb; overflow:hidden; cursor:grab; }
+  /* flexコンテナ内で枚数が増えても縮まないようにする（縮むとカードが潰れる） */
+  .pallet-card { border:2px solid #9ca3af; border-radius:10px; background:#e5e7eb; overflow:hidden; cursor:grab; flex:0 0 auto; }
   .pallet-card.dragging { opacity:.4; }
   .pallet-card-head { padding:7px 9px; background:#d1d5db; border-bottom:1px solid #9ca3af; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
   .pallet-no { font-family:monospace; font-weight:700; font-size:11.5px; color:#374151; }
@@ -309,6 +310,10 @@
   .ship-item.dragging { opacity:.4; }
   .ship-ot { font-size:10px; font-weight:700; color:#1d4ed8; background:#eff6ff; border:1px solid #bfdbfe;
     border-radius:4px; padding:0 5px; margin-left:4px; white-space:nowrap; }
+  /* 出荷場所（OT番号の右）。行き先が一目で分かるよう緑系にする */
+  .ship-dest { font-size:10px; font-weight:700; color:#15803d; background:#f0fdf4; border:1px solid #86efac;
+    border-radius:4px; padding:0 5px; margin-left:4px; white-space:nowrap; display:inline-flex; align-items:center; gap:3px; }
+  .ship-dest::before { content:'📍'; font-size:9px; }
   /* 総重量表示（パレット・便カード共通） */
   .weight-total { display:inline-flex; align-items:baseline; gap:2px; white-space:nowrap; margin-left:auto; }
   .weight-val { font-size:22px; font-weight:800; color:#111827; line-height:1; letter-spacing:-0.02em; }
@@ -1398,14 +1403,19 @@
         <span class="ship-count" id="ship-pool-count">0件</span>
       </div>
       <div class="ship-toolbar">
-        <input class="pd-search" id="ship-pool-search" type="text" placeholder="封印番号・図番・P番号・品名で検索..." oninput="renderShipPool()">
-      </div>
-      <div class="ship-toolbar" style="padding-top:0;">
         <select class="pd-search" id="ship-pool-client" onchange="renderShipPool()" style="min-width:0;">
           <option value="">全取引先</option>
         </select>
         <input class="pd-search" id="ship-pool-date" type="date" onchange="renderShipPool()" style="min-width:0;" title="納期で絞り込み">
+      </div>
+      <div class="ship-toolbar" style="padding-top:0;">
+        <select class="pd-search" id="ship-pool-dest" onchange="renderShipPool()" style="min-width:0;" title="納入場所で絞り込み">
+          <option value="">全納入場所</option>
+        </select>
         <button class="btn-sm" onclick="clearShipPoolFilter()">クリア</button>
+        <button class="btn-sm" id="ship-pool-export-btn" onclick="exportShipPoolExcel()"
+                style="color:#15803d;border-color:#86efac;font-weight:700;white-space:nowrap;"
+                title="表示中の出荷候補を出荷リストとしてExcelに出力します">出荷リスト</button>
       </div>
       <div class="ship-pool-hint">納期が確定した封印番号です。パレットや便のカードへドラッグ＆ドロップして追加します。</div>
       <div class="ship-pool-list" id="ship-pool-list"></div>
@@ -1419,6 +1429,15 @@
           パレット
         </h3>
         <div style="display:flex;gap:6px;align-items:center;">
+          <button class="btn-primary-sm" id="pallet-autosim-btn" onclick="autoSimulatePallets()"
+                  style="display:none;background:#15803d;border-color:#15803d;"
+                  title="フィルター中の出荷候補を1100×1100パレットへ自動配置します">⚙ 自動シミュレーション</button>
+          <button class="btn-sm" id="pallet-repack-btn" onclick="repackAllPallets()"
+                  style="display:none;color:#15803d;border-color:#86efac;font-weight:700;"
+                  title="既存パレットの製品を集め直し、同じ製品をまとめて積み直します">⟳ まとめ直す</button>
+          <button class="btn-sm" id="pallet-clearall-btn" onclick="deleteAllPallets()"
+                  style="display:none;color:#dc2626;border-color:#fecaca;"
+                  title="作成したパレットをすべて削除し、載っている製品を出荷候補に戻します">全削除</button>
           <select class="pd-search" id="pallet-size-select" style="min-width:0;padding:4px 8px;font-size:11px;"></select>
           <button class="btn-primary-sm" onclick="createPallet()">+ パレット</button>
         </div>
@@ -2080,7 +2099,11 @@ async function shipFetchAll(url) {
   let all = [], offset = 0;
   while (true) {
     const res = await fetch(`${url}&limit=${PAGE}&offset=${offset}`, { headers: sbHeaders() });
-    if (!res.ok) break;
+    if (!res.ok) {
+      // 400等で静かに空を返すと原因が追えないため、内容をログに残す
+      console.warn('[ship] 取得失敗', res.status, url, await res.text().catch(() => ''));
+      break;
+    }
     const rows = await res.json();
     all = all.concat(rows);
     if (rows.length < PAGE) break;
@@ -2115,36 +2138,67 @@ function sbHeaders() {
 // 印刷機能と同じ方式。sealnо（400xxx）が受注内で何番目かを求め、
 // productdate_child の並び順に対応させて子ごとのOT番号を割り当てる。
 let shipOtMap = new Map();      // child_id → OT番号
+let shipDestMap = new Map();        // child_id → 出荷場所
+let shipDestByDrawing = new Map();  // 図番 → 出荷場所
 let shipOtColorMap = new Map(); // OT番号 → 0..9 の色インデックス
+
+// in.(...) の値が多いとURLが長すぎて失敗するため、分割して取得する
+async function shipFetchIn(baseUrl, field, values, extra = '') {
+  const out = [];
+  for (let i = 0; i < values.length; i += 150) {
+    const chunk = values.slice(i, i + 150);
+    const sep = baseUrl.includes('?') ? '&' : '?';
+    const rows = await shipFetchAll(`${baseUrl}${sep}${field}=in.(${chunk.join(',')})${extra}`);
+    out.push(...rows);
+  }
+  return out;
+}
 
 async function loadShipOtNumbers(rows) {
   try {
     if (!rows || !rows.length) return;
-    const orderIds = [...new Set(rows.map(r => r.order_id).filter(v => v != null))];
-    if (!orderIds.length) return;
+
+    // ビューに order_id 列が無い場合に備え、child_id から受注IDを解決する
+    let orderIds = [...new Set(rows.map(r => r.order_id).filter(v => v != null))];
+    if (!orderIds.length) {
+      const childIds = [...new Set(rows.map(r => r.child_id).filter(v => v != null))];
+      if (!childIds.length) return;
+      const own = await shipFetchIn(
+        `${SUPABASE_URL}/rest/v1/orders_child?select=id,order_id`, 'id', childIds);
+      orderIds = [...new Set(own.map(c => c.order_id).filter(v => v != null))];
+      if (!orderIds.length) return;
+    }
 
     // 対象受注の全子データ（sealnо順の基準を出すため受注単位で必要）
-    const children = await shipFetchAll(
-      `${SUPABASE_URL}/rest/v1/orders_child?select=id,order_id,sealno&order_id=in.(${orderIds.join(',')})`
-    );
-    const orders = await shipFetchAll(
-      `${SUPABASE_URL}/rest/v1/orders?select=id,drawingno,pd_ot_number&id=in.(${orderIds.join(',')})`
-    );
+    const children = await shipFetchIn(
+      `${SUPABASE_URL}/rest/v1/orders_child?select=id,order_id,sealno`, 'order_id', orderIds);
+    // 注意: pd_ot_number は orders の実カラムではなく画面側で productdate から
+    // 結合している値。REST で select すると 400 になるため、ここでは実カラムのみ取得する
+    // 納入場所は受注(orders)側に入っていることが多く、無ければ製品マスタで補う
+    const orders = await shipFetchIn(
+      `${SUPABASE_URL}/rest/v1/orders?select=id,drawingno,delivery_destination`, 'id', orderIds);
     const orderById = new Map(orders.map(o => [o.id, o]));
 
-    // 図番ごとの productdate_child 一覧を取得
-    const drawingNos = [...new Set(orders.map(o => o.drawingno).filter(Boolean))];
+    // 図番ごとの 親OT番号 と productdate_child 一覧（印刷機能と同じく sort_order 順）
+    const drawingNos = [...new Set(orders.map(o => o.drawingno).filter(Boolean))]
+      .map(d => `"${String(d).replace(/"/g, '')}"`);
     const pdChildMap = new Map();
+    const parentOt = new Map();   // drawingno → productdate.ot_number（子データが無い製品用）
+    shipDestByDrawing.clear();    // 製品マスタ側の変更を毎回反映する
     if (drawingNos.length) {
-      const inList = drawingNos.map(d => `"${String(d).replace(/"/g, '')}"`).join(',');
-      const pds = await shipFetchAll(
-        `${SUPABASE_URL}/rest/v1/productdate?select=designid,customer_drawing_no&customer_drawing_no=in.(${inList})`
-      );
+      const pds = await shipFetchIn(
+        `${SUPABASE_URL}/rest/v1/productdate?select=designid,customer_drawing_no,ot_number,delivery_destination`,
+        'customer_drawing_no', drawingNos);
+      for (const pd of pds) {
+        if (pd.ot_number) parentOt.set(pd.customer_drawing_no, pd.ot_number);
+        // 出荷場所は図番単位で決まるので、受注→図番から引けるようにしておく
+        if (pd.delivery_destination) shipDestByDrawing.set(pd.customer_drawing_no, pd.delivery_destination);
+      }
       const designIds = pds.map(p => p.designid).filter(v => v != null);
       if (designIds.length) {
-        const pcs = await shipFetchAll(
-          `${SUPABASE_URL}/rest/v1/productdate_child?select=parent_designid,ot_number,id&parent_designid=in.(${designIds.join(',')})&order=id.asc`
-        );
+        const pcs = await shipFetchIn(
+          `${SUPABASE_URL}/rest/v1/productdate_child?select=parent_designid,ot_number,sort_order`,
+          'parent_designid', designIds, '&order=sort_order.asc');
         for (const pd of pds) {
           const list = pcs.filter(c => c.parent_designid === pd.designid);
           if (list.length) pdChildMap.set(pd.customer_drawing_no, list);
@@ -2163,7 +2217,10 @@ async function loadShipOtNumbers(rows) {
     for (const c of children) {
       const order = orderById.get(c.order_id);
       if (!order) continue;
-      let ot = order.pd_ot_number || '';
+      // 受注に納入場所があればそれを使い、無ければ製品マスタの出荷場所を使う
+      const dest = order.delivery_destination || shipDestByDrawing.get(order.drawingno);
+      if (dest) shipDestMap.set(c.id, dest);
+      let ot = parentOt.get(order.drawingno) || '';
       const pdc = pdChildMap.get(order.drawingno);
       if (pdc && pdc.length) {
         const b = base.get(c.order_id) ?? parseInt(c.sealno);
@@ -2172,10 +2229,23 @@ async function loadShipOtNumbers(rows) {
       }
       if (ot) shipOtMap.set(c.id, ot);
     }
+    console.log(`[ship] OT番号を${shipOtMap.size}件 / 出荷場所を${shipDestMap.size}件 解決`);
   } catch(e) { console.warn('[ship] OT番号の取得に失敗', e); }
 }
 
 function shipOtOf(childId) { return shipOtMap.get(childId) || ''; }
+function shipDestOf(childId) { return shipDestMap.get(childId) || ''; }
+
+// 納場コードの表示整形。「U」のようなアルファベット記号だけの場合は「U納場」と表示する。
+// 既に「納場」が付いている場合や、工場名など通常の文字列はそのまま返す。
+function shipDestLabel(dest) {
+  const d = String(dest || '').trim();
+  if (!d) return '';
+  if (d.includes('納場')) return d;
+  // 英数字のみの短い記号（U / A1 / BC など）を納場コードとみなす
+  if (/^[A-Za-z0-9]{1,4}$/.test(d)) return d.toUpperCase() + '納場';
+  return d;
+}
 
 // ---- 総重量の集計 ----
 // 1件あたりの重量(kg)。製品マスタの weight_kg を使う（未登録は0扱い）
@@ -2294,31 +2364,49 @@ async function loadShipPool() {
     sel.innerHTML = '<option value="">全取引先</option>' + clients.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
     sel.value = cur;
   }
+  // 納入場所セレクトも更新（OT/納入場所の解決後に呼ぶ必要がある）
+  refreshShipDestOptions();
   shipSelected.clear();
   renderShipPool();
 }
 
 function clearShipPoolFilter() {
-  document.getElementById('ship-pool-search').value = '';
   document.getElementById('ship-pool-client').value = '';
+  const ds = document.getElementById('ship-pool-dest'); if (ds) ds.value = '';
   document.getElementById('ship-pool-date').value = '';
   renderShipPool();
 }
 
 function shipPoolFiltered() {
-  const q = (document.getElementById('ship-pool-search')?.value || '').trim().toLowerCase();
   const cl = document.getElementById('ship-pool-client')?.value || '';
   const dt = document.getElementById('ship-pool-date')?.value || '';
+  const ds = document.getElementById('ship-pool-dest')?.value || '';
   return shipPool.filter(r => {
     if (cl && r.client !== cl) return false;
     if (dt && r.delivery !== dt) return false;
-    if (!q) return true;
-    return (r.sealno||'').toLowerCase().includes(q)
-        || (r.drawingno||'').toLowerCase().includes(q)
-        || (r.productno||'').toLowerCase().includes(q)
-        || (r.product_name||'').toLowerCase().includes(q)
-        || (r.orderno||'').toLowerCase().includes(q);
+    if (ds && shipDestOf(r.child_id) !== ds) return false;
+    return true;
   });
+}
+
+// 取引先・納期・納入場所のいずれかで絞り込んでいるか
+function shipPoolFilterActive() {
+  return !!(document.getElementById('ship-pool-client')?.value
+         || document.getElementById('ship-pool-date')?.value
+         || document.getElementById('ship-pool-dest')?.value);
+}
+
+// 納入場所セレクトの選択肢を、現在の出荷候補から作り直す
+function refreshShipDestOptions() {
+  const sel = document.getElementById('ship-pool-dest');
+  if (!sel) return;
+  const cur = sel.value;
+  const dests = [...new Set(shipPool.map(r => shipDestOf(r.child_id)).filter(Boolean))]
+    .sort((a, b) => shipDestLabel(a).localeCompare(shipDestLabel(b), 'ja'));
+  sel.innerHTML = '<option value="">全納入場所</option>'
+    + dests.map(d => `<option value="${esc(d)}">${esc(shipDestLabel(d))}</option>`).join('');
+  // 以前の選択が残っていれば維持する（固定フィルターとして使えるように）
+  sel.value = dests.includes(cur) ? cur : '';
 }
 
 function esc(s) {
@@ -2331,6 +2419,9 @@ function renderShipPool() {
   if (!list) return;
   const rows = shipPoolFiltered();
   if (cnt) cnt.textContent = rows.length === shipPool.length ? `${rows.length}件` : `${rows.length}件 / 全${shipPool.length}件`;
+  // 取引先・納期で絞り込んでいる間だけ自動シミュレーションボタンを出す
+  const simBtn = document.getElementById('pallet-autosim-btn');
+  if (simBtn) simBtn.style.display = (shipPoolFilterActive() && rows.length) ? '' : 'none';
   if (rows.length === 0) {
     list.innerHTML = '<div class="ship-empty">該当する出荷候補がありません</div>';
   } else {
@@ -2344,11 +2435,83 @@ function renderShipPool() {
         <div class="ship-item-main">
           <div><span class="ship-seal">${esc(r.sealno)}</span>
             <span class="ship-item-meta"> / ${esc(r.productno || '')}</span>
-            ${shipOtOf(r.child_id) ? `<span class="ship-ot">${esc(shipOtOf(r.child_id))}</span>` : ''}</div>
+            ${shipOtOf(r.child_id) ? `<span class="ship-ot">${esc(shipOtOf(r.child_id))}</span>` : ''}
+            ${shipDestOf(r.child_id) ? `<span class="ship-dest" title="納入場所">${esc(shipDestLabel(shipDestOf(r.child_id)))}</span>` : ''}</div>
           <div class="ship-item-sub">${esc(r.product_name || r.drawingno || '')}</div>
           <div class="ship-item-meta">${esc(r.client || '')} ｜ 納期 ${esc(r.delivery || '')}</div>
         </div>
       </div>`).join('');
+  }
+}
+
+// 表示中（フィルター適用後）の出荷候補を「出荷リスト」としてExcel出力する
+function exportShipPoolExcel() {
+  const rows = shipPoolFiltered();
+  if (!rows.length) { alert('出力する出荷候補がありません'); return; }
+  if (typeof XLSX === 'undefined') { alert('Excel出力ライブラリを読み込めていません'); return; }
+
+  const client = document.getElementById('ship-pool-client')?.value || '';
+  const date   = document.getElementById('ship-pool-date')?.value || '';
+
+  // 画面と同じ並び（納期→シールNo）で出力する
+  const sorted = rows.slice().sort((a, b) =>
+    String(a.delivery || '').localeCompare(String(b.delivery || '')) ||
+    String(a.sealno || '').localeCompare(String(b.sealno || '')));
+
+  const header = ['No', '納期', '取引先', '出荷場所', 'シールNo', 'OT番号', '製番', '図番', '品名',
+                  '受注No', '幅(mm)', '奥行(mm)', '高さ(mm)', '重量(kg)'];
+  const body = sorted.map((r, i) => [
+    i + 1,
+    r.delivery || '',
+    r.client || '',
+    shipDestLabel(shipDestOf(r.child_id)) || '',
+    r.sealno || '',
+    shipOtOf(r.child_id) || '',
+    r.productno || '',
+    r.drawingno || '',
+    r.product_name || '',
+    r.orderno || '',
+    r.width_mm  ?? '',
+    r.depth_mm  ?? '',
+    r.height_mm ?? '',
+    (r.weight_kg ?? '') === '' ? '' : Number(r.weight_kg),
+  ]);
+
+  // 見出し（適用中の絞り込み条件を残す）
+  const today = new Date();
+  const stamp = `${today.getFullYear()}/${String(today.getMonth()+1).padStart(2,'0')}/${String(today.getDate()).padStart(2,'0')}`;
+  const cond = [client ? `取引先: ${client}` : '', date ? `納期: ${date}` : '']
+    .filter(Boolean).join('　') || '絞り込みなし（全件）';
+
+  const aoa = [
+    ['出荷リスト'],
+    [`出力日: ${stamp}`, '', `${cond}`, '', `件数: ${sorted.length}件`],
+    [],
+    header,
+    ...body,
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [
+    { wch: 5 }, { wch: 12 }, { wch: 24 }, { wch: 18 }, { wch: 11 }, { wch: 15 }, { wch: 13 },
+    { wch: 16 }, { wch: 34 }, { wch: 14 }, { wch: 9 }, { wch: 9 }, { wch: 9 }, { wch: 10 },
+  ];
+  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: header.length - 1 } }];
+  // 見出し行で固定して、下にスクロールしても項目名が見えるようにする
+  ws['!freeze'] = { xSplit: 0, ySplit: 4 };
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '出荷リスト');
+
+  const fname = ['出荷リスト',
+    date ? date.replace(/-/g, '') : '',
+    client ? client.replace(/[\\/:*?"<>|]/g, '') : '',
+  ].filter(Boolean).join('_') + '.xlsx';
+
+  try {
+    XLSX.writeFile(wb, fname);
+  } catch(e) {
+    alert('Excel出力に失敗しました: ' + e.message);
   }
 }
 
@@ -3031,20 +3194,47 @@ function palletMiniSvg(p) {
   const colorIdx = palletOtColorIndex(p);
   // 表示順に通し番号を振り、枠内の数字と右の一覧を対応させる
   let n = 0;
+  // はみ出しを許容するため、パレット枠より広い描画領域を確保する
+  const items = (p._items || []).filter(i => (i.width_mm && i.depth_mm));
+  const maxX = Math.max(s.width_mm, ...items.map(i => (i.x_mm||0) + ((i.rot ? i.depth_mm : i.width_mm)||0)));
+  const maxY = Math.max(s.depth_mm, ...items.map(i => (i.y_mm||0) + ((i.rot ? i.width_mm : i.depth_mm)||0)));
+  const clipId = `palclip${p.id}`;
+
   const boxes = (p._items || []).map(i => {
     const w = (i.rot ? i.depth_mm : i.width_mm) || 0;
     const d = (i.rot ? i.width_mm : i.depth_mm) || 0;
     if (!w || !d) return '';
     n++;
     const c = SHIP_OT_COLORS[colorIdx.get(shipOtOf(i.child_id) || '(未設定)') || 0];
-    const cx = (i.x_mm + (i.rot ? i.depth_mm : i.width_mm) / 2) * SC;
-    const cy = (i.y_mm + (i.rot ? i.width_mm : i.depth_mm) / 2) * SC;
-    return `<rect x="${i.x_mm*SC}" y="${i.y_mm*SC}" width="${w*SC}" height="${d*SC}"
-      fill="${c.fill}" stroke="${c.stroke}" stroke-width="1"/>
-      <text x="${cx}" y="${cy}" font-size="9" font-weight="700" fill="${c.text}"
+    const x = (i.x_mm||0), y = (i.y_mm||0);
+    const over = (x + w > s.width_mm + 0.01) || (y + d > s.depth_mm + 0.01);
+    const cx = (x + w / 2) * SC, cy = (y + d / 2) * SC;
+    if (!over) {
+      return `<rect x="${x*SC}" y="${y*SC}" width="${w*SC}" height="${d*SC}"
+        fill="${c.fill}" stroke="${c.stroke}" stroke-width="1"/>
+        <text x="${cx}" y="${cy}" font-size="9" font-weight="700" fill="${c.text}"
+          text-anchor="middle" dominant-baseline="central">${n}</text>`;
+    }
+    // はみ出す製品: 全体を赤で描き、パレット枠内に収まる部分だけ通常色を上書きする
+    return `<rect x="${x*SC}" y="${y*SC}" width="${w*SC}" height="${d*SC}"
+        fill="#fca5a5" stroke="#dc2626" stroke-width="1"/>
+      <g clip-path="url(#${clipId})">
+        <rect x="${x*SC}" y="${y*SC}" width="${w*SC}" height="${d*SC}"
+          fill="${c.fill}" stroke="${c.stroke}" stroke-width="1"/>
+      </g>
+      <rect x="${x*SC}" y="${y*SC}" width="${w*SC}" height="${d*SC}"
+        fill="none" stroke="#dc2626" stroke-width="1.2"/>
+      <text x="${cx}" y="${cy}" font-size="9" font-weight="700" fill="#7f1d1d"
         text-anchor="middle" dominant-baseline="central">${n}</text>`;
   }).join('');
-  return `<svg width="${s.width_mm*SC}" height="${s.depth_mm*SC}" viewBox="0 0 ${s.width_mm*SC} ${s.depth_mm*SC}">${boxes}</svg>`;
+
+  return `<svg width="${maxX*SC}" height="${maxY*SC}" viewBox="0 0 ${maxX*SC} ${maxY*SC}">
+    <defs><clipPath id="${clipId}">
+      <rect x="0" y="0" width="${s.width_mm*SC}" height="${s.depth_mm*SC}"/>
+    </clipPath></defs>
+    <rect x="0" y="0" width="${s.width_mm*SC}" height="${s.depth_mm*SC}"
+      fill="none" stroke="#6b5615" stroke-width="1" stroke-dasharray="3 2"/>
+    ${boxes}</svg>`;
 }
 
 // パレット枠の右側に並べる製品一覧（①製品名 / 下に小さくOT番号・シールNo）
@@ -3069,6 +3259,13 @@ function palletSideList(p) {
 function renderPallets() {
   const wrap = document.getElementById('ship-pallet-list');
   if (!wrap) return;
+  // パレットが1枚でもあれば全削除ボタンを出す（便に積載中のものも対象）
+  const clearBtn = document.getElementById('pallet-clearall-btn');
+  if (clearBtn) clearBtn.style.display = shipPallets.length ? '' : 'none';
+  // 便に積んでいないパレットが2枚以上あれば「まとめ直す」を出す
+  const repackBtn = document.getElementById('pallet-repack-btn');
+  if (repackBtn) repackBtn.style.display =
+    shipPallets.filter(p => !p.shipment_id).length >= 2 ? '' : 'none';
   // 便に積んだパレットはトラックカード側に表示されるので、この一覧からは除く
   const freePallets = shipPallets.filter(p => !p.shipment_id);
   if (freePallets.length === 0) {
@@ -3190,11 +3387,230 @@ async function onPalletDrop(ev, palletId, el) {
   } catch(e) { alert('追加に失敗: ' + e.message); }
 }
 
+// ==================== パレット自動シミュレーション ====================
+// フィルター中の出荷候補を 1100×1100 パレットへ自動配置する。
+// ・平積みのみ（二段積みはしない＝psimFindSpotの平面詰めそのまま）
+// ・同じ製品はできるだけ同じパレットへ、同じ向きで並べる
+// ・パレットからはみ出す配置はしない（入らなければ新しいパレットを作る）
+// ・シール番号のない製品は小物想定＝サイズなし扱いで、同製品のいるパレットに同乗させる
+
+const AUTOSIM_PALLET_W = 1100, AUTOSIM_PALLET_D = 1100;
+// パレット端から許容するはみ出し量(mm)。これ以内なら「載る」とみなして詰める
+const PALLET_OVERHANG_MM = 100;
+
+// 配置計画を作る純関数。rows: 出荷候補の行。戻り値: { pallets:[{spatial:[], riders:[]}], groups }
+function planAutoSim(rows) {
+  const sized = [], riders = [];
+  for (const r of rows) {
+    // シール番号なしはサイズなし扱い。寸法未登録も空間配置はできないので同じ扱い
+    if (r.sealno && r.width_mm && r.depth_mm) sized.push(r);
+    else riders.push(r);
+  }
+
+  // 同じ製品（品名＋寸法）でグループ化し、面積の大きい順に配置
+  const groups = new Map();
+  for (const r of sized) {
+    const k = `${r.product_name || r.drawingno || ''}|${r.width_mm}x${r.depth_mm}`;
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(r);
+  }
+  const order = [...groups.entries()].sort((a, b) => {
+    const A = a[1][0], B = b[1][0];
+    return (B.width_mm * B.depth_mm) - (A.width_mm * A.depth_mm) || b[1].length - a[1].length;
+  });
+
+  const pallets = [];   // { spatial:[{row,x,y,rot}], placed:[{x,y,w,d}], rotByGroup:{}, nameSet:Set }
+  const newPallet = () => {
+    const p = { spatial: [], riders: [], placed: [], rotByGroup: {}, nameSet: new Set() };
+    pallets.push(p);
+    return p;
+  };
+
+  // あるパレットに、このグループの残り全件が入るかを試し置きで判定する
+  const fitsAll = (pallet, list, key) => {
+    const ph = pallet.placed.map(b => ({ ...b }));   // 試し置き用のコピー
+    let rot = pallet.rotByGroup[key];
+    const spots = [];
+    for (const r of list) {
+      const item = { w: r.width_mm, d: r.depth_mm, rotatable: r.rotatable !== false };
+      const sp = psimFindSpot(item, ph, AUTOSIM_PALLET_W, AUTOSIM_PALLET_D, rot, PALLET_OVERHANG_MM);
+      if (!sp) return null;
+      ph.push({ x: sp.x, y: sp.y, w: sp.w, d: sp.d });
+      if (rot === undefined) rot = sp.rot;
+      spots.push(sp);
+    }
+    return spots;
+  };
+  const commit = (pallet, list, key, spots) => {
+    list.forEach((r, i) => {
+      const sp = spots[i];
+      pallet.spatial.push({ row: r, x: sp.x, y: sp.y, rot: sp.rot });
+      pallet.placed.push({ x: sp.x, y: sp.y, w: sp.w, d: sp.d });
+      if (!(key in pallet.rotByGroup)) pallet.rotByGroup[key] = sp.rot;
+      pallet.nameSet.add(r.product_name || r.drawingno || '');
+    });
+  };
+
+  for (const [key, list] of order) {
+    let rest = list.slice();
+    while (rest.length) {
+      // 1) 同じ製品が既に載っているパレット → 2) 残り全件が入る既存パレット → 3) 新規
+      let target = pallets.find(p => (key in p.rotByGroup) && fitsAll(p, rest, key));
+      if (!target) target = pallets.find(p => fitsAll(p, rest, key));
+      if (target) {
+        commit(target, rest, key, fitsAll(target, rest, key));
+        break;
+      }
+      // どの既存パレットにも全件は入らない → 新しいパレットに入るだけ詰める
+      const np = newPallet();
+      const placedNow = [];
+      for (const r of rest) {
+        const item = { w: r.width_mm, d: r.depth_mm, rotatable: r.rotatable !== false };
+        const sp = psimFindSpot(item, np.placed, AUTOSIM_PALLET_W, AUTOSIM_PALLET_D, np.rotByGroup[key], PALLET_OVERHANG_MM);
+        if (!sp) continue;
+        np.spatial.push({ row: r, x: sp.x, y: sp.y, rot: sp.rot });
+        np.placed.push({ x: sp.x, y: sp.y, w: sp.w, d: sp.d });
+        if (!(key in np.rotByGroup)) np.rotByGroup[key] = sp.rot;
+        np.nameSet.add(r.product_name || r.drawingno || '');
+        placedNow.push(r);
+      }
+      if (!placedNow.length) {
+        // 空パレットにも1件も置けない＝パレットより大きい製品。
+        // はみ出しを許可し、はみ出す向き（幅超過なら縦、奥行超過なら横）に
+        // 詰められるだけ積み重ねる。1台ずつ別パレットになるのを防ぐ。
+        const r0 = rest[0];
+        // 超過量が少ない向きを選ぶ（回転可能な場合）
+        const over = (w, d) => Math.max(0, w - AUTOSIM_PALLET_W) + Math.max(0, d - AUTOSIM_PALLET_D);
+        const rot = (r0.rotatable !== false) && over(r0.depth_mm, r0.width_mm) < over(r0.width_mm, r0.depth_mm);
+        const bw = rot ? r0.depth_mm : r0.width_mm;
+        const bd = rot ? r0.width_mm : r0.depth_mm;
+        // 幅がはみ出すなら縦方向に、そうでなければ横方向に並べる
+        const stackVertical = bw > AUTOSIM_PALLET_W;
+        let cx = 0, cy = 0;
+        for (const r of rest) {
+          if (stackVertical) {
+            if (cy + bd > AUTOSIM_PALLET_D + PALLET_OVERHANG_MM) break;
+          } else {
+            if (cx + bw > AUTOSIM_PALLET_W + PALLET_OVERHANG_MM) break;
+          }
+          np.spatial.push({ row: r, x: cx, y: cy, rot });
+          np.placed.push({ x: cx, y: cy, w: bw, d: bd });
+          if (!(key in np.rotByGroup)) np.rotByGroup[key] = rot;
+          np.nameSet.add(r.product_name || r.drawingno || '');
+          placedNow.push(r);
+          if (stackVertical) cy += bd; else cx += bw;
+        }
+        // 1台も置けないことは無いはずだが、保険として先頭を原点に置く
+        if (!placedNow.length) {
+          np.spatial.push({ row: r0, x: 0, y: 0, rot: false });
+          np.placed.push({ x: 0, y: 0, w: r0.width_mm, d: r0.depth_mm });
+          if (!(key in np.rotByGroup)) np.rotByGroup[key] = false;
+          np.nameSet.add(r0.product_name || r0.drawingno || '');
+          placedNow.push(r0);
+        }
+      }
+      rest = rest.filter(r => !placedNow.includes(r));
+    }
+  }
+
+  // サイズなし（シール番号なし等）は同じ製品名のいるパレットへ、無ければ件数の少ないパレットへ
+  if (riders.length && !pallets.length) newPallet();
+  for (const r of riders) {
+    const nm = r.product_name || r.drawingno || '';
+    let target = pallets.find(p => p.nameSet.has(nm));
+    if (!target) target = pallets.reduce((a, b) =>
+      (a.spatial.length + a.riders.length) <= (b.spatial.length + b.riders.length) ? a : b);
+    target.riders.push(r);
+    target.nameSet.add(nm);
+  }
+
+  const unplaced = sized.length - pallets.reduce((n, p) => n + p.spatial.length, 0);
+  // パレット枠からはみ出す配置の件数（許容するが件数は伝える）
+  const overflowCount = pallets.reduce((n, p) => n + p.placed.filter(b =>
+    b.x + b.w > AUTOSIM_PALLET_W + 0.01 || b.y + b.d > AUTOSIM_PALLET_D + 0.01).length, 0);
+  return { pallets, sizedCount: sized.length, riderCount: riders.length, unplaced, overflowCount };
+}
+
+// ボタンから呼ばれる本体
+async function autoSimulatePallets() {
+  const rows = shipPoolFiltered();
+  if (!rows.length) { alert('対象の出荷候補がありません'); return; }
+
+  const size = palletSizes.find(sz => sz.width_mm === AUTOSIM_PALLET_W && sz.depth_mm === AUTOSIM_PALLET_D);
+  if (!size) { alert('パレットサイズマスタに 1100×1100 が見つかりません'); return; }
+
+  const plan = planAutoSim(rows);
+  if (!plan.pallets.length) { alert('配置できる製品がありません'); return; }
+
+  const lines = [
+    `自動シミュレーションさせてよろしいですか？`,
+    ``,
+    `対象: フィルター中の出荷候補 ${rows.length}件`,
+    `作成: 1100×1100 パレット ${plan.pallets.length}枚（平積み・二段積みなし）`,
+    `・寸法あり ${plan.sizedCount - plan.unplaced}件を自動配置`,
+  ];
+  if (plan.riderCount) lines.push(`・サイズなし（シール番号なし等） ${plan.riderCount}件を同乗`);
+  if (plan.overflowCount) lines.push(`※ ${plan.overflowCount}件はパレットからはみ出します（積付図で赤表示）`);
+  if (!confirm(lines.join('\n'))) return;
+
+  const btn = document.getElementById('pallet-autosim-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '実行中...'; }
+  try {
+    // パレットをまとめて作成し、採番されたIDを受け取る
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/pallets`, {
+      method: 'POST',
+      headers: { ...sbHeaders(), 'Prefer': 'return=representation' },
+      body: JSON.stringify(plan.pallets.map(() => ({ size_id: size.id })))
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const created = await res.json();
+    if (created.length !== plan.pallets.length) throw new Error('パレット作成数が一致しません');
+
+    // 積載する製品を一括登録（座標付き。サイズなしは座標0のまま）
+    const items = [];
+    plan.pallets.forEach((p, i) => {
+      const pid = created[i].id;
+      p.spatial.forEach(sp => items.push({
+        pallet_id: pid, child_id: sp.row.child_id,
+        x_mm: Math.round(sp.x), y_mm: Math.round(sp.y), rot: !!sp.rot
+      }));
+      // PostgRESTの一括INSERTは全行のキー構成が同じである必要があるため、
+      // 同乗品（サイズなし）にも同じキーを持たせる（座標は0、回転なし）
+      p.riders.forEach(r => items.push({
+        pallet_id: pid, child_id: r.child_id, x_mm: 0, y_mm: 0, rot: false
+      }));
+    });
+    if (items.length) {
+      const res2 = await fetch(`${SUPABASE_URL}/rest/v1/pallet_items`, {
+        method: 'POST', headers: { ...sbHeaders(), 'Prefer': 'return=minimal' },
+        body: JSON.stringify(items)
+      });
+      if (!res2.ok) {
+        const t = await res2.text();
+        if (t.includes('pallet_items_child_unique'))
+          throw new Error('既に他のパレットに載っている製品が含まれています');
+        throw new Error(t);
+      }
+    }
+
+    shipSelected.clear();
+    await Promise.all([loadShipPool(), loadPallets()]);
+    _pdfedToast ? _pdfedToast(`✅ パレット${created.length}枚に${items.length}件を自動配置しました`, '#15803d')
+                : alert(`パレット${created.length}枚に${items.length}件を自動配置しました`);
+  } catch(e) {
+    alert('自動シミュレーションに失敗しました: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '⚙ 自動シミュレーション'; }
+  }
+}
+
 // ---- 空き領域を探して1件を配置する共通ロジック ----
 // placed: 既に位置が決まっている {x,y,w,d} の配列（実寸・回転考慮済み）
 // 同じ製品は同じ向きに揃えたいので preferRot（既に置かれた同製品の向き）を最優先で試す
-function psimFindSpot(item, placed, PW, PD, preferRot) {
+function psimFindSpot(item, placed, PW, PD, preferRot, overhang) {
   const GRID = 10;   // 10mm刻みで探索（ドラッグのスナップと同じ）
+  const OH = overhang === undefined ? 0 : overhang;
+  const LW = PW + OH, LD = PD + OH;   // はみ出しを含めた実効的な配置可能範囲
   const cands = [];
   if (item.rotatable) {
     if (preferRot === true)       cands.push([item.d, item.w, true], [item.w, item.d, false]);
@@ -3209,31 +3625,39 @@ function psimFindSpot(item, placed, PW, PD, preferRot) {
 
   // 候補座標＝「0」＋既存ブロックの各辺（左右・上下とも）
   const uniqSorted = arr => [...new Set(arr)].sort((a, b) => a - b);
-  const xs = uniqSorted([0, ...placed.flatMap(b => [b.x, b.x + b.w])].filter(v => v >= 0 && v <= PW));
-  const ys = uniqSorted([0, ...placed.flatMap(b => [b.y, b.y + b.d])].filter(v => v >= 0 && v <= PD));
+  const xs = uniqSorted([0, ...placed.flatMap(b => [b.x, b.x + b.w])].filter(v => v >= 0 && v <= LW));
+  const ys = uniqSorted([0, ...placed.flatMap(b => [b.y, b.y + b.d])].filter(v => v >= 0 && v <= LD));
 
   // 上→左の順に詰める（同じ製品が横一列に並びやすい）
-  const scan = (w, d, rot) => {
+  const scan = (w, d, rot, limW, limD) => {
     for (const y of ys) {
-      if (y + d > PD) continue;
+      if (y + d > limD) continue;
       for (const x of xs) {
-        if (x + w > PW) continue;
+        if (x + w > limW) continue;
         if (!hits(x, y, w, d)) return { x, y, rot, w, d };
       }
     }
     // 角で見つからない場合は格子状に総当たりで探す
-    for (let y = 0; y + d <= PD; y += GRID) {
-      for (let x = 0; x + w <= PW; x += GRID) {
+    for (let y = 0; y + d <= limD; y += GRID) {
+      for (let x = 0; x + w <= limW; x += GRID) {
         if (!hits(x, y, w, d)) return { x, y, rot, w, d };
       }
     }
     return null;
   };
 
+  // まずパレット内にきっちり収まる置き方を探し、無ければ許容はみ出し内で探す
   for (const [w, d, rot] of cands) {
     if (w > PW || d > PD) continue;
-    const r = scan(w, d, rot);
+    const r = scan(w, d, rot, PW, PD);
     if (r) return r;
+  }
+  if (OH > 0) {
+    for (const [w, d, rot] of cands) {
+      if (w > LW || d > LD) continue;
+      const r = scan(w, d, rot, LW, LD);
+      if (r) return r;
+    }
   }
   return null;
 }
@@ -3347,7 +3771,8 @@ function psimBad(i) {
   const s = palletSize(psimPallet);
   const a = psimItems[i];
   if (!a.w || !a.d) return false;
-  if (a.x < 0 || a.y < 0 || a.x + psimW(a) > s.width_mm || a.y + psimD(a) > s.depth_mm) return true;
+  // パレットからのはみ出しは許容（赤表示で知らせる）。マイナス方向のみエラー扱い
+  if (a.x < 0 || a.y < 0) return true;
   for (let j = 0; j < psimItems.length; j++) {
     if (i === j) continue;
     const b = psimItems[j];
@@ -3370,15 +3795,33 @@ function psimRender() {
   const boxes = psimItems.map((it, i) => {
     if (!it.w || !it.d) return '';
     const bad = psimBad(i);
+    // パレット枠からはみ出す製品は、枠外部分だけ赤くする（枠内はクリップで通常色）
+    const over = (it.x + psimW(it) > s.width_mm + 0.01) || (it.y + psimD(it) > s.depth_mm + 0.01);
+    const bw = psimW(it)*SC, bd = psimD(it)*SC;
+    const body = over
+      ? `<rect width="${bw}" height="${bd}" fill="#fca5a5" stroke="#dc2626" stroke-width="2" rx="2"/>
+         <g clip-path="url(#psimclip)" transform="translate(${-it.x*SC},${-it.y*SC})">
+           <rect x="${it.x*SC}" y="${it.y*SC}" width="${bw}" height="${bd}"
+             fill="#bfdbfe" stroke="#1d4ed8" stroke-width="2" rx="2"/>
+         </g>
+         <rect width="${bw}" height="${bd}" fill="none" stroke="#dc2626" stroke-width="2" rx="2"/>`
+      : `<rect width="${bw}" height="${bd}" fill="#bfdbfe" stroke="#1d4ed8" stroke-width="2" rx="2"/>`;
     return `<g class="psim-box ${bad?'bad':''}" data-i="${i}" transform="translate(${it.x*SC},${it.y*SC})">
-      <rect width="${psimW(it)*SC}" height="${psimD(it)*SC}" fill="#bfdbfe" stroke="#1d4ed8" stroke-width="2" rx="2"/>
-      <text x="4" y="13" font-size="10" font-family="monospace" fill="#1e3a5f">${esc(it.sealno||'')}</text>
-      <text x="4" y="25" font-size="9" fill="#475569">${psimW(it)}×${psimD(it)}${it.rot?' ↻':''}</text>
+      ${body}
+      <text x="4" y="13" font-size="10" font-family="monospace" fill="${over?'#7f1d1d':'#1e3a5f'}">${esc(it.sealno||'')}</text>
+      <text x="4" y="25" font-size="9" fill="${over?'#991b1b':'#475569'}">${psimW(it)}×${psimD(it)}${it.rot?' ↻':''}</text>
     </g>`;
   }).join('');
+
+  // はみ出した分まで見えるようにキャンバスを広げる
+  const VW = Math.max(W, ...psimItems.filter(it => it.w && it.d).map(it => (it.x + psimW(it)) * SC));
+  const VD = Math.max(D, ...psimItems.filter(it => it.w && it.d).map(it => (it.y + psimD(it)) * SC));
   document.getElementById('psim-canvas-wrap').innerHTML =
-    `<svg id="psim-svg" width="${W}" height="${D}" viewBox="0 0 ${W} ${D}"
+    `<svg id="psim-svg" width="${VW}" height="${VD}" viewBox="0 0 ${VW} ${VD}"
         style="border:2px solid #92400e;background:#fffbeb;touch-action:none;">
+       <defs><clipPath id="psimclip"><rect x="0" y="0" width="${W}" height="${D}"/></clipPath></defs>
+       <rect x="0" y="0" width="${W}" height="${D}" fill="#fff" stroke="#92400e"
+         stroke-width="1.5" stroke-dasharray="5 3"/>
        ${grid.join('')}${boxes}
      </svg>`;
   psimBindDrag();
@@ -3387,9 +3830,13 @@ function psimRender() {
   const s2 = palletSize(psimPallet);
   const area = psimItems.filter(it => it.w && it.d).reduce((a,it) => a + psimW(it)*psimD(it), 0);
   const bad = psimItems.filter((_,i) => psimBad(i)).length;
+  const outCnt = psimItems.filter(it => it.w && it.d &&
+    (it.x + psimW(it) > s2.width_mm + 0.01 || it.y + psimD(it) > s2.depth_mm + 0.01)).length;
   document.getElementById('psim-stat').innerHTML =
     `占有率 <b>${(area/(s2.width_mm*s2.depth_mm)*100).toFixed(1)}%</b>` +
-    (bad ? ` ／ <span style="color:#dc2626;font-weight:700;">問題 ${bad}件</span>` : ' ／ 問題なし');
+    (outCnt ? ` ／ <span style="color:#dc2626;font-weight:700;">はみ出し ${outCnt}件</span>` : '') +
+    (bad ? ` ／ <span style="color:#dc2626;font-weight:700;">重なり ${bad}件</span>`
+         : (outCnt ? '' : ' ／ 問題なし'));
 
   // 右のリスト
   document.getElementById('psim-items').innerHTML = psimItems.map((it,i) => `
@@ -3509,6 +3956,143 @@ async function savePalletLayout() {
     await loadPallets();
     closePalletSim();
   } catch(e) { err.textContent = '保存に失敗: ' + e.message; }
+}
+
+// 既存パレット（便に積んでいないもの）の製品を全部集め直し、
+// 同じ製品がまとまるように積み直す。1台積みのパレットが複数ある状態を解消する。
+async function repackAllPallets() {
+  const targets = shipPallets.filter(p => !p.shipment_id);
+  if (targets.length < 2) { alert('まとめ直す対象のパレットがありません'); return; }
+
+  // 積まれている製品を1つの配列に集める（v_shippable_items由来なので寸法も持っている）
+  const rows = targets.flatMap(p => p._items || []);
+  if (!rows.length) { alert('パレットに製品が載っていません'); return; }
+
+  const size = palletSizes.find(sz => sz.width_mm === AUTOSIM_PALLET_W && sz.depth_mm === AUTOSIM_PALLET_D);
+  if (!size) { alert('パレットサイズマスタに 1100×1100 が見つかりません'); return; }
+
+  const plan = planAutoSim(rows);
+  if (!plan.pallets.length) { alert('配置できる製品がありません'); return; }
+
+  const before = targets.length, after = plan.pallets.length;
+  if (after >= before) {
+    if (!confirm(`まとめ直しても枚数は減りません（${before}枚 → ${after}枚）。\nそれでも積み直しますか？`)) return;
+  } else {
+    const lines = [
+      'パレットをまとめ直してよろしいですか？',
+      '',
+      `・対象パレット ${before}枚（載っている ${rows.length}件）`,
+      `・まとめ直すと ${after}枚になります（${before - after}枚削減）`,
+      '',
+      '※ 便に積載中のパレットは対象外です'
+    ];
+    if (plan.overflowCount) lines.push(`※ ${plan.overflowCount}件はパレットからはみ出します（赤表示）`);
+    if (!confirm(lines.join('\n'))) return;
+  }
+
+  const btn = document.getElementById('pallet-repack-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '実行中...'; }
+  try {
+    if (typeof psimPallet !== 'undefined' && psimPallet) closePalletSim();
+
+    // 1) 対象パレットと積載データを削除（製品は一旦出荷候補に戻る）
+    const oldIds = targets.map(p => p.id);
+    for (let i = 0; i < oldIds.length; i += 100) {
+      const chunk = oldIds.slice(i, i + 100);
+      const r1 = await fetch(`${SUPABASE_URL}/rest/v1/pallet_items?pallet_id=in.(${chunk.join(',')})`,
+        { method: 'DELETE', headers: sbHeaders() });
+      if (!r1.ok) throw new Error('積載データの削除に失敗: ' + await r1.text());
+      const r2 = await fetch(`${SUPABASE_URL}/rest/v1/pallets?id=in.(${chunk.join(',')})`,
+        { method: 'DELETE', headers: sbHeaders() });
+      if (!r2.ok) throw new Error('パレットの削除に失敗: ' + await r2.text());
+    }
+
+    // 2) 新しいパレットを作成
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/pallets`, {
+      method: 'POST',
+      headers: { ...sbHeaders(), 'Prefer': 'return=representation' },
+      body: JSON.stringify(plan.pallets.map(() => ({ size_id: size.id })))
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const created = await res.json();
+    if (created.length !== plan.pallets.length) throw new Error('パレット作成数が一致しません');
+
+    // 3) 製品を積み直す（全行のキー構成を揃える）
+    const items = [];
+    plan.pallets.forEach((p, i) => {
+      const pid = created[i].id;
+      p.spatial.forEach(sp => items.push({
+        pallet_id: pid, child_id: sp.row.child_id,
+        x_mm: Math.round(sp.x), y_mm: Math.round(sp.y), rot: !!sp.rot
+      }));
+      p.riders.forEach(r => items.push({
+        pallet_id: pid, child_id: r.child_id, x_mm: 0, y_mm: 0, rot: false
+      }));
+    });
+    if (items.length) {
+      const res2 = await fetch(`${SUPABASE_URL}/rest/v1/pallet_items`, {
+        method: 'POST', headers: { ...sbHeaders(), 'Prefer': 'return=minimal' },
+        body: JSON.stringify(items)
+      });
+      if (!res2.ok) throw new Error(await res2.text());
+    }
+
+    shipSelected.clear();
+    await Promise.all([loadShipPool(), loadPallets()]);
+    await loadShipments();
+    alert(`パレットをまとめ直しました。\n${before}枚 → ${created.length}枚（${items.length}件を再配置）`);
+  } catch(e) {
+    alert('まとめ直しに失敗しました: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '⟳ まとめ直す'; }
+  }
+}
+
+// パレットを一括削除し、載っていた製品を出荷候補へ戻す
+async function deleteAllPallets() {
+  if (!shipPallets.length) { alert('削除するパレットがありません'); return; }
+  const total   = shipPallets.length;
+  const onShip  = shipPallets.filter(p => p.shipment_id).length;
+  const itemCnt = shipPallets.reduce((n, p) => n + (p._items || []).length, 0);
+
+  const msg = [
+    'パレットをすべて削除してよろしいですか？',
+    '',
+    `・パレット ${total}枚を削除` + (onShip ? `（うち ${onShip}枚は便に積載中）` : ''),
+    `・載っている ${itemCnt}件は出荷候補に戻ります`,
+    '',
+    'この操作は元に戻せません。'
+  ].join('\n');
+  if (!confirm(msg)) return;
+
+  const btn = document.getElementById('pallet-clearall-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '削除中...'; }
+  try {
+    // 積み付けシミュレーターを開いていたら閉じる（削除済みを参照しないため）
+    if (typeof psimPallet !== 'undefined' && psimPallet) closePalletSim();
+
+    // pallet_items は pallets の削除に連動して消える想定だが、
+    // 環境によっては残るため先に明示的に削除しておく
+    const ids = shipPallets.map(p => p.id);
+    for (let i = 0; i < ids.length; i += 100) {
+      const chunk = ids.slice(i, i + 100);
+      const r1 = await fetch(`${SUPABASE_URL}/rest/v1/pallet_items?pallet_id=in.(${chunk.join(',')})`,
+        { method: 'DELETE', headers: sbHeaders() });
+      if (!r1.ok) throw new Error('積載データの削除に失敗: ' + await r1.text());
+      const r2 = await fetch(`${SUPABASE_URL}/rest/v1/pallets?id=in.(${chunk.join(',')})`,
+        { method: 'DELETE', headers: sbHeaders() });
+      if (!r2.ok) throw new Error('パレットの削除に失敗: ' + await r2.text());
+    }
+
+    shipSelected.clear();
+    await Promise.all([loadShipPool(), loadPallets()]);
+    await loadShipments();
+    alert(`パレット${total}枚を削除し、${itemCnt}件を出荷候補に戻しました。`);
+  } catch(e) {
+    alert('一括削除に失敗しました: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '全削除'; }
+  }
 }
 
 async function deletePallet() {
