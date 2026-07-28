@@ -280,8 +280,8 @@
   /* フォークの差込口（上下の桁） */
   .pallet-fork { position:absolute; left:0; right:0; height:5px; background:#6b5615; opacity:.7; }
   .pallet-fork.l { top:0; } .pallet-fork.r { bottom:0; }
-  .pallet-mini { display:flex; justify-content:center; }
-  .pallet-mini svg { display:block; background:rgba(255,255,255,.92); border:1px solid #6b5615; }
+  .pallet-mini { display:flex; justify-content:center; align-items:center; }
+  .pallet-mini svg { display:block; overflow:visible; }
   .pallet-side { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; max-height:160px; overflow-y:auto; }
   .pallet-side-row { background:#fff; border:1px solid #d1d5db; border-radius:5px; padding:3px 6px; }
   .pallet-side-name { font-size:11px; font-weight:700; color:#111827; display:flex; align-items:center; gap:4px;
@@ -296,7 +296,13 @@
   .pallet-card.drag-over { border-color:#1d4ed8; background:#eff6ff; box-shadow:0 0 0 3px rgba(29,78,216,.15); }
   .pallet-card.drag-over .pallet-deck { border-color:#1d4ed8;
     background:repeating-linear-gradient(90deg,#dbeafe 0 13px,#bfdbfe 13px 15px); }
-  .ship-card-head { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:12px 14px; border-bottom:1px solid #e5e7eb; flex-shrink:0; }
+  .ship-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; padding:12px 14px; border-bottom:1px solid #e5e7eb; flex-shrink:0; flex-wrap:wrap; }
+  .ship-head-titlewrap { display:flex; flex-direction:column; align-items:flex-start; gap:6px; min-width:0; }
+  .pallet-totals { display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+  .pallet-total-chip { display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:700;
+    padding:2px 9px; border-radius:20px; background:#eef2ff; color:#3730a3; border:1px solid #c7d2fe;
+    white-space:nowrap; }
+  .pallet-total-chip.wt { background:#ecfdf5; color:#065f46; border-color:#a7f3d0; }
   .ship-card-head h3 { margin:0; font-size:14px; font-weight:700; color:#1e3a5f; display:flex; align-items:center; gap:7px; }
   .ship-card-head h3 svg { width:16px; height:16px; }
   .ship-count { font-size:12px; color:#6b7280; font-weight:600; }
@@ -393,13 +399,19 @@
     margin:0 26px 10px; background:#a8a8a8; border-radius:3px;
     box-shadow:inset 0 0 0 7px #a8a8a8, 0 2px 5px rgba(0,0,0,.28); }
   .ship-frame-foot { border-top:2px solid #4b5563; background:#4b5563; padding:6px 9px 7px; flex-shrink:0;
-    display:grid; grid-template-columns:1fr auto; grid-template-areas:'wt wt' 'info act'; gap:5px 6px; align-items:center; }
+    display:grid; grid-template-columns:1fr auto; grid-template-areas:'auto auto' 'wt wt' 'info act'; gap:5px 6px; align-items:center; }
   /* 総重量は独立した行に置いて大きく見せる */
   .foot-weight { grid-area:wt; display:flex; align-items:center; gap:7px;
     background:rgba(0,0,0,.22); border-radius:6px; padding:3px 8px; }
   .ship-frame-foot .ship-chip.gray { grid-area:info; justify-self:start; }
   .ship-frame-actions { grid-area:act; }
   .ship-frame-actions { display:flex; gap:4px; }
+  /* 荷台への自動配置ボタン（フッター最上段に横いっぱい） */
+  .ship-autoload { grid-area:auto; display:flex; }
+  .ship-autoload .btn-autoload { flex:1; padding:5px 8px; font-size:11.5px; font-weight:700;
+    background:#2563eb; color:#fff; border:1px solid #1d4ed8; border-radius:6px; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center; gap:4px; }
+  .ship-autoload .btn-autoload:hover { background:#1d4ed8; }
   .ship-row { position:relative; background:#f3f4f6; border-radius:7px; padding:8px 9px; font-size:11px; flex-shrink:0; }
   .ship-row .seal { font-family:monospace; font-weight:700; color:#1d4ed8; font-size:11.5px; }
   .ship-row .nm { color:#374151; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -424,25 +436,59 @@
   .mform-row .req { color:#dc2626; }
   .mform-error { color:#dc2626; font-size:11px; margin-top:10px; min-height:14px; }
   /* パレット積み付けシミュレーター */
-  #pallet-sim-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:300; align-items:center; justify-content:center; padding:20px; }
+  #pallet-sim-overlay { display:none; position:fixed; inset:0; background:rgba(30,20,5,0.55); backdrop-filter:blur(2px); z-index:300; align-items:center; justify-content:center; padding:20px; }
   #pallet-sim-overlay.open { display:flex; }
-  #pallet-sim-overlay .modal { background:#fff; border-radius:14px; width:100%; box-shadow:0 24px 80px rgba(0,0,0,0.25); overflow:hidden; }
-  #pallet-sim-overlay .modal-head { background:linear-gradient(135deg,#b45309,#92400e); padding:14px 18px; display:flex; align-items:center; justify-content:space-between; }
-  #pallet-sim-overlay .modal-head h3 { margin:0; color:#fff; font-size:15px; font-weight:700; }
-  #pallet-sim-overlay .modal-close { background:rgba(255,255,255,0.2); border:none; border-radius:6px; width:28px; height:28px; color:#fff; font-size:18px; cursor:pointer; line-height:1; }
-  #pallet-sim-overlay .modal-body { padding:16px; max-height:calc(100vh - 190px); overflow-y:auto; }
-  #pallet-sim-overlay .modal-foot { padding:12px 18px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:8px; background:#f9fafb; }
-  .psim-wrap { display:grid; grid-template-columns:1fr 260px; gap:14px; }
-  .psim-toolbar { display:flex; gap:6px; align-items:center; margin-bottom:8px; }
-  .psim-stat { font-size:11px; color:#6b7280; margin-left:auto; }
-  .psim-hint { font-size:10.5px; color:#9ca3af; margin-top:8px; }
-  .psim-side-title { font-size:11px; font-weight:700; color:#374151; margin-bottom:6px; }
-  .psim-items { display:flex; flex-direction:column; gap:5px; max-height:430px; overflow-y:auto; }
-  .psim-item { border:1px solid #e5e7eb; border-radius:6px; padding:6px 8px; font-size:10.5px; }
-  .psim-item.err { border-color:#fecaca; background:#fef2f2; }
-  .psim-item .s { font-family:monospace; font-weight:700; color:#1d4ed8; font-size:11px; }
-  .psim-item .d { color:#6b7280; }
+  #pallet-sim-overlay .modal { background:#fff; border-radius:16px; width:100%; box-shadow:0 24px 80px rgba(0,0,0,0.35); overflow:hidden; }
+  #pallet-sim-overlay .modal-head { background:linear-gradient(135deg,#c2790b,#8a5a08); padding:15px 20px; display:flex; align-items:center; justify-content:space-between; }
+  #pallet-sim-overlay .modal-head h3 { margin:0; color:#fff; font-size:15.5px; font-weight:700; letter-spacing:.02em; text-shadow:0 1px 2px rgba(0,0,0,.2); }
+  #pallet-sim-overlay .modal-close { background:rgba(255,255,255,0.18); border:none; border-radius:8px; width:30px; height:30px; color:#fff; font-size:19px; cursor:pointer; line-height:1; transition:background .12s; }
+  #pallet-sim-overlay .modal-close:hover { background:rgba(255,255,255,0.32); }
+  #pallet-sim-overlay .modal-body { padding:18px; max-height:calc(100vh - 190px); overflow-y:auto; background:#faf7f2; }
+  #pallet-sim-overlay .modal-foot { padding:12px 18px; border-top:1px solid #ece7df; display:flex; justify-content:flex-end; gap:8px; background:#f4efe7; }
+  .psim-wrap { display:grid; grid-template-columns:1fr 270px; gap:16px; }
+  /* ツールバー */
+  .psim-toolbar { display:flex; gap:8px; align-items:center; margin-bottom:12px; }
+  .psim-tool-btn { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700;
+    padding:7px 13px; border-radius:9px; cursor:pointer; border:1px solid #d8cfc0; background:#fff; color:#6b5615;
+    transition:all .12s; box-shadow:0 1px 2px rgba(0,0,0,.05); }
+  .psim-tool-btn svg { width:15px; height:15px; }
+  .psim-tool-btn:hover { border-color:#c2790b; background:#fffaf0; }
+  .psim-tool-btn.primary { background:linear-gradient(135deg,#c2790b,#a5670a); color:#fff; border-color:#8a5a08; }
+  .psim-tool-btn.primary:hover { background:linear-gradient(135deg,#a5670a,#8a5a08); }
+  /* キャンバスの台座 */
+  .psim-stage { display:flex; justify-content:center; align-items:flex-start; padding:22px 18px 24px;
+    background:radial-gradient(ellipse at 50% 30%,#fffdf8,#f0e9dc); border:1px solid #e5dccb; border-radius:14px;
+    box-shadow:inset 0 2px 14px rgba(120,90,20,.10); overflow:auto; }
+  #psim-canvas-wrap { filter:drop-shadow(0 6px 14px rgba(80,55,10,.22)); }
+  /* 占有率メトリクス */
+  .psim-metrics { margin-top:14px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    background:#fff; border:1px solid #ece7df; border-radius:11px; padding:11px 14px; }
+  .psim-occ { display:flex; align-items:center; gap:9px; flex:1; min-width:180px; }
+  .psim-occ-label { font-size:11px; font-weight:700; color:#6b5615; white-space:nowrap; }
+  .psim-occ-bar { position:relative; flex:1; height:9px; background:#efe9df; border-radius:6px; overflow:hidden; min-width:90px; }
+  .psim-occ-fill { position:absolute; inset:0 auto 0 0; border-radius:6px; background:linear-gradient(90deg,#d99a1c,#c2790b); transition:width .3s ease; }
+  .psim-occ-val { font-size:13px; font-weight:800; color:#8a5a08; font-variant-numeric:tabular-nums; min-width:44px; text-align:right; }
+  .psim-badge { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; white-space:nowrap; }
+  .psim-badge.ok { background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; }
+  .psim-badge.err { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
+  /* ヒント */
+  .psim-hint { display:flex; align-items:center; gap:6px; font-size:11px; color:#9a8c72; margin-top:11px; line-height:1.5; }
+  .psim-hint svg { width:14px; height:14px; flex-shrink:0; color:#c2790b; }
+  .psim-hint-red { color:#dc2626; font-weight:700; }
+  /* 右: 製品リスト */
+  .psim-side-title { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:#6b5615; margin-bottom:9px; padding-bottom:8px; border-bottom:2px solid #ece7df; }
+  .psim-side-title svg { width:15px; height:15px; }
+  .psim-items { display:flex; flex-direction:column; gap:7px; max-height:460px; overflow-y:auto; padding-right:2px; }
+  .psim-item { position:relative; border:1px solid #e8e2d8; border-left-width:4px; border-radius:9px; padding:8px 10px; font-size:11px; background:#fff; transition:box-shadow .12s; box-shadow:0 1px 2px rgba(0,0,0,.03); }
+  .psim-item:hover { box-shadow:0 2px 8px rgba(120,90,20,.12); }
+  .psim-item.err { border-color:#fecaca; border-left-color:#dc2626 !important; background:#fff8f8; }
+  .psim-item-top { display:flex; align-items:center; gap:6px; margin-bottom:3px; }
+  .psim-item .s { font-family:ui-monospace,monospace; font-weight:800; color:#1d4ed8; font-size:11.5px; }
+  .psim-item .nm { font-size:11.5px; font-weight:700; color:#1f2937; margin-bottom:2px; line-height:1.35; }
+  .psim-item .d { color:#8a7d68; font-size:10.5px; }
   .psim-item .warn { color:#dc2626; font-weight:700; }
+  .psim-item-rm { position:absolute; top:6px; right:6px; border:none; background:#f3f0ea; color:#9a8c72; width:20px; height:20px; border-radius:6px; cursor:pointer; font-size:13px; line-height:1; transition:all .12s; }
+  .psim-item-rm:hover { background:#fee2e2; color:#dc2626; }
   .psim-box { cursor:move; }
   .psim-box.bad rect { stroke:#dc2626 !important; stroke-width:3 !important; fill:#fee2e2 !important; }
   .sf-steps { display:flex; align-items:center; gap:4px; margin-bottom:16px; flex-wrap:wrap; }
@@ -1424,11 +1470,17 @@
     <!-- 中央: パレット -->
     <div class="ship-pallets-card">
       <div class="ship-card-head">
-        <h3>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
-          パレット
-        </h3>
-        <div style="display:flex;gap:6px;align-items:center;">
+        <div class="ship-head-titlewrap">
+          <h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+            パレット
+          </h3>
+          <div class="pallet-totals" id="pallet-totals" style="display:none;">
+            <span class="pallet-total-chip" id="pallet-total-count" title="フレーム内のパレット総数"></span>
+            <span class="pallet-total-chip wt" id="pallet-total-weight" title="フレーム内パレットの製品合計重量"></span>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;margin-left:auto;">
           <button class="btn-primary-sm" id="pallet-autosim-btn" onclick="autoSimulatePallets()"
                   style="display:none;background:#15803d;border-color:#15803d;"
                   title="フィルター中の出荷候補を1100×1100パレットへ自動配置します">⚙ 自動シミュレーション</button>
@@ -1467,7 +1519,7 @@
 
 <!-- パレット積み付けシミュレーター -->
 <div class="overlay" id="pallet-sim-overlay">
-  <div class="modal" style="max-width:920px;">
+  <div class="modal psim-modal" style="max-width:960px;">
     <div class="modal-head">
       <h3 id="pallet-sim-title">パレット積み付け</h3>
       <button class="modal-close" onclick="closePalletSim()">&times;</button>
@@ -1476,15 +1528,29 @@
       <div class="psim-wrap">
         <div class="psim-left">
           <div class="psim-toolbar">
-            <button class="btn-primary-sm" onclick="palletAutoPack()">自動配置</button>
-            <button class="btn-sm" onclick="palletClearPos()">配置クリア</button>
-            <span class="psim-stat" id="psim-stat"></span>
+            <button class="psim-tool-btn primary" onclick="palletAutoPack()" title="同じ製品をまとめて自動で並べます">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
+              自動配置
+            </button>
+            <button class="psim-tool-btn" onclick="palletClearPos()" title="すべての製品を初期位置へ戻します">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.5 2.8L3 8"/><path d="M3 3v5h5"/></svg>
+              配置クリア
+            </button>
           </div>
-          <div id="psim-canvas-wrap"></div>
-          <div class="psim-hint">四角をドラッグして移動／ダブルクリックで90°回転（回転可の製品のみ）。赤枠は はみ出し・重なりです。</div>
+          <div class="psim-stage">
+            <div id="psim-canvas-wrap"></div>
+          </div>
+          <div class="psim-metrics" id="psim-stat"></div>
+          <div class="psim-hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            四角をドラッグして移動／ダブルクリックで90°回転（回転可の製品のみ）。<span class="psim-hint-red">赤枠は はみ出し・重なり</span>です。
+          </div>
         </div>
         <div class="psim-right">
-          <div class="psim-side-title">このパレットの製品</div>
+          <div class="psim-side-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v4H3zM3 10h18v11H3z"/></svg>
+            このパレットの製品
+          </div>
           <div class="psim-items" id="psim-items"></div>
         </div>
       </div>
@@ -2617,6 +2683,73 @@ async function unloadPallet(palletId) {
   } catch(e) { alert('外すのに失敗: ' + e.message); }
 }
 
+// トラック（便）へパレットを自動配置する。
+// パレットフレーム内の未割当パレット＋この便に既に載っているパレットをまとめて荷台に詰め、
+// 載る分だけこの便へ割り当てる。載り切らなかったパレットはフレーム内にそのまま残す。
+async function autoLoadShipment(shipmentId) {
+  const s = shipments.find(x => x.id === shipmentId);
+  if (!s) return;
+  const sp = truckSpec(s.truck);
+  if (!sp) { alert('この便はトラック区分が未設定のため自動配置できません。便を編集してトラックを設定してください。'); return; }
+
+  // 対象: この便に既に載っているパレット＋どの便にも載っていないパレット
+  const onThis = shipPallets.filter(p => p.shipment_id === shipmentId);
+  const free   = shipPallets.filter(p => !p.shipment_id);
+  const candidates = [...onThis, ...free];
+  if (!candidates.length) { alert('配置できるパレットがありません。先にパレットを作成してください。'); return; }
+
+  const lay = truckBedLayout(s, candidates);
+  if (!lay) { alert('荷台情報を取得できませんでした。'); return; }
+
+  const placedIds = lay.placed.map(pl => pl.pallet.id);
+  // 既にこの便に載っているが今回載り切らなかったものは外す（フレームへ戻す）
+  const toUnload = onThis.filter(p => !placedIds.includes(p.id)).map(p => p.id);
+  // 新たにこの便へ載せるもの（未割当だったパレット）
+  const toLoad = placedIds.filter(id => free.some(p => p.id === id));
+
+  if (!toLoad.length && !toUnload.length) {
+    alert('この便の荷台は既にいっぱいで、追加できるパレットはありませんでした。');
+    return;
+  }
+
+  const overflowFree = free.filter(p => !placedIds.includes(p.id)).length;
+  const lines = [
+    `${s.shipment_no || 'この便'}（${sp.label}）へパレットを自動配置します。`,
+    ``,
+    `・荷台へ載せる: ${lay.placed.length}枚`,
+  ];
+  if (toLoad.length)     lines.push(`　（うち新規 ${toLoad.length}枚）`);
+  if (toUnload.length)   lines.push(`・載り切らずフレームへ戻す: ${toUnload.length}枚`);
+  if (overflowFree)      lines.push(`・フレームに残る（載らない）: ${overflowFree}枚`);
+  lines.push('', '※ パレット内の製品配置は変更しません');
+  if (!confirm(lines.join('\n'))) return;
+
+  try {
+    // 載せるパレットに shipment_id をセット
+    if (toLoad.length) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/pallets?id=in.(${toLoad.join(',')})`, {
+        method:'PATCH', headers:{ ...sbHeaders(), 'Prefer':'return=minimal' },
+        body: JSON.stringify({ shipment_id: shipmentId })
+      });
+      if (!res.ok) throw new Error(await res.text());
+    }
+    // 載り切らなかったパレットを外す
+    if (toUnload.length) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/pallets?id=in.(${toUnload.join(',')})`, {
+        method:'PATCH', headers:{ ...sbHeaders(), 'Prefer':'return=minimal' },
+        body: JSON.stringify({ shipment_id: null })
+      });
+      if (!res.ok) throw new Error(await res.text());
+    }
+    await loadPallets(); await loadShipments();
+    const msg = `荷台に${lay.placed.length}枚を配置しました`
+      + (overflowFree ? `（${overflowFree}枚はフレームに残りました）` : '');
+    _pdfedToast ? _pdfedToast('✅ ' + msg, '#15803d') : alert(msg);
+  } catch(e) {
+    alert('自動配置に失敗しました: ' + e.message);
+  }
+}
+
 // 運送会社 → CSSクラス（ヘッダー色分け）
 const CARRIER_CLASS = {
   '月城':'tsukishiro', 'アキタ':'akita', '佐川':'sagawa',
@@ -2702,6 +2835,10 @@ function shipFrameHtml(s) {
       </div>
       </div>
       <div class="ship-frame-foot">
+        <div class="ship-autoload">
+          <button class="btn-autoload" onclick="autoLoadShipment(${s.id})"
+            title="パレット欄のパレットを荷台へ自動配置します（載り切らない分はフレームに残します）">⚙ パレットを自動配置</button>
+        </div>
         <span class="ship-chip gray">${items.length}件${(s._pallets||[]).length ? ` +P${(s._pallets||[]).length}` : ''}</span>
         <div class="foot-weight">
           ${(() => {
@@ -2754,11 +2891,11 @@ const TRUCK_CAB_SVG = `
 // ---- トラック荷台へのパレット自動レイアウト ----
 // 荷台の実寸(mm)にパレットの実寸(mm)を並べ、真上から見た積付図を作る。
 // 幅方向に入るだけ並べ、入らなくなったら奥（長さ方向）へ次の列を作る。
-function truckBedLayout(shipment) {
+function truckBedLayout(shipment, palletList) {
   const sp = truckSpec(shipment.truck);
   if (!sp) return null;
   const BW = sp.width_mm, BL = sp.length_mm;   // 荷台の幅・長さ
-  const pallets = shipment._pallets || [];
+  const pallets = palletList || shipment._pallets || [];
   if (!pallets.length) return { spec: sp, placed: [], overflow: [] };
 
   // 同じ寸法のパレットの向きを先に決めておく。
@@ -2819,14 +2956,36 @@ function truckBedLayout(shipment) {
 function truckBedSvg(shipment, layout) {
   const sp = layout.spec;
   const BW = sp.width_mm, BL = sp.length_mm;
+
+  // パレット内製品の中央寄せで枠外へはみ出すことがあるので、
+  // 実際に描画する範囲（はみ出し込み）を先に求め、その幅に収まる縮尺で描く。
+  let cMinX = 0, cMinY = 0, cMaxX = BW, cMaxY = BL;
+  for (const pl of layout.placed) {
+    cMinX = Math.min(cMinX, pl.x); cMinY = Math.min(cMinY, pl.y);
+    cMaxX = Math.max(cMaxX, pl.x + pl.w); cMaxY = Math.max(cMaxY, pl.y + pl.d);
+    for (const i of (pl.pallet._items || [])) {
+      const iw0 = (i.rot ? i.depth_mm : i.width_mm) || 0;
+      const id0 = (i.rot ? i.width_mm : i.depth_mm) || 0;
+      if (!iw0 || !id0) continue;
+      const ix0 = i.x_mm || 0, iy0 = i.y_mm || 0;
+      const ix = pl.rot ? (pl.size.depth_mm - iy0 - id0) : ix0;
+      const iy = pl.rot ? ix0 : iy0;
+      const iw = pl.rot ? id0 : iw0;
+      const id = pl.rot ? iw0 : id0;
+      cMinX = Math.min(cMinX, pl.x + ix); cMinY = Math.min(cMinY, pl.y + iy);
+      cMaxX = Math.max(cMaxX, pl.x + ix + iw); cMaxY = Math.max(cMaxY, pl.y + iy + id);
+    }
+  }
+  const contentW = cMaxX - cMinX;   // 実際に必要な横幅(mm)
   // 画面上は「幅=横, 長さ=縦」。荷台は細長いので横幅いっぱいに描き、
   // 縦は実寸比のまま伸ばす（はみ出す分は荷台エリアをスクロールして見る）
   const VIEW_W = 206;      // カード内で使える横幅
-  const SC = VIEW_W / BW;
-  const W = BW * SC, H = BL * SC;
+  const SC = VIEW_W / Math.max(BW, contentW);   // はみ出しがある場合はその分だけ縮小して収める
+  const W = (cMaxX - cMinX) * SC, H = (cMaxY - cMinY) * SC;
+  const OX = cMinX, OY = cMinY;   // 描画原点（マイナス方向のはみ出しぶん）
 
   const boxes = layout.placed.map((pl, idx) => {
-    const x = pl.x * SC, y = pl.y * SC, w = pl.w * SC, d = pl.d * SC;
+    const x = (pl.x - OX) * SC, y = (pl.y - OY) * SC, w = pl.w * SC, d = pl.d * SC;
     const colorIdx = palletOtColorIndex(pl.pallet);
     // パレット上の製品を実寸で描く（回転している場合は座標を入れ替える）
     const items = (pl.pallet._items || []).map(i => {
@@ -2865,8 +3024,11 @@ function truckBedSvg(shipment, layout) {
     </g>`;
   }).join('');
 
-  return `<svg viewBox="0 0 ${W.toFixed(1)} ${H.toFixed(1)}" width="${W.toFixed(1)}" height="${H.toFixed(1)}"
-    style="display:block;margin:0 auto;">${boxes}</svg>`;
+  // 幅は固定pxにせず親コンテナに合わせて伸縮させる（縦スクロールバーが出ても切れない）。
+  // viewBoxで実寸比を保持し、高さは自動。荷台床（薄グレー）の幅にぴったり収まる。
+  return `<svg viewBox="0 0 ${W.toFixed(1)} ${H.toFixed(1)}"
+    preserveAspectRatio="xMidYMin meet"
+    style="display:block;width:100%;height:auto;">${boxes}</svg>`;
 }
 
 // 出荷日ごとに縦カラムで横並び表示
@@ -3194,10 +3356,6 @@ function palletMiniSvg(p) {
   const colorIdx = palletOtColorIndex(p);
   // 表示順に通し番号を振り、枠内の数字と右の一覧を対応させる
   let n = 0;
-  // はみ出しを許容するため、パレット枠より広い描画領域を確保する
-  const items = (p._items || []).filter(i => (i.width_mm && i.depth_mm));
-  const maxX = Math.max(s.width_mm, ...items.map(i => (i.x_mm||0) + ((i.rot ? i.depth_mm : i.width_mm)||0)));
-  const maxY = Math.max(s.depth_mm, ...items.map(i => (i.y_mm||0) + ((i.rot ? i.width_mm : i.depth_mm)||0)));
   const clipId = `palclip${p.id}`;
 
   const boxes = (p._items || []).map(i => {
@@ -3228,12 +3386,16 @@ function palletMiniSvg(p) {
         text-anchor="middle" dominant-baseline="central">${n}</text>`;
   }).join('');
 
-  return `<svg width="${maxX*SC}" height="${maxY*SC}" viewBox="0 0 ${maxX*SC} ${maxY*SC}">
+  // SVGの表示サイズもviewBoxも常にパレット枠の実寸に固定する（枠の見た目を全パレットで揃える）。
+  // はみ出した製品の矩形は枠外の座標のまま描かれ、overflow:visibleで枠の外側に表示される。
+  const frameW = s.width_mm * SC, frameH = s.depth_mm * SC;
+  return `<svg width="${frameW}" height="${frameH}" viewBox="0 0 ${frameW} ${frameH}"
+      style="overflow:visible;width:${frameW}px;height:${frameH}px;">
     <defs><clipPath id="${clipId}">
-      <rect x="0" y="0" width="${s.width_mm*SC}" height="${s.depth_mm*SC}"/>
+      <rect x="0" y="0" width="${frameW}" height="${frameH}"/>
     </clipPath></defs>
-    <rect x="0" y="0" width="${s.width_mm*SC}" height="${s.depth_mm*SC}"
-      fill="none" stroke="#6b5615" stroke-width="1" stroke-dasharray="3 2"/>
+    <rect x="0" y="0" width="${frameW}" height="${frameH}"
+      fill="rgba(255,255,255,.92)" stroke="#6b5615" stroke-width="1" stroke-dasharray="3 2"/>
     ${boxes}</svg>`;
 }
 
@@ -3268,6 +3430,22 @@ function renderPallets() {
     shipPallets.filter(p => !p.shipment_id).length >= 2 ? '' : 'none';
   // 便に積んだパレットはトラックカード側に表示されるので、この一覧からは除く
   const freePallets = shipPallets.filter(p => !p.shipment_id);
+
+  // フレーム内（パレット欄に並ぶ未割当パレット）の総数・総重量を表示
+  const totalsEl = document.getElementById('pallet-totals');
+  if (totalsEl) {
+    if (freePallets.length) {
+      const totalWt = freePallets.reduce((sum, p) => sum + palletTotalWeight(p), 0);
+      const noWt = freePallets.reduce((n, p) => n + shipNoWeightCount(p._items || []), 0);
+      document.getElementById('pallet-total-count').textContent = `${freePallets.length} 枚`;
+      document.getElementById('pallet-total-weight').innerHTML =
+        `${fmtWeight(totalWt)} kg` + (noWt ? ` <span style="color:#dc2626;">未登録${noWt}</span>` : '');
+      totalsEl.style.display = '';
+    } else {
+      totalsEl.style.display = 'none';
+    }
+  }
+
   if (freePallets.length === 0) {
     wrap.innerHTML = shipPallets.length
       ? '<div class="ship-empty">すべてのパレットが<br>便に積まれています。<br>戻すにはトラックの<br>パレットをここへドラッグ。</div>'
@@ -3398,6 +3576,29 @@ const AUTOSIM_PALLET_W = 1100, AUTOSIM_PALLET_D = 1100;
 // パレット端から許容するはみ出し量(mm)。これ以内なら「載る」とみなして詰める
 const PALLET_OVERHANG_MM = 100;
 
+// ---- 配置済みブロックのかたまりをパレット中央へ寄せる ----
+// items: 座標を持つオブジェクトの配列。getBox(it)で実寸の{x,y,w,d}を返す。
+// setPos(it,x,y)で新しい左上座標を書き戻す。相対位置は保ったまま平行移動する。
+// はみ出す（かたまりがパレットより大きい）場合も、中心が揃うようマイナス方向にも寄せる。
+function centerOnPallet(items, PW, PD, getBox, setPos) {
+  const boxes = items.map(getBox);
+  const valid = boxes.filter(b => b.w > 0 && b.d > 0);
+  if (!valid.length) return;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const b of valid) {
+    if (b.x < minX) minX = b.x;
+    if (b.y < minY) minY = b.y;
+    if (b.x + b.w > maxX) maxX = b.x + b.w;
+    if (b.y + b.d > maxY) maxY = b.y + b.d;
+  }
+  const dx = (PW - (maxX - minX)) / 2 - minX;   // かたまり全体をこれだけ平行移動
+  const dy = (PD - (maxY - minY)) / 2 - minY;
+  items.forEach((it, i) => {
+    const b = boxes[i]; if (!(b.w > 0 && b.d > 0)) return;
+    setPos(it, b.x + dx, b.y + dy);
+  });
+}
+
 // 配置計画を作る純関数。rows: 出荷候補の行。戻り値: { pallets:[{spatial:[], riders:[]}], groups }
 function planAutoSim(rows) {
   const sized = [], riders = [];
@@ -3524,10 +3725,22 @@ function planAutoSim(rows) {
     target.nameSet.add(nm);
   }
 
+  // 各パレットのかたまりを中央へ寄せる（spatialとplacedは同じ順序で対応している）
+  for (const p of pallets) {
+    centerOnPallet(
+      p.spatial, AUTOSIM_PALLET_W, AUTOSIM_PALLET_D,
+      (sp, i) => ({ x: sp.x, y: sp.y, w: p.placed[i].w, d: p.placed[i].d }),
+      (sp, x, y) => { sp.x = x; sp.y = y; }
+    );
+    // placed側もはみ出し件数の集計用に座標を合わせておく
+    p.spatial.forEach((sp, i) => { p.placed[i].x = sp.x; p.placed[i].y = sp.y; });
+  }
+
   const unplaced = sized.length - pallets.reduce((n, p) => n + p.spatial.length, 0);
   // パレット枠からはみ出す配置の件数（許容するが件数は伝える）
   const overflowCount = pallets.reduce((n, p) => n + p.placed.filter(b =>
-    b.x + b.w > AUTOSIM_PALLET_W + 0.01 || b.y + b.d > AUTOSIM_PALLET_D + 0.01).length, 0);
+    b.x + b.w > AUTOSIM_PALLET_W + 0.01 || b.y + b.d > AUTOSIM_PALLET_D + 0.01 ||
+    b.x < -0.01 || b.y < -0.01).length, 0);
   return { pallets, sizedCount: sized.length, riderCount: riders.length, unplaced, overflowCount };
 }
 
@@ -3713,8 +3926,22 @@ async function autoPlaceNewPalletItems(palletId, newChildIds) {
   }
   if (!updates.length) return;
 
+  // パレット上の寸法ありアイテム全体を中央へ寄せる。
+  // 動いたものは保存対象に加える（既存分も中央寄せでずれるため）。
+  const before = new Map(sized.map(i => [i.child_id, { x: i.x, y: i.y }]));
+  centerOnPallet(
+    sized, PW, PD,
+    i => ({ x: i.x, y: i.y, w: i.rot ? i.d : i.w, d: i.rot ? i.w : i.d }),
+    (i, x, y) => { i.x = Math.round(x); i.y = Math.round(y); }
+  );
+  const moved = sized.filter(i => {
+    const b = before.get(i.child_id);
+    return b && (b.x !== i.x || b.y !== i.y);
+  });
+  const saveList = [...new Set([...updates, ...moved])];
+
   try {
-    await Promise.all(updates.map(it =>
+    await Promise.all(saveList.map(it =>
       fetch(`${SUPABASE_URL}/rest/v1/pallet_items?child_id=eq.${it.child_id}`, {
         method:'PATCH', headers:{ ...sbHeaders(), 'Prefer':'return=minimal' },
         body: JSON.stringify({ x_mm: Math.round(it.x), y_mm: Math.round(it.y), rot: it.rot })
@@ -3751,7 +3978,7 @@ function openPalletSim(palletId) {
     x: i.x_mm || 0, y: i.y_mm || 0, rot: !!i.rot,
   }));
   document.getElementById('pallet-sim-title').textContent =
-    `パレット積み付け ${psimPallet.pallet_no}（${s.name}）`;
+    `パレット積み付け ${psimPallet.pallet_no || '(未採番)'}（${s.name}）`;
   document.getElementById('psim-error').textContent = '';
   document.getElementById('pallet-sim-overlay').classList.add('open');
   psimRender();
@@ -3767,18 +3994,19 @@ function psimW(it) { return it.rot ? it.d : it.w; }
 function psimD(it) { return it.rot ? it.w : it.d; }
 
 // はみ出し・重なり判定
+// パレットからのはみ出し（枠外・マイナス方向とも）は許容し、赤表示で知らせるだけ。
+// 「重なり」は製品どうしの四角が実際に重なっている場合のみ。
 function psimBad(i) {
-  const s = palletSize(psimPallet);
   const a = psimItems[i];
   if (!a.w || !a.d) return false;
-  // パレットからのはみ出しは許容（赤表示で知らせる）。マイナス方向のみエラー扱い
-  if (a.x < 0 || a.y < 0) return true;
   for (let j = 0; j < psimItems.length; j++) {
     if (i === j) continue;
     const b = psimItems[j];
     if (!b.w || !b.d) continue;
-    if (a.x < b.x + psimW(b) && a.x + psimW(a) > b.x &&
-        a.y < b.y + psimD(b) && a.y + psimD(a) > b.y) return true;
+    // 実際の重なり面積がごく僅か（端が接する程度）は重なり扱いしない
+    const ox = Math.min(a.x + psimW(a), b.x + psimW(b)) - Math.max(a.x, b.x);
+    const oy = Math.min(a.y + psimD(a), b.y + psimD(b)) - Math.max(a.y, b.y);
+    if (ox > 1 && oy > 1) return true;
   }
   return false;
 }
@@ -3792,32 +4020,41 @@ function psimRender() {
     if (g < s.width_mm) grid.push(`<line x1="${g*SC}" y1="0" x2="${g*SC}" y2="${D}" stroke="#f3f4f6" stroke-width="1"/>`);
     if (g < s.depth_mm) grid.push(`<line x1="0" y1="${g*SC}" x2="${W}" y2="${g*SC}" stroke="#f3f4f6" stroke-width="1"/>`);
   }
+  const colorIdx = palletOtColorIndex(psimPallet);
   const boxes = psimItems.map((it, i) => {
     if (!it.w || !it.d) return '';
     const bad = psimBad(i);
     // パレット枠からはみ出す製品は、枠外部分だけ赤くする（枠内はクリップで通常色）
-    const over = (it.x + psimW(it) > s.width_mm + 0.01) || (it.y + psimD(it) > s.depth_mm + 0.01);
+    // 中央寄せでは左・上（マイナス方向）へはみ出すこともある
+    const over = (it.x + psimW(it) > s.width_mm + 0.01) || (it.y + psimD(it) > s.depth_mm + 0.01)
+               || (it.x < -0.01) || (it.y < -0.01);
+    const c = SHIP_OT_COLORS[colorIdx.get(shipOtOf(it.child_id) || '(未設定)') || 0];
     const bw = psimW(it)*SC, bd = psimD(it)*SC;
     const body = over
-      ? `<rect width="${bw}" height="${bd}" fill="#fca5a5" stroke="#dc2626" stroke-width="2" rx="2"/>
+      ? `<rect width="${bw}" height="${bd}" fill="#fca5a5" stroke="#dc2626" stroke-width="2" rx="3"/>
          <g clip-path="url(#psimclip)" transform="translate(${-it.x*SC},${-it.y*SC})">
            <rect x="${it.x*SC}" y="${it.y*SC}" width="${bw}" height="${bd}"
-             fill="#bfdbfe" stroke="#1d4ed8" stroke-width="2" rx="2"/>
+             fill="${c.fill}" stroke="${c.stroke}" stroke-width="2" rx="3"/>
          </g>
-         <rect width="${bw}" height="${bd}" fill="none" stroke="#dc2626" stroke-width="2" rx="2"/>`
-      : `<rect width="${bw}" height="${bd}" fill="#bfdbfe" stroke="#1d4ed8" stroke-width="2" rx="2"/>`;
+         <rect width="${bw}" height="${bd}" fill="none" stroke="#dc2626" stroke-width="2" rx="3"/>`
+      : `<rect width="${bw}" height="${bd}" fill="${c.fill}" stroke="${c.stroke}" stroke-width="2" rx="3"/>`;
+    const txtc = over ? '#7f1d1d' : c.text;
     return `<g class="psim-box ${bad?'bad':''}" data-i="${i}" transform="translate(${it.x*SC},${it.y*SC})">
       ${body}
-      <text x="4" y="13" font-size="10" font-family="monospace" fill="${over?'#7f1d1d':'#1e3a5f'}">${esc(it.sealno||'')}</text>
+      <text x="4" y="13" font-size="10" font-family="monospace" fill="${txtc}">${esc(it.sealno||'')}</text>
       <text x="4" y="25" font-size="9" fill="${over?'#991b1b':'#475569'}">${psimW(it)}×${psimD(it)}${it.rot?' ↻':''}</text>
     </g>`;
   }).join('');
 
-  // はみ出した分まで見えるようにキャンバスを広げる
-  const VW = Math.max(W, ...psimItems.filter(it => it.w && it.d).map(it => (it.x + psimW(it)) * SC));
-  const VD = Math.max(D, ...psimItems.filter(it => it.w && it.d).map(it => (it.y + psimD(it)) * SC));
+  // はみ出した分まで見えるようにキャンバスを広げる（左・上のマイナス方向も含める）
+  const sized = psimItems.filter(it => it.w && it.d);
+  const vMinX = Math.min(0, ...sized.map(it => it.x * SC));
+  const vMinY = Math.min(0, ...sized.map(it => it.y * SC));
+  const vMaxX = Math.max(W, ...sized.map(it => (it.x + psimW(it)) * SC));
+  const vMaxY = Math.max(D, ...sized.map(it => (it.y + psimD(it)) * SC));
+  const VW = vMaxX - vMinX, VD = vMaxY - vMinY;
   document.getElementById('psim-canvas-wrap').innerHTML =
-    `<svg id="psim-svg" width="${VW}" height="${VD}" viewBox="0 0 ${VW} ${VD}"
+    `<svg id="psim-svg" width="${VW}" height="${VD}" viewBox="${vMinX} ${vMinY} ${VW} ${VD}"
         style="border:2px solid #92400e;background:#fffbeb;touch-action:none;">
        <defs><clipPath id="psimclip"><rect x="0" y="0" width="${W}" height="${D}"/></clipPath></defs>
        <rect x="0" y="0" width="${W}" height="${D}" fill="#fff" stroke="#92400e"
@@ -3826,27 +4063,38 @@ function psimRender() {
      </svg>`;
   psimBindDrag();
 
-  // 統計
+  // 統計（占有率バー＋状態バッジ）
   const s2 = palletSize(psimPallet);
   const area = psimItems.filter(it => it.w && it.d).reduce((a,it) => a + psimW(it)*psimD(it), 0);
   const bad = psimItems.filter((_,i) => psimBad(i)).length;
   const outCnt = psimItems.filter(it => it.w && it.d &&
-    (it.x + psimW(it) > s2.width_mm + 0.01 || it.y + psimD(it) > s2.depth_mm + 0.01)).length;
+    (it.x + psimW(it) > s2.width_mm + 0.01 || it.y + psimD(it) > s2.depth_mm + 0.01
+     || it.x < -0.01 || it.y < -0.01)).length;
+  const occ = area / (s2.width_mm * s2.depth_mm) * 100;
+  const problems = [];
+  if (outCnt) problems.push(`はみ出し ${outCnt}`);
+  if (bad)    problems.push(`重なり ${bad}`);
+  const badge = problems.length
+    ? `<span class="psim-badge err"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>${problems.join(' ／ ')}件</span>`
+    : `<span class="psim-badge ok"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6 9 17l-5-5"/></svg>問題なし</span>`;
   document.getElementById('psim-stat').innerHTML =
-    `占有率 <b>${(area/(s2.width_mm*s2.depth_mm)*100).toFixed(1)}%</b>` +
-    (outCnt ? ` ／ <span style="color:#dc2626;font-weight:700;">はみ出し ${outCnt}件</span>` : '') +
-    (bad ? ` ／ <span style="color:#dc2626;font-weight:700;">重なり ${bad}件</span>`
-         : (outCnt ? '' : ' ／ 問題なし'));
+    `<div class="psim-occ">
+       <span class="psim-occ-label">占有率</span>
+       <span class="psim-occ-bar"><span class="psim-occ-fill" style="width:${Math.min(100,occ).toFixed(1)}%;"></span></span>
+       <span class="psim-occ-val">${occ.toFixed(1)}%</span>
+     </div>${badge}`;
 
-  // 右のリスト
-  document.getElementById('psim-items').innerHTML = psimItems.map((it,i) => `
-    <div class="psim-item ${psimBad(i)?'err':''}">
-      <div><span class="s">${esc(it.sealno||'(未採番)')}</span>
-        <button class="btn-sm" style="float:right;padding:1px 6px;" onclick="psimRemove(${it.child_id})">×</button></div>
-      <div class="d">${esc(it.product_name)}</div>
-      <div class="d">${it.w&&it.d ? `${it.w}×${it.d}${it.h?`×${it.h}`:''} mm` : '<span class="warn">寸法未登録</span>'}
-        ${it.rotatable ? '' : ' <span class="warn">回転不可</span>'}</div>
-    </div>`).join('') || '<div class="ship-empty">製品がありません</div>';
+  // 右のリスト（OT色を左ボーダーに反映した製品カード）
+  document.getElementById('psim-items').innerHTML = psimItems.map((it,i) => {
+    const c = SHIP_OT_COLORS[colorIdx.get(shipOtOf(it.child_id) || '(未設定)') || 0];
+    return `
+    <div class="psim-item ${psimBad(i)?'err':''}" style="border-left-color:${c.stroke};">
+      <button class="psim-item-rm" onclick="psimRemove(${it.child_id})" title="このパレットから外す">&times;</button>
+      <div class="psim-item-top"><span class="s">${esc(it.sealno||'(未採番)')}</span></div>
+      <div class="nm">${esc(it.product_name || '(名称なし)')}</div>
+      <div class="d">${it.w&&it.d ? `${it.w}×${it.d}${it.h?`×${it.h}`:''} mm` : '<span class="warn">寸法未登録</span>'}${it.rotatable ? '' : ' <span class="warn">回転不可</span>'}</div>
+    </div>`;
+  }).join('') || '<div class="ship-empty" style="padding:20px 8px;color:#9a8c72;">製品がありません</div>';
 }
 
 function psimBindDrag() {
@@ -3855,7 +4103,16 @@ function psimBindDrag() {
   const SC = psimScale();
   const s = palletSize(psimPallet);
   let cur = null, offX = 0, offY = 0;
+  // viewBoxが0起点でない場合があるため、SVGの座標変換行列で画面→SVG座標に変換し、
+  // さらにmm換算する（SCはpx/mm）。これでマイナス原点でもドラッグがずれない。
   const pt = (ev) => {
+    const m = svg.getScreenCTM();
+    if (m) {
+      const p = svg.createSVGPoint();
+      p.x = ev.clientX; p.y = ev.clientY;
+      const q = p.matrixTransform(m.inverse());
+      return { x: q.x / SC, y: q.y / SC };
+    }
     const r = svg.getBoundingClientRect();
     return { x: (ev.clientX - r.left) / SC, y: (ev.clientY - r.top) / SC };
   };
@@ -3906,18 +4163,61 @@ function palletAutoPack() {
     return (B.w * B.d) - (A.w * A.d) || b[1].length - a[1].length;
   });
 
+  const OVERHANG = (typeof PALLET_OVERHANG_MM === 'number') ? PALLET_OVERHANG_MM : 100;
   const placed = [];
   const failed = [];
   for (const [, list] of order) {
     let groupRot = null;   // グループ内の1件目で向きを決め、以降はそれに揃える
-    for (const it of list) {
+    let rest = list.slice();
+    while (rest.length) {
+      const it = rest[0];
       const spot = psimFindSpot(it, placed, PW, PD, groupRot);
-      if (!spot) { it.x = 0; it.y = 0; failed.push(it); continue; }
-      it.x = spot.x; it.y = spot.y; it.rot = spot.rot;
-      if (groupRot === null) groupRot = spot.rot;
-      placed.push({ x: spot.x, y: spot.y, w: spot.w, d: spot.d });
+      if (spot) {
+        it.x = spot.x; it.y = spot.y; it.rot = spot.rot;
+        if (groupRot === null) groupRot = spot.rot;
+        placed.push({ x: spot.x, y: spot.y, w: spot.w, d: spot.d });
+        rest.shift();
+        continue;
+      }
+      // 枠（＋許容）に収まらない長尺製品：はみ出す前提で積めるだけ積み重ねる。
+      // 超過が少ない向きを選び、はみ出す方向（幅超過なら縦、奥行超過なら横）に並べる。
+      const rot = it.rotatable
+        ? (Math.max(0, it.w - PW) + Math.max(0, it.d - PD)
+           <= Math.max(0, it.d - PW) + Math.max(0, it.w - PD) ? false : true)
+        : false;
+      const bw = rot ? it.d : it.w, bd = rot ? it.w : it.d;
+      const stackVertical = bw > PW;   // 幅が枠を超える→縦（奥行方向）に積む
+      // 既存の配置の末端から続ける（重ならないように）
+      let base = 0;
+      for (const b of placed) base = Math.max(base, stackVertical ? b.y + b.d : b.x + b.w);
+      let cursor = base;
+      const before = rest.length;
+      for (const r of rest.slice()) {
+        if (stackVertical) { if (cursor + bd > PD + OVERHANG && cursor > 0) break; }
+        else               { if (cursor + bw > PW + OVERHANG && cursor > 0) break; }
+        r.rot = rot;
+        if (stackVertical) { r.x = 0; r.y = cursor; cursor += bd; }
+        else               { r.x = cursor; r.y = 0; cursor += bw; }
+        placed.push({ x: r.x, y: r.y, w: bw, d: bd });
+        rest.shift();
+      }
+      // 1台も置けなかった場合の保険（無限ループ防止）
+      if (rest.length === before) {
+        it.x = 0; it.y = 0; it.rot = rot;
+        placed.push({ x: 0, y: 0, w: bw, d: bd });
+        failed.push(it);
+        rest.shift();
+      }
     }
   }
+
+  // 配置できたものをパレット中央へ寄せる（収まらなかったfailedは原点のまま）
+  const packed = psimItems.filter(it => it.w && it.d && !failed.includes(it));
+  centerOnPallet(
+    packed, PW, PD,
+    it => ({ x: it.x, y: it.y, w: psimW(it), d: psimD(it) }),
+    (it, x, y) => { it.x = x; it.y = y; }
+  );
 
   const msgs = [];
   if (failed.length)  msgs.push(`${failed.length}件はパレットに収まりません（${failed.map(f=>f.sealno).join(', ')}）`);
@@ -5676,7 +5976,7 @@ function renderPreview() {
     <tr style="${r._isChange ? 'background:#fef9c3;' : ''}">
       <td>${r._isChange ? '<span style="font-size:9px;background:#f59e0b;color:#fff;border-radius:3px;padding:1px 4px;margin-right:3px;">変更</span>' : ''}${r.orderdate}</td>
       <td class="mono">${r.orderno}</td>
-      <td class="mono">${r.drawingno}</td>
+      <td class="mono">${r.drawingno || (r._otNumber ? `<span title="図番なし。OT番号で製品を照合します" style="color:#7c3aed;">${r._otNumber}<span style="font-size:9px;color:#a78bfa;">(OT参照)</span></span>` : '')}</td>
       <td style="text-align:right">${r.quantity}</td>
       <td>${r.unit||''}</td>
       <td style="text-align:right">${r.price.toLocaleString()}</td>
@@ -6051,6 +6351,48 @@ async function doSaveNewRows(rows, silent = false) {
         }
       }
     } catch(e) { console.warn('[doSaveNewRows] 型式フォールバック確認失敗', e); }
+  }
+
+  // 図番が無くOT番号だけの製品（IZUSHI等）: OT番号でproductdateを逆引きし、
+  // 正式な客先図番(customer_drawing_no)を割り当てる。これにより以降のシール数算出・
+  // 製品名解決・OT番号表示がすべて既存の図番ベースのロジックで動く。
+  const otOnlyRows = rows.filter(r => !r.drawingno && r._otNumber);
+  if (otOnlyRows.length) {
+    try {
+      // OT番号の表記ゆれ（OT-014517 / OT014517 / 枝番・丸数字付き）を吸収するため、
+      // 数字の下6桁（コア部分）で照合する
+      const otCore = (v) => {
+        const m = String(v || '').match(/OT-?(\d{3,6})/);
+        return m ? m[1] : '';
+      };
+      const cores = [...new Set(otOnlyRows.map(r => otCore(r._otNumber)).filter(Boolean))];
+      if (cores.length) {
+        // ot_number が "OT-<core>..." で始まるものをまとめて取得（like.OR で1リクエスト）
+        const orExpr = cores.map(c => `ot_number.like.*${c}*`).join(',');
+        const pdRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/productdate?or=(${orExpr})&select=customer_drawing_no,ot_number`,
+          { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }
+        );
+        if (pdRes.ok) {
+          const pdList = await pdRes.json();
+          // core → customer_drawing_no のマップ（複数該当時は最初の1件）
+          const byCore = new Map();
+          for (const pd of pdList) {
+            const c = otCore(pd.ot_number);
+            if (c && pd.customer_drawing_no && !byCore.has(c)) byCore.set(c, pd.customer_drawing_no);
+          }
+          for (const r of otOnlyRows) {
+            const dno = byCore.get(otCore(r._otNumber));
+            if (dno) {
+              console.log(`[OT逆引き] ${r._otNumber} → 図番 ${dno} を割り当て`);
+              r.drawingno = dno;
+            } else {
+              console.warn(`[OT逆引き] ${r._otNumber} に対応する製品マスタが見つかりません`);
+            }
+          }
+        }
+      }
+    } catch(e) { console.warn('[doSaveNewRows] OT番号逆引き失敗', e); }
   }
 
   // 注文書の原本ファイルをStorageへアップロードし、URLを各行に付与
