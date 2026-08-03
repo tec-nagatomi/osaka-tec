@@ -47,6 +47,41 @@
   /* 未振り分けドロップゾーンは2列グリッド（各列5件・計10件まで表示、超えたらスクロール） */
   .laser-dropzone.laser-unassigned-zone { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-content: start; }
   .laser-dropzone.laser-unassigned-zone > .laser-empty-msg { grid-column: 1 / -1; }
+  /* カレンダーを載せた分、未振り分けゾーンの高さを詰める（カレンダーはコンパクト化済み） */
+  .laser-unassigned-zone { min-height: min(560px, calc(100vh - 360px)); max-height: min(560px, calc(100vh - 360px)); }
+  /* ---- レーザー未振り分け 納期カレンダー（コンパクト） ---- */
+  .laser-calendar { background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:6px 8px 7px; }
+  .laser-cal-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:3px; }
+  .laser-cal-title { font-size:11px; font-weight:700; color:#374151; }
+  .laser-cal-nav { display:flex; gap:3px; }
+  .laser-cal-nav button { width:18px; height:18px; border:1px solid #e5e7eb; background:#f9fafb; border-radius:5px; cursor:pointer; color:#6b7280; font-size:11px; line-height:1; display:flex; align-items:center; justify-content:center; }
+  .laser-cal-nav button:hover { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; }
+  .laser-cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; }
+  .laser-cal-dow { text-align:center; font-size:8px; font-weight:700; color:#9ca3af; padding:0; }
+  .laser-cal-dow.sun { color:#dc2626; } .laser-cal-dow.sat { color:#2563eb; }
+  /* セルは正方形をやめて高さを抑え、日付と件数を横並びにする */
+  .laser-cal-cell { position:relative; min-height:26px; border-radius:5px; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:2px; padding:2px 1px; font-size:10px; color:#374151; cursor:default; border:1px solid transparent; }
+  .laser-cal-cell.empty { visibility:hidden; }
+  .laser-cal-cell.has { cursor:pointer; background:#f8fafc; border-color:#e2e8f0; }
+  .laser-cal-cell.has:hover { background:#eff6ff; border-color:#93c5fd; }
+  .laser-cal-cell.selected { background:#1d4ed8 !important; border-color:#1d4ed8 !important; }
+  .laser-cal-cell.today { border-color:#f59e0b; }
+  .laser-cal-daynum { font-size:10px; font-weight:600; line-height:1; color:#64748b; }
+  .laser-cal-cell.has .laser-cal-daynum { color:#334155; }
+  /* 件数は色付きの丸バッジで日付と明確に区別 */
+  .laser-cal-badge { min-width:13px; height:13px; padding:0 2px; box-sizing:border-box;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:8px; font-weight:800; line-height:1; color:#fff; background:#2563eb; border-radius:20px; }
+  .laser-cal-cell.selected .laser-cal-daynum { color:#fff; }
+  .laser-cal-cell.selected .laser-cal-badge { background:#fff; color:#1d4ed8; }
+  .laser-cal-cell.sun .laser-cal-daynum { color:#dc2626; } .laser-cal-cell.sat .laser-cal-daynum { color:#2563eb; }
+  .laser-cal-cell.selected.sun .laser-cal-daynum, .laser-cal-cell.selected.sat .laser-cal-daynum { color:#fff; }
+  .laser-cal-clear { margin-top:4px; text-align:center; }
+  .laser-cal-clear button { font-size:9px; color:#6b7280; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:5px; padding:1px 8px; cursor:pointer; }
+  .laser-cal-clear button:hover { background:#e5e7eb; }
+  .laser-cal-clear { margin-top:6px; text-align:center; }
+  .laser-cal-clear button { font-size:10px; color:#6b7280; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:6px; padding:2px 10px; cursor:pointer; }
+  .laser-cal-clear button:hover { background:#e5e7eb; }
   /* カスタムスクロールバー（細め） */
   .laser-dropzone::-webkit-scrollbar { width: 8px; }
   .laser-dropzone::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -142,6 +177,30 @@
   .pd-form-label { font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; }
   .pd-form-input { padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; width:100%; box-sizing:border-box; }
   .pd-form-input:focus { outline:none; border-color:#0891b2; box-shadow:0 0 0 3px rgba(8,145,178,0.1); }
+  /* 入力フォームのグループ（基本=桃/部品=緑/製品=黄/図面=青） */
+  .pd-fieldset { border-radius:12px; padding:14px 16px 16px; margin-bottom:14px; border:1px solid; }
+  .pd-fieldset-legend { display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:800; letter-spacing:0.04em; margin-bottom:12px; padding-bottom:8px; border-bottom:1.5px dashed; }
+  .pd-fieldset-legend svg { width:16px; height:16px; }
+  /* 基本情報＝ピンク */
+  .pd-fieldset.basic { background:#fdf2f8; border-color:#fbcfe8; }
+  .pd-fieldset.basic .pd-fieldset-legend { color:#be185d; border-color:#f9a8d4; }
+  .pd-fieldset.basic .pd-form-input { background:#fff5fa; border-color:#f5b8d4; }
+  .pd-fieldset.basic .pd-form-input:focus { border-color:#ec4899; box-shadow:0 0 0 3px rgba(236,72,153,0.12); }
+  /* 部品情報＝緑 */
+  .pd-fieldset.parts { background:#f0fdf4; border-color:#bbf7d0; }
+  .pd-fieldset.parts .pd-fieldset-legend { color:#15803d; border-color:#86efac; }
+  .pd-fieldset.parts .pd-form-input { background:#f4fef7; border-color:#a7e8bd; }
+  .pd-fieldset.parts .pd-form-input:focus { border-color:#22c55e; box-shadow:0 0 0 3px rgba(34,197,94,0.12); }
+  /* 製品情報＝黄 */
+  .pd-fieldset.spec { background:#fefce8; border-color:#fde68a; }
+  .pd-fieldset.spec .pd-fieldset-legend { color:#a16207; border-color:#fcd34d; }
+  .pd-fieldset.spec .pd-form-input { background:#fffdf0; border-color:#f5d97a; }
+  .pd-fieldset.spec .pd-form-input:focus { border-color:#eab308; box-shadow:0 0 0 3px rgba(234,179,8,0.12); }
+  /* 図面情報＝青 */
+  .pd-fieldset.draw { background:#eff6ff; border-color:#bfdbfe; }
+  .pd-fieldset.draw .pd-fieldset-legend { color:#1d4ed8; border-color:#93c5fd; }
+  .pd-fieldset.draw .pd-form-input { background:#f5f9ff; border-color:#a8c9f5; }
+  .pd-fieldset.draw .pd-form-input:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,0.12); }
   .pd-modal-footer { padding:14px 20px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:8px; position:sticky; bottom:0; background:#fff; }
   .pd-save-btn { padding:8px 20px; background:#0891b2; color:#fff; border:none; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; }
   .pd-save-btn:hover { background:#0e7490; }
@@ -590,12 +649,12 @@
   .cal-more { font-size:9px; color:#6b7280; padding-left:2px; cursor:pointer; }
   .cal-loading { text-align:center; padding:20px; color:#9ca3af; font-size:12px; grid-column:1/-1; }
   /* 作業指示書 */
-  .work-order { font-family: 'Arial', sans-serif; font-size: 11px; color: #111; }
-  .work-order-title { text-align: center; font-size: 15px; font-weight: 700; letter-spacing: 0.12em; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid #1d4ed8; color: #1d4ed8; }
-  .work-order-date { text-align: right; font-size: 10px; color: #6b7280; margin-bottom: 12px; }
+  .work-order { font-family: 'Arial', sans-serif; font-size: 13px; color: #111; }
+  .work-order-title { text-align: center; font-size: 17px; font-weight: 700; letter-spacing: 0.12em; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid #1d4ed8; color: #1d4ed8; }
+  .work-order-date { text-align: right; font-size: 11px; color: #6b7280; margin-bottom: 12px; }
   .work-order-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-  .work-order-table td { border: 1px solid #9ca3af; padding: 5px 7px; vertical-align: top; font-size: 11px; }
-  .work-order-table .label { background: #eff6ff; font-weight: 700; color: #1d4ed8; white-space: nowrap; width: 60px; }
+  .work-order-table td { border: 1px solid #9ca3af; padding: 7px 9px; vertical-align: top; font-size: 13px; }
+  .work-order-table .label { background: #eff6ff; font-weight: 700; color: #1d4ed8; white-space: nowrap; width: 64px; font-size: 12.5px; }
   .work-order-table .value { color: #111827; word-break: break-all; }
   .work-order-section { margin-bottom: 10px; }
   .work-order-stamp-row { display: flex; gap: 0; margin-top: 14px; }
@@ -729,47 +788,48 @@
   .detail-overlay {
     display: none; position: fixed; inset: 0; z-index: 200;
     background: rgba(0,0,0,0.45); align-items: flex-start; justify-content: center;
-    padding: 20px; overflow-y: auto;
+    padding: 12px; overflow-y: auto;
   }
   .detail-overlay.open { display: flex; }
   .detail-modal {
-    background: #fff; border-radius: 14px; width: 100%; max-width: 1400px;
+    background: #fff; border-radius: 16px; width: 100%; max-width: 1440px;
     box-shadow: 0 24px 80px rgba(0,0,0,0.22); margin: auto;
-    animation: slideUp 0.2s ease;
+    animation: slideUp 0.2s ease; overflow: hidden;
   }
   @keyframes slideUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
   .detail-modal-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 18px 24px; border-bottom: 1px solid #e5e7eb;
+    padding: 16px 22px; border-bottom: 1px solid #e5e7eb;
     background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-    border-radius: 14px 14px 0 0;
+    border-radius: 16px 16px 0 0;
     flex-wrap: wrap; gap: 8px;
   }
-  .detail-modal-title { font-size: 15px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 10px; }
-  .detail-modal-title svg { width: 18px; height: 18px; }
+  .detail-modal-title { font-size: 17px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; }
+  .detail-modal-title svg { width: 20px; height: 20px; }
   .detail-modal-close {
-    background: rgba(255,255,255,0.15); border: none; border-radius: 6px;
-    width: 30px; height: 30px; cursor: pointer; color: #fff;
+    background: rgba(255,255,255,0.15); border: none; border-radius: 8px;
+    width: 34px; height: 34px; cursor: pointer; color: #fff;
     display: flex; align-items: center; justify-content: center; transition: background 0.15s;
   }
   .detail-modal-close:hover { background: rgba(255,255,255,0.25); }
-  .detail-modal-close svg { width: 16px; height: 16px; }
-  .detail-modal-body { padding: 24px; }
+  .detail-modal-close svg { width: 17px; height: 17px; }
+  .detail-modal-body { padding: 0; }
 
   /* ==================== DETAIL MODAL v2 (responsive redesign) ==================== */
   /* 3カラム構造。狭い画面では自動的に縦積みに切り替わる */
   .detail-columns { display: flex; gap: 0; min-height: 400px; }
   .detail-col-left {
-    width: 300px; min-width: 280px; border-right: 1px solid #e5e7eb;
-    padding: 14px; background: #fafafa; flex-shrink: 0;
+    width: 310px; min-width: 290px; border-right: 1px solid #e5e7eb;
+    padding: 16px; background: #fafafa; flex-shrink: 0;
+    overflow-y: auto; max-height: calc(94vh - 60px);
   }
   .detail-col-center {
-    flex: 1.4; min-width: 0; /* min-width:0 がないとflex子要素が内容幅以下に縮まずはみ出す */
-    overflow-y: auto; max-height: calc(90vh - 60px); border-right: 1px solid #e5e7eb;
+    flex: 1.6; min-width: 0; /* min-width:0 がないとflex子要素が内容幅以下に縮まずはみ出す */
+    overflow-y: auto; max-height: calc(94vh - 60px); border-right: 1px solid #e5e7eb;
   }
   .detail-col-right {
-    width: 270px; min-width: 250px; padding: 14px; background: #fffbf0;
-    flex-shrink: 0; overflow-y: auto; max-height: calc(90vh - 60px);
+    width: 280px; min-width: 260px; padding: 16px; background: #fffbf0;
+    flex-shrink: 0; overflow-y: auto; max-height: calc(94vh - 60px);
   }
   /* モニター分割などで幅が狭い場合: 3カラム → 縦積み */
   @media (max-width: 1100px) {
@@ -788,19 +848,19 @@
 
   /* ヒーローカード（品名・受注番号などの主役情報） */
   .dhero {
-    border-radius: 12px; padding: 16px 18px; margin-bottom: 10px;
+    border-radius: 14px; padding: 18px 22px; margin-bottom: 12px;
     position: relative; overflow: hidden;
   }
   .dhero.pd { background: linear-gradient(135deg, #ecfeff 0%, #e0f2fe 100%); border: 1px solid #bae6fd; }
   .dhero.order { background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%); border: 1px solid #c7d2fe; }
   .dhero-label {
-    font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
-    margin-bottom: 4px; display: flex; align-items: center; gap: 6px;
+    font-size: 11.5px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+    margin-bottom: 6px; display: flex; align-items: center; gap: 6px;
   }
   .dhero.pd .dhero-label { color: #0891b2; }
   .dhero.order .dhero-label { color: #4f46e5; }
   .dhero-value {
-    font-size: 19px; font-weight: 800; line-height: 1.3;
+    font-size: 24px; font-weight: 800; line-height: 1.25;
     overflow-wrap: anywhere; word-break: break-word;
   }
   .dhero.pd .dhero-value { color: #0c4a6e; }
@@ -811,39 +871,39 @@
   /* フィールドグリッド: 幅に応じて自動で 3列→2列→1列 に折り返す */
   .dfields {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 1px; background: #e2e8f0;
-    border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;
+    border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;
   }
-  .dfield { background: #fff; padding: 9px 12px; min-width: 0; }
+  .dfield { background: #fff; padding: 12px 15px; min-width: 0; }
   .dfield.span2 { grid-column: span 2; }
   @media (max-width: 500px) { .dfield.span2 { grid-column: span 1; } }
   .dfield-l {
-    font-size: 9.5px; font-weight: 700; color: #94a3b8;
-    letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 3px;
+    font-size: 11px; font-weight: 700; color: #94a3b8;
+    letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 5px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .dfield-v {
-    font-size: 12.5px; font-weight: 600; color: #1e293b;
-    overflow-wrap: anywhere; word-break: break-word; line-height: 1.45;
+    font-size: 15px; font-weight: 600; color: #1e293b;
+    overflow-wrap: anywhere; word-break: break-word; line-height: 1.4;
   }
-  .dfield-v.mono { font-family: 'SF Mono','Consolas',monospace; font-size: 12px; }
+  .dfield-v.mono { font-family: 'SF Mono','Consolas',monospace; font-size: 14.5px; }
   .dfield-v.accent { color: #1d4ed8; font-weight: 800; }
   .dfield-v.money { font-variant-numeric: tabular-nums; }
   .dfield-v.warn { color: #ea580c; font-weight: 800; }
 
   /* セクションカード */
-  .dsection { margin-bottom: 16px; }
+  .dsection { margin-bottom: 18px; }
   .dsection-head {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 8px; gap: 8px; flex-wrap: wrap;
+    margin-bottom: 10px; gap: 8px; flex-wrap: wrap;
   }
   .dsection-title {
-    font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
-    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+    display: inline-flex; align-items: center; gap: 8px;
   }
   .dsection-title::before {
-    content: ''; display: inline-block; width: 3px; height: 14px; border-radius: 2px;
+    content: ''; display: inline-block; width: 4px; height: 17px; border-radius: 2px;
   }
   .dsection-title.cyan { color: #0891b2; } .dsection-title.cyan::before { background: #06b6d4; }
   .dsection-title.blue { color: #1d4ed8; } .dsection-title.blue::before { background: #3b82f6; }
@@ -926,25 +986,25 @@
   .status-badge.shipped::before { background:#10b981; }
 
   /* Child table */
-  .child-table-wrap { border: 1px solid #d1fae5; border-radius: 10px; overflow: hidden; }
-  .child-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .child-table-wrap { border: 1px solid #d1fae5; border-radius: 12px; overflow: hidden; }
+  .child-table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
   .child-table th {
-    background: #ecfdf5; padding: 10px 18px; text-align: left;
-    font-size: 10px; font-weight: 700; color: #059669;
-    letter-spacing: 0.07em; text-transform: uppercase; border-bottom: 1px solid #d1fae5;
+    background: #ecfdf5; padding: 11px 18px; text-align: left;
+    font-size: 12px; font-weight: 700; color: #059669;
+    letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 1px solid #d1fae5;
   }
-  .child-table td { padding: 10px 18px; border-bottom: 1px solid #f0fdf4; color: #374151; }
+  .child-table td { padding: 12px 18px; border-bottom: 1px solid #f0fdf4; color: #374151; }
   .child-table tr:last-child td { border-bottom: none; }
   .child-table tr:hover td { background: #f0fdf4; }
-  .child-table .sealno-cell { font-family: 'SF Mono','Consolas',monospace; font-weight: 600; color: #059669; font-size: 13px; }
-  .child-table .seq-num { color: #9ca3af; font-size: 11px; }
+  .child-table .sealno-cell { font-family: 'SF Mono','Consolas',monospace; font-weight: 600; color: #059669; font-size: 14px; }
+  .child-table .seq-num { color: #9ca3af; font-size: 12.5px; }
   .child-loading { text-align:center; padding:24px; color:#6b7280; font-size:13px; }
   .detail-divider { height:1px; background:#e5e7eb; margin: 20px 0; }
   .child-summary {
     display: flex; align-items: center; gap: 16px; margin-bottom: 14px;
-    padding: 10px 14px; background: #ecfdf5; border-radius: 8px; border: 1px solid #d1fae5;
+    padding: 12px 16px; background: #ecfdf5; border-radius: 10px; border: 1px solid #d1fae5;
   }
-  .child-summary-item { font-size: 12px; color: #374151; }
+  .child-summary-item { font-size: 14px; color: #374151; }
   .child-summary-item strong { color: #059669; font-weight: 700; }
 
   /* Row hover for orders table */
@@ -1358,6 +1418,15 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               CSV出力
             </button>
+            <button class="refresh-btn" onclick="exportEditableExcel()" title="表示中の受注を子データ1件=1行でExcel出力します（製番・納期・シールNoを編集して取り込めます）" style="background:#ecfdf5;border-color:#a7f3d0;color:#059669;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Excel出力
+            </button>
+            <button class="refresh-btn" onclick="document.getElementById('editable-excel-file').click()" title="Excel出力したファイルを編集して取り込むと、製番・納期・シールNoを反映します" style="background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Excel取込
+            </button>
+            <input type="file" id="editable-excel-file" accept=".xlsx,.xls" style="display:none;" onchange="importEditableExcel(event)">
             <div class="delivery-status-seg" id="delivery-status-seg">
               <button type="button" class="delivery-seg-btn seg-unset" data-status="unset" onclick="setDeliveryStatusFilter('unset')" title="未納期のみ表示">未納期</button>
               <button type="button" class="delivery-seg-btn seg-confirmed" data-status="confirmed" onclick="setDeliveryStatusFilter('confirmed')" title="納期確定のみ表示">納期確定</button>
@@ -1644,10 +1713,11 @@
         再読込
       </button>
     </div>
-    <p style="font-size:12px;color:#6b7280;margin:0 0 12px;flex-shrink:0;">進捗ルートに「レーザー」を含む仕事を、製品名＋OT番号単位でまとめてドラッグし、各設備の列へ振り分けます。</p>
+    <p style="font-size:12px;color:#6b7280;margin:0 0 12px;flex-shrink:0;">進捗ルートに「レーザー」を含む仕事、および納期が入った仕事を、製品名＋OT番号単位でまとめてドラッグし、各設備の列へ振り分けます。</p>
     <div id="laser-assign-board" style="display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:14px;align-items:stretch;">
       <div class="laser-col" data-machine="" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:12px;">
         <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:10px;display:flex;align-items:center;gap:6px;flex-shrink:0;">未振り分け <span id="laser-unassigned-count" style="font-size:11px;color:#9ca3af;font-weight:400;"></span></div>
+        <div id="laser-calendar" class="laser-calendar" style="flex-shrink:0;margin-bottom:10px;"></div>
         <div class="laser-col-body">
           <div class="laser-dropzone laser-unassigned-zone" data-machine="" ondragover="laserDragOver(event)" ondragleave="laserDragLeave(event)" ondrop="laserDrop(event)"></div>
         </div>
@@ -1946,129 +2016,176 @@
     </div>
     <div class="pd-modal-body">
       <input type="hidden" id="pd-edit-id">
-      <div class="pd-form-grid">
-        <div class="pd-form-group">
-          <label class="pd-form-label">OT番号</label>
-          <input class="pd-form-input" id="pd-ot_number" type="text" placeholder="OT-000000">
+
+      <!-- 基本情報（ピンク） -->
+      <div class="pd-fieldset basic">
+        <div class="pd-fieldset-legend">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          基本情報
         </div>
-        <div class="pd-form-group">
-          <label class="pd-form-label">客先図番</label>
-          <input class="pd-form-input" id="pd-customer_drawing_no" type="text">
+        <div class="pd-form-grid">
+          <div class="pd-form-group">
+            <label class="pd-form-label">品目区分</label>
+            <select class="pd-form-input" id="pd-product_category">
+              <option value="">選択してください</option>
+              <option value="カバー">カバー</option>
+              <option value="パーツ">パーツ</option>
+              <option value="搬送台">搬送台</option>
+              <option value="作業費">作業費</option>
+            </select>
+          </div>
+          <div class="pd-form-group">
+            <label class="pd-form-label">取引先</label>
+            <select class="pd-form-input" id="pd-client">
+              <option value="">選択してください</option>
+              <option value="ヤマザキマザック株式会社">ヤマザキマザック株式会社</option>
+              <option value="オークマ株式会社">オークマ株式会社</option>
+              <option value="ニデックオーケーケー株式会社">ニデックオーケーケー株式会社</option>
+              <option value="ニデックマシンツール株式会社">ニデックマシンツール株式会社</option>
+              <option value="株式会社ＩＺＵＳＨＩ">株式会社ＩＺＵＳＨＩ</option>
+              <option value="キタムラ機械株式会社">キタムラ機械株式会社</option>
+              <option value="安田工業株式会社">安田工業株式会社</option>
+              <option value="株式会社TAKISAWA">株式会社TAKISAWA</option>
+              <option value="株式会社野村製作所">株式会社野村製作所</option>
+              <option value="中村留精密工業株式会社">中村留精密工業株式会社</option>
+              <option value="ユアサネオテック株式会社">ユアサネオテック株式会社</option>
+              <option value="エンシュウ株式会社">エンシュウ株式会社</option>
+              <option value="ニッシンコーポレーション株式会社">ニッシンコーポレーション株式会社</option>
+              <option value="株式会社ツガミ">株式会社ツガミ</option>
+              <option value="株式会社エグロ">株式会社エグロ</option>
+              <option value="株式会社カシフジ">株式会社カシフジ</option>
+              <option value="豊和工業株式会社">豊和工業株式会社</option>
+              <option value="三菱重工マシナリーテクノロジー株式会社">三菱重工マシナリーテクノロジー株式会社</option>
+              <option value="大鳥機工株式会社">大鳥機工株式会社</option>
+              <option value="株式会社池貝">株式会社池貝</option>
+            </select>
+          </div>
+          <div class="pd-form-group">
+            <label class="pd-form-label">OT番号</label>
+            <input class="pd-form-input" id="pd-ot_number" type="text" placeholder="OT-000000">
+          </div>
+          <div class="pd-form-group">
+            <label class="pd-form-label">客先図番</label>
+            <input class="pd-form-input" id="pd-customer_drawing_no" type="text">
+          </div>
+          <div class="pd-form-group full">
+            <label class="pd-form-label">品名</label>
+            <input class="pd-form-input" id="pd-product_name" type="text">
+          </div>
+          <div class="pd-form-group">
+            <label class="pd-form-label">現行価格</label>
+            <input class="pd-form-input" id="pd-current_price" type="number" placeholder="0">
+          </div>
+          <div class="pd-form-group">
+            <label class="pd-form-label">納入先</label>
+            <input class="pd-form-input" id="pd-delivery_destination" type="text">
+          </div>
+          <div class="pd-form-group">
+            <label class="pd-form-label">最新見積日</label>
+            <input class="pd-form-input" id="pd-latest_quote_date" type="text" placeholder="YYYY/MM/DD">
+          </div>
+          <div class="pd-form-group">
+            <label class="pd-form-label">承認返却日</label>
+            <input class="pd-form-input" id="pd-approval_return_date" type="date">
+          </div>
+          <div class="pd-form-group full">
+            <label class="pd-form-label">備考</label>
+            <input class="pd-form-input" id="pd-remarks" type="text">
+          </div>
         </div>
-        <div class="pd-form-group">
-          <label class="pd-form-label">品目区分</label>
-          <select class="pd-form-input" id="pd-product_category">
-            <option value="">選択してください</option>
-            <option value="カバー">カバー</option>
-            <option value="パーツ">パーツ</option>
-            <option value="搬送台">搬送台</option>
-            <option value="作業費">作業費</option>
-          </select>
+      </div>
+
+      <!-- 部品情報（緑） -->
+      <div class="pd-fieldset parts">
+        <div class="pd-fieldset-legend">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          部品情報
         </div>
-        <div class="pd-form-group">
-          <label class="pd-form-label">第2品目区分</label>
-          <select class="pd-form-input" id="pd-second_category">
-            <option value="">なし</option>
-            <option value="BK">BK</option>
-            <option value="P">P</option>
-          </select>
+        <div class="pd-form-grid">
+          <div class="pd-form-group">
+            <label class="pd-form-label">第2品目区分</label>
+            <select class="pd-form-input" id="pd-second_category">
+              <option value="">なし</option>
+              <option value="BK">BK</option>
+              <option value="P">P</option>
+            </select>
+          </div>
+          <div class="pd-form-group"></div>
+          <div class="pd-form-group">
+            <label class="pd-form-label">部品番号</label>
+            <input class="pd-form-input" id="pd-part_number" type="text" placeholder="OT番号 または P番号">
+          </div>
+          <div class="pd-form-group">
+            <label class="pd-form-label">部品番号URL</label>
+            <input class="pd-form-input" id="pd-part_number_url" type="text">
+          </div>
         </div>
-        <div class="pd-form-group">
-          <label class="pd-form-label">部品番号</label>
-          <input class="pd-form-input" id="pd-part_number" type="text" placeholder="OT番号 または P番号">
+      </div>
+
+      <!-- 製品情報（黄） -->
+      <div class="pd-fieldset spec">
+        <div class="pd-fieldset-legend">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          製品情報
         </div>
-        <div class="pd-form-group">
-          <label class="pd-form-label">部品番号URL</label>
-          <input class="pd-form-input" id="pd-part_number_url" type="text">
+        <div class="pd-form-grid">
+          <div class="pd-form-group">
+            <label class="pd-form-label">横 W (mm)</label>
+            <input class="pd-form-input" id="pd-width_mm" type="number" min="0" placeholder="例: 800">
+          </div>
+          <div class="pd-form-group">
+            <label class="pd-form-label">縦 D (mm)</label>
+            <input class="pd-form-input" id="pd-depth_mm" type="number" min="0" placeholder="例: 500">
+          </div>
+          <div class="pd-form-group">
+            <label class="pd-form-label">高さ H (mm)</label>
+            <input class="pd-form-input" id="pd-height_mm" type="number" min="0" placeholder="例: 300">
+          </div>
+          <div class="pd-form-group">
+            <label class="pd-form-label">重量 (kg)</label>
+            <input class="pd-form-input" id="pd-weight_kg" type="number" min="0" step="0.1" placeholder="任意">
+          </div>
+          <div class="pd-form-group">
+            <label class="pd-form-label">ストローク (mm)</label>
+            <input class="pd-form-input" id="pd-stroke_mm" type="number" min="0" placeholder="任意">
+          </div>
+          <div class="pd-form-group">
+            <label class="pd-form-label">摺動抵抗</label>
+            <input class="pd-form-input" id="pd-sliding_resistance" type="number" min="0" step="0.1" placeholder="任意">
+          </div>
+          <div class="pd-form-group full">
+            <label class="pd-form-label">パレット上で90°回転</label>
+            <select class="pd-form-input" id="pd-rotatable">
+              <option value="true">可（向きを変えてよい）</option>
+              <option value="false">不可（向き固定）</option>
+            </select>
+          </div>
         </div>
-        <div class="pd-form-group">
-          <label class="pd-form-label">横 W (mm)</label>
-          <input class="pd-form-input" id="pd-width_mm" type="number" min="0" placeholder="例: 800">
+      </div>
+
+      <!-- 図面情報（青） -->
+      <div class="pd-fieldset draw">
+        <div class="pd-fieldset-legend">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          図面情報
         </div>
-        <div class="pd-form-group">
-          <label class="pd-form-label">縦 D (mm)</label>
-          <input class="pd-form-input" id="pd-depth_mm" type="number" min="0" placeholder="例: 500">
-        </div>
-        <div class="pd-form-group">
-          <label class="pd-form-label">高さ H (mm)</label>
-          <input class="pd-form-input" id="pd-height_mm" type="number" min="0" placeholder="例: 300">
-        </div>
-        <div class="pd-form-group">
-          <label class="pd-form-label">重量 (kg)</label>
-          <input class="pd-form-input" id="pd-weight_kg" type="number" min="0" step="0.1" placeholder="任意">
-        </div>
-        <div class="pd-form-group">
-          <label class="pd-form-label">パレット上で90°回転</label>
-          <select class="pd-form-input" id="pd-rotatable">
-            <option value="true">可（向きを変えてよい）</option>
-            <option value="false">不可（向き固定）</option>
-          </select>
-        </div>
-        <div class="pd-form-group">
-          <label class="pd-form-label">取引先</label>
-          <select class="pd-form-input" id="pd-client">
-            <option value="">選択してください</option>
-            <option value="ヤマザキマザック株式会社">ヤマザキマザック株式会社</option>
-            <option value="オークマ株式会社">オークマ株式会社</option>
-            <option value="ニデックオーケーケー株式会社">ニデックオーケーケー株式会社</option>
-            <option value="ニデックマシンツール株式会社">ニデックマシンツール株式会社</option>
-            <option value="株式会社ＩＺＵＳＨＩ">株式会社ＩＺＵＳＨＩ</option>
-            <option value="キタムラ機械株式会社">キタムラ機械株式会社</option>
-            <option value="安田工業株式会社">安田工業株式会社</option>
-            <option value="株式会社TAKISAWA">株式会社TAKISAWA</option>
-            <option value="株式会社野村製作所">株式会社野村製作所</option>
-            <option value="中村留精密工業株式会社">中村留精密工業株式会社</option>
-            <option value="ユアサネオテック株式会社">ユアサネオテック株式会社</option>
-            <option value="エンシュウ株式会社">エンシュウ株式会社</option>
-            <option value="ニッシンコーポレーション株式会社">ニッシンコーポレーション株式会社</option>
-            <option value="株式会社ツガミ">株式会社ツガミ</option>
-            <option value="株式会社エグロ">株式会社エグロ</option>
-            <option value="株式会社カシフジ">株式会社カシフジ</option>
-            <option value="豊和工業株式会社">豊和工業株式会社</option>
-            <option value="三菱重工マシナリーテクノロジー株式会社">三菱重工マシナリーテクノロジー株式会社</option>
-            <option value="大鳥機工株式会社">大鳥機工株式会社</option>
-            <option value="株式会社池貝">株式会社池貝</option>
-          </select>
-        </div>
-        <div class="pd-form-group full">
-          <label class="pd-form-label">品名</label>
-          <input class="pd-form-input" id="pd-product_name" type="text">
-        </div>
-        <div class="pd-form-group">
-          <label class="pd-form-label">最新見積日</label>
-          <input class="pd-form-input" id="pd-latest_quote_date" type="text" placeholder="YYYY/MM/DD">
-        </div>
-        <div class="pd-form-group">
-          <label class="pd-form-label">現行価格</label>
-          <input class="pd-form-input" id="pd-current_price" type="number" placeholder="0">
-        </div>
-        <div class="pd-form-group">
-          <label class="pd-form-label">承認返却日</label>
-          <input class="pd-form-input" id="pd-approval_return_date" type="date">
-        </div>
-        <div class="pd-form-group">
-          <label class="pd-form-label">納入先</label>
-          <input class="pd-form-input" id="pd-delivery_destination" type="text">
-        </div>
-        <div class="pd-form-group full">
-          <label class="pd-form-label">備考</label>
-          <input class="pd-form-input" id="pd-remarks" type="text">
-        </div>
-        <div class="pd-form-group full">
-          <label class="pd-form-label">承認図URL</label>
-          <input class="pd-form-input" id="pd-approved_url" type="text">
-        </div>
-        <div class="pd-form-group full">
-          <label class="pd-form-label">図面URL</label>
-          <input class="pd-form-input" id="pd-drawing_url" type="text">
-        </div>
-        <div class="pd-form-group full">
-          <label class="pd-form-label">旧図面URL</label>
-          <input class="pd-form-input" id="pd-old_drawing_url" type="text">
-        </div>
-        <div class="pd-form-group full">
-          <label class="pd-form-label">構成パーツURL</label>
-          <input class="pd-form-input" id="pd-component_url" type="text">
+        <div class="pd-form-grid">
+          <div class="pd-form-group full">
+            <label class="pd-form-label">承認図URL</label>
+            <input class="pd-form-input" id="pd-approved_url" type="text">
+          </div>
+          <div class="pd-form-group full">
+            <label class="pd-form-label">図面URL</label>
+            <input class="pd-form-input" id="pd-drawing_url" type="text">
+          </div>
+          <div class="pd-form-group full">
+            <label class="pd-form-label">旧図面URL</label>
+            <input class="pd-form-input" id="pd-old_drawing_url" type="text">
+          </div>
+          <div class="pd-form-group full">
+            <label class="pd-form-label">構成パーツURL</label>
+            <input class="pd-form-input" id="pd-component_url" type="text">
+          </div>
         </div>
       </div>
     </div>
@@ -4495,6 +4612,8 @@ let _laserCopies = [];   // コピーカード [{ id, order_id, productNo, machi
 let _laserGroupByOrder = new Map(); // order_id → グループ表示情報（コピー作成時に流用）
 let _laserDragKey = null;
 let _laserMachineCurrent = null;  // 現在表示中の設備専用ページの設備名（FOM2/VENTIS/ENSIS）
+let _laserCalMonth = null;   // カレンダー表示中の月（Date、月初）
+let _laserCalSelected = null; // 選択中の納期日（'YYYY-MM-DD'）。未選択はnull
 
 // レーザー設備専用ページを開く（FOM2 / VENTIS / ENSIS 共通）
 function openLaserMachinePage(equip) {
@@ -4532,6 +4651,8 @@ function backToLaserMachine() {
 }
 
 function openLaserAssign() {
+  _laserCalMonth = null;      // 開くたびにデータに応じた月を再計算
+  _laserCalSelected = null;   // 絞り込みは解除した状態で開く
   showPage('laser-assign', null);
   loadLaserAssign();
 }
@@ -4546,28 +4667,45 @@ async function loadLaserAssign() {
       { headers: H }
     );
     const routeRows = routeRes.ok ? await routeRes.json() : [];
-    const laserChildIds = [...new Set(routeRows.map(r => r.child_id))];
-    if (!laserChildIds.length) {
+    const laserChildIds = new Set(routeRows.map(r => r.child_id));
+
+    // 1b) 加えて、子データの納期（orders_child.delivery）が入ったものもすべて対象にする
+    const delivRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/orders_child?delivery=not.is.null&select=id`,
+      { headers: H }
+    );
+    if (delivRes.ok) (await delivRes.json()).forEach(c => laserChildIds.add(c.id));
+
+    const laserChildIdList = [...laserChildIds];
+    if (!laserChildIdList.length) {
       _laserGroups = [];
       renderLaserAssign();
       return;
     }
 
     // 2) 対象の子データを取得
-    const childRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/orders_child?id=in.(${laserChildIds.join(',')})&select=id,order_id,sealno,laser_machine,laser_done`,
-      { headers: H }
-    );
-    const children = childRes.ok ? await childRes.json() : [];
+    const children = [];
+    for (let i = 0; i < laserChildIdList.length; i += 150) {
+      const chunk = laserChildIdList.slice(i, i + 150);
+      const cRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/orders_child?id=in.(${chunk.join(',')})&select=id,order_id,sealno,laser_machine,laser_done,delivery`,
+        { headers: H }
+      );
+      if (cRes.ok) children.push(...await cRes.json());
+    }
     if (!children.length) { _laserGroups = []; renderLaserAssign(); return; }
 
     // 3) order_id → 親データ（製番・各項目）を取得し、drawingno で productdate 突合
     const orderIds = [...new Set(children.map(c => c.order_id))];
-    const ordRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/orders?id=in.(${orderIds.join(',')})&select=id,productno,orderno,drawingno,orderdate,deliverydate,quantity,unit`,
-      { headers: H }
-    );
-    const orders = ordRes.ok ? await ordRes.json() : [];
+    const orders = [];
+    for (let i = 0; i < orderIds.length; i += 150) {
+      const chunk = orderIds.slice(i, i + 150);
+      const oRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/orders?id=in.(${chunk.join(',')})&select=id,productno,orderno,drawingno,orderdate,deliverydate,quantity,unit`,
+        { headers: H }
+      );
+      if (oRes.ok) orders.push(...await oRes.json());
+    }
     const orderMap = new Map(orders.map(o => [o.id, o]));
 
     const drawingnos = [...new Set(orders.map(o => o.drawingno).filter(Boolean))];
@@ -4606,13 +4744,14 @@ async function loadLaserAssign() {
           deliverydate: o.deliverydate || '-',
           quantity: o.quantity != null ? o.quantity : '-',
           unit: o.unit || '-',
-          childIds: [], machines: new Set(), doneFlags: []
+          childIds: [], machines: new Set(), doneFlags: [], deliveries: []
         });
       }
       const g = groups.get(key);
       g.childIds.push(c.id);
       g.machines.add(c.laser_machine || '');
       g.doneFlags.push(c.laser_done === true);
+      if (c.delivery) g.deliveries.push(c.delivery);
     });
 
     _laserGroups = [...groups.values()].map(g => {
@@ -4620,7 +4759,9 @@ async function loadLaserAssign() {
       const machine = (ms.length === 1 && g.machines.size === 1) ? ms[0] : '';
       // 全子データが完了なら完了扱い
       const done = g.doneFlags.length > 0 && g.doneFlags.every(Boolean);
-      return { ...g, machine, done, count: g.childIds.length };
+      // 子データの納期のうち最も早い日をカードの代表納期にする（カレンダー集計・絞り込みに使用）
+      const childDelivery = g.deliveries.length ? g.deliveries.slice().sort()[0] : '';
+      return { ...g, machine, done, count: g.childIds.length, childDelivery };
     });
 
     // order_id → 表示情報マップ（コピーカードの表示に流用）
@@ -4650,6 +4791,7 @@ async function loadLaserCopies() {
         orderNo: g?.orderNo || '-', drawingNo: g?.drawingNo || '-',
         productName: g?.productName || '-', otNumber: g?.otNumber || '-',
         client: g?.client || '-', deliverydate: g?.deliverydate || '-',
+        childDelivery: g?.childDelivery || '',
         productCategory: g?.productCategory || '',
         quantity: g?.quantity != null ? g.quantity : '-', unit: g?.unit || '-',
         count: g?.count || 0, isCopy: true, done: r.done === true,
@@ -4659,19 +4801,115 @@ async function loadLaserCopies() {
 }
 
 function renderLaserAssign() {
+  renderLaserCalendar();
   const machines = ['', 'VENTIS', 'ENSIS', 'FOM2'];
   machines.forEach(m => {
     const zone = document.querySelector('.laser-dropzone[data-machine="' + m + '"]');
     if (!zone) return;
-    const groups = _laserGroups.filter(g => g.machine === m);
-    const copies = _laserCopies.filter(c => c.machine === m);
+    let groups = _laserGroups.filter(g => g.machine === m);
+    let copies = _laserCopies.filter(c => c.machine === m);
+    // 未振り分け列だけ、カレンダーで日付を選んでいればその納期のカードに絞り込む
+    if (m === '' && _laserCalSelected) {
+      groups = groups.filter(g => (g.childDelivery || '') === _laserCalSelected);
+      copies = copies.filter(c => (c.childDelivery || '') === _laserCalSelected);
+    }
     const html = groups.map(g => laserCardHtml(g)).join('') + copies.map(c => laserCardHtml(c)).join('');
+    const emptyMsg = (m === '' && _laserCalSelected)
+      ? 'この納期のカードはありません'
+      : 'ここにドラッグ';
     zone.innerHTML = html ||
-      '<div class="laser-empty-msg" style="font-size:11px;color:#cbd5e1;text-align:center;padding:14px 0;">ここにドラッグ</div>';
+      '<div class="laser-empty-msg" style="font-size:11px;color:#cbd5e1;text-align:center;padding:14px 0;">' + emptyMsg + '</div>';
     const cnt = groups.length + copies.length;
-    if (m === '') { const el = document.getElementById('laser-unassigned-count'); if (el) el.textContent = '(' + cnt + '件)'; }
+    if (m === '') {
+      const el = document.getElementById('laser-unassigned-count');
+      if (el) el.textContent = _laserCalSelected
+        ? ('(' + cnt + '件 / ' + _laserCalSelected + ')')
+        : ('(' + cnt + '件)');
+    }
     else { const el = document.querySelector('.laser-col-count[data-machine="' + m + '"]'); if (el) el.textContent = '(' + cnt + '件)'; }
   });
+}
+
+// 未振り分けの納期カレンダーを描画する。各日付セルにその日納期の未振り分けカード件数を出す。
+function renderLaserCalendar() {
+  const wrap = document.getElementById('laser-calendar');
+  if (!wrap) return;
+
+  // 未振り分け（machine=''）カードの納期ごと件数を集計
+  const counts = new Map();  // 'YYYY-MM-DD' → 件数
+  const addCount = (d) => { if (d) counts.set(d, (counts.get(d) || 0) + 1); };
+  _laserGroups.filter(g => g.machine === '').forEach(g => addCount(g.childDelivery));
+  _laserCopies.filter(c => c.machine === '').forEach(c => addCount(c.childDelivery));
+
+  // 表示月の初期値：未選択なら「最も件数が多い納期の月」、無ければ今月
+  if (!_laserCalMonth) {
+    let base = null;
+    if (_laserCalSelected) base = _laserCalSelected;
+    else if (counts.size) {
+      // 最も早い納期の月を初期表示にする
+      base = [...counts.keys()].sort()[0];
+    }
+    const d = base ? new Date(base + 'T00:00:00') : new Date();
+    _laserCalMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+  }
+
+  const year = _laserCalMonth.getFullYear();
+  const month = _laserCalMonth.getMonth();
+  const first = new Date(year, month, 1);
+  const startDow = first.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayStr = (() => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`; })();
+
+  const dow = ['日','月','火','水','木','金','土'];
+  let html = '<div class="laser-cal-head">'
+    + '<div class="laser-cal-nav"><button onclick="laserCalPrev()" title="前の月">‹</button></div>'
+    + '<div class="laser-cal-title">' + year + '年' + (month + 1) + '月</div>'
+    + '<div class="laser-cal-nav"><button onclick="laserCalNext()" title="次の月">›</button></div>'
+    + '</div><div class="laser-cal-grid">';
+  dow.forEach((d, i) => {
+    html += '<div class="laser-cal-dow' + (i===0?' sun':i===6?' sat':'') + '">' + d + '</div>';
+  });
+  for (let i = 0; i < startDow; i++) html += '<div class="laser-cal-cell empty"></div>';
+  for (let day = 1; day <= daysInMonth; day++) {
+    const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const c = counts.get(ds) || 0;
+    const dowIdx = new Date(year, month, day).getDay();
+    const isSel = (ds === _laserCalSelected);
+    const cls = ['laser-cal-cell'];
+    if (c > 0) cls.push('has');
+    if (isSel) cls.push('selected');
+    if (ds === todayStr) cls.push('today');
+    if (dowIdx === 0) cls.push('sun'); if (dowIdx === 6) cls.push('sat');
+    // 件数がある日、または選択中の日（0件でも解除できるよう）クリック可能にする
+    const onclick = (c > 0 || isSel) ? ' onclick="laserCalSelectDay(\'' + ds + '\')"' : '';
+    html += '<div class="' + cls.join(' ') + '"' + onclick + '>'
+      + '<span class="laser-cal-daynum">' + day + '</span>'
+      + ((c > 0 || isSel) ? '<span class="laser-cal-badge">' + c + '</span>' : '')
+      + '</div>';
+  }
+  html += '</div>';
+  if (_laserCalSelected) {
+    html += '<div class="laser-cal-clear"><button onclick="laserCalClear()">絞り込み解除</button></div>';
+  }
+  wrap.innerHTML = html;
+}
+
+function laserCalPrev() {
+  _laserCalMonth = new Date(_laserCalMonth.getFullYear(), _laserCalMonth.getMonth() - 1, 1);
+  renderLaserCalendar();
+}
+function laserCalNext() {
+  _laserCalMonth = new Date(_laserCalMonth.getFullYear(), _laserCalMonth.getMonth() + 1, 1);
+  renderLaserCalendar();
+}
+function laserCalSelectDay(ds) {
+  // 同じ日を再クリックしたら解除、それ以外は選択
+  _laserCalSelected = (_laserCalSelected === ds) ? null : ds;
+  renderLaserAssign();
+}
+function laserCalClear() {
+  _laserCalSelected = null;
+  renderLaserAssign();
 }
 
 function laserCardHtml(g) {
@@ -4723,7 +4961,7 @@ function laserCardHtml(g) {
       '</div>' +
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">' +
         '<span style="color:#6b7280;font-size:9px;">受注 <span style="font-family:monospace;color:#374151;">' + g.orderNo + '</span></span>' +
-        '<span style="color:#6b7280;font-size:9px;">納期 <strong style="color:#dc2626;">' + (g.deliverydate||'-') + '</strong></span>' +
+        '<span style="color:#6b7280;font-size:9px;">納期 <strong style="color:#0d9488;">' + (g.childDelivery||'-') + '</strong></span>' +
       '</div>' +
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px;">' +
         '<span style="color:#6b7280;font-size:9px;">数量 <strong style="color:#111827;">' + g.quantity + '</strong> ' + g.unit + '</span>' +
@@ -5512,7 +5750,7 @@ function extractIzushiRows(full, lines) {
     const pats = [
       // FAC/FAL系（ワイパーセット等）: FACU30784BWS / FACU30658A02WS / FACU30633AW / FACU30457B04STK
       /\b(FA[CL]-?U?\d{5,6}[A-Z]\d{0,2}(?:WS|STK|W)?)\b/,
-      /\b(\d?[UH]\d{5,6}[A-Z]\d{2})\b/,        // U33215A04 / H09782A01 / 2H0500258A
+      /\b(\d?[UH]\d{5,6}[A-Z]\d{0,2})\b/,      // U33215A04 / H09782A01 / 2H0500258A / U30923A（末尾数字なしも可）
       /\b(FAC\d{4,6}[A-Z]{1,2}\d{0,2})\b/,     // FAC11511AB02 / FAC16505A
       /\b(FAC-?[A-Z]?\d{4,6}[A-Z]?\d{0,2})\b/, // FAC-011446 等（旧形式）
     ];
@@ -5528,8 +5766,13 @@ function extractIzushiRows(full, lines) {
     wm = nameLine.match(wiperCode) || custLine.match(wiperCode);
     if (wm) return wm[0];
     for (const p of pats) { const m = custLine.match(p); if (m) return m[1]; }
+    // 大阪ﾃｯｸ行の7桁品番（5325781 / 5369734 等）。OT番号(OT-xxxxxx)を誤って拾わないよう、
+    // OT番号部分を除いてから7桁を探す
+    const custNoOt = custLine.replace(/OT-?\d{3,6}(?:-[\d\u2460-\u2473]+)?/g, ' ');
+    let m = custNoOt.match(/\b(\d{7})\b/);          // 7桁品番（大阪ﾃｯｸ行側）
+    if (m) return m[1];
     // 大阪ﾃｯｸ行に無ければ商品名側
-    let m = nameLine.match(/\b(\d{7})\b/);          // 7桁品番 (5671098 等)
+    m = nameLine.match(/\b(\d{7})\b/);              // 7桁品番 (5671098 等)
     if (m) return m[1];
     for (const p of pats) { m = nameLine.match(p); if (m) return m[1]; }
     return '';
@@ -7533,6 +7776,184 @@ function exportOrdersCSV() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// ==================== 親子データ Excel入出力（製番・納期・シールNo） ====================
+// 表示中の受注を「子データ1件=1行」でExcel出力する。各行に親id・子idを持たせ、
+// 取り込み時にそのidで確実に対象レコードを特定する。編集対象は製番・納期・シールNoの3項目。
+const EDITABLE_XLSX_HEADER = ['親id', '子id', '受注番号', '図番', '品名', '製番', '納期', 'シールNo'];
+const EDITABLE_XLSX_SHEET = '受注編集';
+
+async function exportEditableExcel() {
+  const data = filteredOrders;
+  if (!data || !data.length) { alert('エクスポートするデータがありません。'); return; }
+  if (typeof XLSX === 'undefined') { alert('Excelライブラリの読み込みに失敗しています。ページを再読込してください。'); return; }
+
+  // 表示中の受注の子データをまとめて取得（order_id in (...) を150件ずつ分割）
+  const orderIds = data.map(o => o.id).filter(v => v != null);
+  const childByOrder = new Map();  // order_id → [子データ...]
+  try {
+    for (let i = 0; i < orderIds.length; i += 150) {
+      const chunk = orderIds.slice(i, i + 150);
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/orders_child?order_id=in.(${chunk.join(',')})&select=id,order_id,sealno,delivery&order=id.asc`,
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }
+      );
+      if (!res.ok) continue;
+      for (const c of await res.json()) {
+        if (!childByOrder.has(c.order_id)) childByOrder.set(c.order_id, []);
+        childByOrder.get(c.order_id).push(c);
+      }
+    }
+  } catch(e) { alert('子データの取得に失敗しました: ' + e.message); return; }
+
+  // 製品名は図番→productdateで解決（既存のマップがあれば利用）
+  const nameOf = (dno) => {
+    if (!dno) return '';
+    const pd = (typeof allProductdate !== 'undefined' ? allProductdate : []).find(p => p.customer_drawing_no === dno);
+    return pd ? (pd.product_name || '') : '';
+  };
+
+  const body = [];
+  for (const o of data) {
+    const children = childByOrder.get(o.id) || [];
+    if (children.length === 0) {
+      // 子が無い受注も1行出す（子idは空。取り込むと新規子データとして追加される）
+      body.push([o.id, '', o.orderno || '', o.drawingno || '', nameOf(o.drawingno), o.productno || '', '', '']);
+    } else {
+      for (const c of children) {
+        body.push([o.id, c.id, o.orderno || '', o.drawingno || '', nameOf(o.drawingno),
+                   o.productno || '', c.delivery || '', c.sealno || '']);
+      }
+    }
+  }
+
+  const today = new Date();
+  const stamp = `${today.getFullYear()}/${String(today.getMonth()+1).padStart(2,'0')}/${String(today.getDate()).padStart(2,'0')}`;
+  const aoa = [
+    ['受注編集シート（製番・納期・シールNoを編集して取込できます）'],
+    [`出力日: ${stamp}`, '', '※ 親id・子idの列は変更しないでください', '', '', `件数: ${body.length}行`],
+    [],
+    EDITABLE_XLSX_HEADER,
+    ...body,
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [{ wch: 8 }, { wch: 8 }, { wch: 15 }, { wch: 18 }, { wch: 32 }, { wch: 14 }, { wch: 12 }, { wch: 13 }];
+  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: EDITABLE_XLSX_HEADER.length - 1 } }];
+  ws['!freeze'] = { xSplit: 0, ySplit: 4 };
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, EDITABLE_XLSX_SHEET);
+  const ts = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
+  try { XLSX.writeFile(wb, `受注編集_${ts}.xlsx`); }
+  catch(e) { alert('Excel出力に失敗しました: ' + e.message); }
+}
+
+// 日付セルを 'YYYY-MM-DD' に正規化（空はnull）。Excelのシリアル値・各種区切りに対応
+function normalizeDateCell(v) {
+  if (v === '' || v == null) return null;
+  if (typeof v === 'number') {           // Excelシリアル値
+    const d = new Date(Math.round((v - 25569) * 86400 * 1000));
+    return isNaN(d) ? null : d.toISOString().slice(0, 10);
+  }
+  const s = String(v).trim();
+  if (!s) return null;
+  const m = s.match(/(\d{4})[\/\-.年](\d{1,2})[\/\-.月](\d{1,2})/);
+  if (m) return `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
+  return s;  // それ以外はそのまま（DB側で弾かれたら報告）
+}
+
+async function importEditableExcel(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = '';  // 同じファイルを続けて選べるようにリセット
+  if (!file) return;
+  if (typeof XLSX === 'undefined') { alert('Excelライブラリの読み込みに失敗しています。ページを再読込してください。'); return; }
+
+  let rows;
+  try {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array', cellDates: false });
+    const ws = wb.Sheets[EDITABLE_XLSX_SHEET] || wb.Sheets[wb.SheetNames[0]];
+    const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    // ヘッダー行（親id 子id ...）を探す
+    const hIdx = aoa.findIndex(r => String(r[0]).trim() === '親id' && String(r[1]).trim() === '子id');
+    if (hIdx < 0) { alert('この形式のファイルは取り込めません。「Excel出力」で作成したファイルを編集して取り込んでください。'); return; }
+    rows = aoa.slice(hIdx + 1).filter(r => r.some(c => String(c).trim() !== ''));
+  } catch(e) { alert('ファイルの読み込みに失敗しました: ' + e.message); return; }
+
+  if (!rows.length) { alert('取り込む行がありません。'); return; }
+
+  // 列: [親id, 子id, 受注番号, 図番, 品名, 製番, 納期, シールNo]
+  const parentUpdates = new Map();   // order_id → productno（重複は最後の値）
+  const childUpdates = [];           // { id, delivery, sealno }
+  const childInserts = [];           // { order_id, delivery, sealno }
+  let skipped = 0;
+
+  for (const r of rows) {
+    const pid = parseInt(r[0]);
+    const cid = r[1] !== '' && r[1] != null ? parseInt(r[1]) : null;
+    const productno = String(r[5] ?? '').trim();
+    const delivery = normalizeDateCell(r[6]);
+    const sealno = String(r[7] ?? '').trim();
+
+    if (!pid || isNaN(pid)) { skipped++; continue; }  // 親idが無い行はスキップ
+    // 製番は親に反映（同じ親を複数行が指す場合は上書き。空欄はnullで消去）
+    parentUpdates.set(pid, productno || null);
+
+    if (cid && !isNaN(cid)) {
+      childUpdates.push({ id: cid, delivery, sealno: sealno });  // sealnoはNOT NULL制約のため空文字を保持
+    } else {
+      // 子idが無い＝新規子データとして追加（シールNoか納期のどちらかが入っている場合のみ）
+      if (sealno || delivery) childInserts.push({ order_id: pid, delivery, sealno: sealno });
+    }
+  }
+
+  const msg = [
+    '取り込み内容を確認してください。',
+    '',
+    `・製番を更新する受注: ${parentUpdates.size}件`,
+    `・納期／シールNoを更新する子データ: ${childUpdates.length}件`,
+    childInserts.length ? `・新規追加する子データ: ${childInserts.length}件` : '',
+    skipped ? `・親idが無くスキップする行: ${skipped}件` : '',
+    '',
+    '実行してよろしいですか？',
+  ].filter(Boolean).join('\n');
+  if (!confirm(msg)) return;
+
+  if (typeof rtSuppress === 'function') rtSuppress();
+  const H = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+  let okParent = 0, okChild = 0, okInsert = 0, errors = [];
+
+  try {
+    // 親（製番）更新
+    for (const [id, productno] of parentUpdates) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${id}`,
+        { method: 'PATCH', headers: H, body: JSON.stringify({ productno }) });
+      if (res.ok) okParent++; else errors.push(`受注id ${id}: ${(await res.text()).slice(0,80)}`);
+    }
+    // 子（納期・シールNo）更新
+    for (const c of childUpdates) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders_child?id=eq.${c.id}`,
+        { method: 'PATCH', headers: H, body: JSON.stringify({ delivery: c.delivery, sealno: c.sealno }) });
+      if (res.ok) okChild++; else errors.push(`子id ${c.id}: ${(await res.text()).slice(0,80)}`);
+    }
+    // 子（新規追加）— まとめてPOST
+    if (childInserts.length) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders_child`,
+        { method: 'POST', headers: H, body: JSON.stringify(childInserts) });
+      if (res.ok) okInsert = childInserts.length; else errors.push(`新規子データ: ${(await res.text()).slice(0,120)}`);
+    }
+  } catch(e) { errors.push(e.message); }
+
+  await loadOrders();
+
+  const result = [
+    '取り込みが完了しました。',
+    `・製番更新: ${okParent}件`,
+    `・子データ更新: ${okChild}件`,
+    okInsert ? `・子データ追加: ${okInsert}件` : '',
+    errors.length ? `\n⚠ エラー ${errors.length}件:\n` + errors.slice(0,10).join('\n') : '',
+  ].filter(Boolean).join('\n');
+  alert(result);
 }
 
 function renderOrdersTable() {
@@ -10805,7 +11226,7 @@ function openPdModal(id) {
   const fields = ['ot_number','customer_drawing_no','product_category','second_category','part_number','part_number_url','client',
     'product_name','latest_quote_date','current_price','approval_return_date',
     'delivery_destination','remarks','approved_url','drawing_url','old_drawing_url','component_url',
-    'width_mm','depth_mm','height_mm','weight_kg','rotatable'];
+    'width_mm','depth_mm','height_mm','weight_kg','stroke_mm','sliding_resistance','rotatable'];
 
   const childSection = document.getElementById('pd-child-section');
 
@@ -11118,6 +11539,8 @@ async function savePdRecord() {
     depth_mm:               document.getElementById('pd-depth_mm').value  !== '' ? parseInt(document.getElementById('pd-depth_mm').value)  : null,
     height_mm:              document.getElementById('pd-height_mm').value !== '' ? parseInt(document.getElementById('pd-height_mm').value) : null,
     weight_kg:              document.getElementById('pd-weight_kg').value !== '' ? parseFloat(document.getElementById('pd-weight_kg').value) : null,
+    stroke_mm:              document.getElementById('pd-stroke_mm').value !== '' ? parseInt(document.getElementById('pd-stroke_mm').value) : null,
+    sliding_resistance:     document.getElementById('pd-sliding_resistance').value !== '' ? parseFloat(document.getElementById('pd-sliding_resistance').value) : null,
     rotatable:              document.getElementById('pd-rotatable').value === 'true',
     client:                 document.getElementById('pd-client').value.trim() || null,
     product_name:           document.getElementById('pd-product_name').value.trim() || null,
