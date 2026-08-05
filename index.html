@@ -87,6 +87,349 @@
   .laser-dropzone::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
   .laser-dropzone::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
 
+  /* ---- 設備ページ 未着手/完了フィールド ---- */
+  .laser-field { border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; background:#fff;
+    flex:0 0 auto; display:flex; flex-direction:column; }
+  .laser-field-head { display:flex; align-items:center; gap:8px; padding:9px 14px; font-size:13px; font-weight:700; border-bottom:1px solid #e5e7eb; }
+  .laser-field-head.todo { background:#f9fafb; color:#374151; }
+  .laser-field-head.done { background:#f0fdf4; color:#15803d; }
+  .laser-field-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .laser-field-count { font-size:11px; font-weight:400; color:#9ca3af; }
+  /* ヘッダーの絞り込み中バッジ */
+  .lf-datechip { display:inline-flex; align-items:center; gap:6px; margin-left:8px; }
+  .lf-datechip .lf-date { font-size:11px; font-weight:700; color:#1d4ed8; background:#eff6ff;
+    border:1px solid #bfdbfe; border-radius:20px; padding:2px 10px; white-space:nowrap; }
+  .lf-datechip .lf-clear { font-size:10px; font-weight:700; color:#6b7280; background:#f3f4f6;
+    border:1px solid #e5e7eb; border-radius:6px; padding:2px 9px; cursor:pointer; }
+  .lf-datechip .lf-clear:hover { background:#fee2e2; color:#dc2626; border-color:#fecaca; }
+  /* カレンダーで選択中の日 */
+  .laser-mini-cal .lmc-cell.has { cursor:pointer; }
+  .laser-mini-cal .lmc-cell.picked { background:#1d4ed8 !important; border-color:#1d4ed8 !important; }
+  .laser-mini-cal .lmc-cell.picked .lmc-daynum { color:#fff !important; }
+  .laser-mini-cal .lmc-cell.picked .lmc-badge { background:#fff !important; color:#1d4ed8 !important; }
+  .laser-field-head.done .laser-field-count { color:#86a893; }
+  /* カードは横並び自動折り返し。高さは実際のカード2行分をJSで設定し、あふれたらこの中でスクロール */
+  .laser-field-body {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:12px;
+    grid-auto-rows:max-content; align-items:start;   /* カードを引き伸ばさない＝内容が切れない */
+    padding:10px; align-content:start;
+    min-height:140px; overflow-y:auto;
+    transition:background .12s;
+  }
+  .laser-field-body.drag-over { background:#eff6ff; }
+  .laser-field-body > .laser-card { flex-shrink:0; }
+  .laser-field-empty { grid-column:1/-1; text-align:center; color:#cbd5e1; font-size:12px; padding:26px 0; }
+  .laser-field-body::-webkit-scrollbar { width:8px; }
+  .laser-field-body::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:4px; }
+  .laser-field-body::-webkit-scrollbar-track { background:#f1f5f9; border-radius:4px; }
+  /* フィールドを「左:カレンダー ＋ 右:カード」の横並びに */
+  .laser-field-row { display:flex; gap:0; align-items:stretch; }
+  .laser-field-row > .laser-field-body { flex:1; min-width:0; }
+  /* ミニカレンダー（カード領域と同じ高さ292pxに揃える） */
+  .laser-mini-cal { width:300px; flex-shrink:0; border-right:1px solid #e5e7eb; padding:8px 10px;
+    height:292px; box-sizing:border-box; display:flex; flex-direction:column; background:#fff; }
+  .laser-mini-cal .lmc-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; flex-shrink:0; }
+  .laser-mini-cal .lmc-title { font-size:11px; font-weight:700; color:#374151; }
+  .laser-mini-cal .lmc-nav { display:flex; gap:3px; }
+  .laser-mini-cal .lmc-nav button { width:18px; height:18px; border:1px solid #e5e7eb; background:#f9fafb; border-radius:5px; cursor:pointer; color:#6b7280; font-size:11px; line-height:1; display:flex; align-items:center; justify-content:center; }
+  .laser-mini-cal .lmc-nav button:hover { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; }
+  .laser-mini-cal .lmc-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; flex:1; grid-auto-rows:1fr; }
+  .laser-mini-cal .lmc-dow { text-align:center; font-size:8px; font-weight:700; color:#9ca3af; }
+  .laser-mini-cal .lmc-dow.sun { color:#dc2626; } .laser-mini-cal .lmc-dow.sat { color:#2563eb; }
+  .laser-mini-cal .lmc-cell { position:relative; border-radius:4px; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:3px; font-size:10px; color:#374151; border:1px solid transparent; min-height:0; }
+  .laser-mini-cal .lmc-cell.empty { visibility:hidden; }
+  .laser-mini-cal .lmc-cell.has { background:#f8fafc; border-color:#e2e8f0; }
+  .laser-mini-cal .lmc-cell.today { border-color:#f59e0b; }
+  .laser-mini-cal .lmc-daynum { font-size:10.5px; font-weight:600; color:#64748b; line-height:1; }
+  .laser-mini-cal .lmc-cell.has .lmc-daynum { color:#334155; }
+  .laser-mini-cal .lmc-cell.sun .lmc-daynum { color:#dc2626; } .laser-mini-cal .lmc-cell.sat .lmc-daynum { color:#2563eb; }
+  .laser-mini-cal .lmc-badge { min-width:24px; height:14px; padding:0 4px; box-sizing:border-box; display:inline-flex; align-items:center; justify-content:center; font-size:9px; font-weight:800; line-height:1; color:#fff; border-radius:20px; white-space:nowrap; }
+  .laser-mini-cal.todo .lmc-badge { background:#2563eb; }
+  .laser-mini-cal.done .lmc-badge { background:#16a34a; }
+
+  /* ---- 設備ページ 出荷予定表（画像ライクなリスト表、カード領域と同じ292px高） ---- */
+  .laser-sched { width:440px; flex-shrink:0; border-right:1px solid #e5e7eb; height:292px;
+    box-sizing:border-box; overflow-y:auto; background:#fff; }
+  .laser-sched table { width:100%; border-collapse:collapse; table-layout:fixed; }
+  .laser-sched th, .laser-sched td { border:1px solid #b6c2d1; padding:2px 4px; font-size:10px;
+    vertical-align:middle; word-break:break-all; }
+  .laser-sched thead th { position:sticky; top:0; z-index:1; background:#bfe0f5; color:#1e3a5f;
+    font-weight:700; text-align:center; font-size:10px; }
+  .laser-sched col.c-date { width:52px; }
+  .laser-sched col.c-dow  { width:26px; }
+  .laser-sched col.c-cust { width:60px; }
+  .laser-sched col.c-item { width:auto; }
+  .laser-sched col.c-note { width:64px; }
+  .laser-sched td.sc-date { text-align:center; font-weight:700; background:#eef5fb; white-space:nowrap; }
+  .laser-sched td.sc-dow  { text-align:center; color:#475569; }
+  .laser-sched td.sc-cust { text-align:center; }
+  .laser-sched td.sc-item { text-align:left; }
+  .laser-sched td.sc-note { text-align:center; color:#374151; }
+  .laser-sched .sc-empty { text-align:center; color:#9ca3af; padding:24px 6px; font-size:11px; }
+  .laser-sched::-webkit-scrollbar { width:8px; }
+  .laser-sched::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:4px; }
+  .laser-sched::-webkit-scrollbar-track { background:#f1f5f9; border-radius:4px; }
+
+  /* 設備ページ：左カラム（カレンダー＋在庫）／右カラム（2フィールド）
+     ページ全体にスクロールバーが出ないよう、画面の高さに収めて内側だけスクロールさせる */
+  #page-laser-machine > div { height: calc(100vh - 99px); box-sizing:border-box;
+    display:flex; flex-direction:column; overflow-y:auto; }
+  .laser-machine-layout { display:flex; gap:18px; align-items:stretch; flex:1; min-height:0; }
+  .laser-side { flex-shrink:0; display:flex; flex-direction:column; gap:12px; min-height:0; }
+  .laser-fields { flex:1; min-width:0; display:flex; flex-direction:column; gap:10px; min-height:0; }
+  /* 左カラムのカレンダーは枠付きカードに。タブで未着手/完了を切替 */
+  .laser-side-cal { border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; background:#fff; width:460px; }
+  .laser-cal-tabs { display:flex; border-bottom:1px solid #e5e7eb; }
+  .laser-cal-tab { flex:1; padding:8px 0; font-size:12px; font-weight:700; border:none; background:#f9fafb; color:#9ca3af; cursor:pointer; border-bottom:2px solid transparent; }
+  .laser-cal-tab:hover { background:#f3f4f6; }
+  .laser-cal-tab.active#laser-caltab-todo { background:#fff; color:#2563eb; border-bottom-color:#2563eb; }
+  .laser-cal-tab.active#laser-caltab-done { background:#fff; color:#16a34a; border-bottom-color:#16a34a; }
+  /* 左カラム内ではカレンダー・予定表の右境界線は不要 */
+  .laser-side .laser-mini-cal { border-right:none; width:100%; }
+  .laser-side .laser-sched { border-right:none; width:300px; }
+
+  /* ---- 設備ごとの在庫リスト ---- */
+  .laser-inv { width:460px; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; background:#fff;
+    flex:1; min-height:0; display:flex; flex-direction:column; }
+  .laser-inv-head { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:#f9fafb; border-bottom:1px solid #e5e7eb; }
+  .laser-inv-title { font-size:12px; font-weight:700; color:#374151; display:flex; align-items:center; gap:6px; }
+  .laser-inv-tabs { display:inline-flex; gap:3px; }
+  .laser-inv-tab { font-size:10px; font-weight:700; padding:3px 9px; border-radius:20px; cursor:pointer;
+    border:1px solid #e5e7eb; background:#fff; color:#9ca3af; white-space:nowrap; }
+  .laser-inv-tab:hover { border-color:#a5f3fc; color:#0e7490; }
+  .laser-inv-tab.active { background:#0891b2; border-color:#0891b2; color:#fff; }
+
+  /* ---- 設備名プレート（ヘアライン加工のステンレス板風・全幅バンド） ---- */
+  .machine-plate {
+    position:relative; display:flex; align-items:center; justify-content:space-between;
+    margin:8px 0 6px; padding:4px 24px; border-radius:8px;
+    /* ヘアライン（細い縦筋）＋斜めの光沢で金属の質感を出す */
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.55) 0 1px, rgba(0,0,0,.045) 1px 2px, rgba(255,255,255,0) 2px 4px),
+      linear-gradient(105deg, #9aa3ab 0%, #e9edf1 18%, #c3cad1 34%, #f4f7f9 52%, #b9c1c9 68%, #e4e9ee 84%, #98a1a9 100%);
+    border:1px solid #8d959d;
+    box-shadow: 0 2px 6px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.85), inset 0 -2px 4px rgba(0,0,0,.12);
+  }
+  /* 上下のエッジに入る鋭いハイライト */
+  .machine-plate::before {
+    content:''; position:absolute; left:8px; right:8px; top:3px; height:1px; border-radius:1px;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.95), transparent);
+  }
+  .machine-plate-name {
+    flex:1; text-align:center; position:relative;
+    margin:0; font-size:22px; font-weight:800; letter-spacing:0.3em; text-indent:0.3em;
+    color:#2b3138; text-shadow:0 1px 0 rgba(255,255,255,.9), 0 -1px 0 rgba(0,0,0,.25);
+    font-family:'Arial Black','Impact',sans-serif;
+    display:flex; align-items:center; justify-content:center; gap:26px;
+    transition: color .3s ease, text-shadow .3s ease;
+  }
+  /* カーソルを合わせると設備名がネオンブルーに発光する */
+  .machine-plate:hover .machine-plate-name {
+    color:#aeefff;
+    text-shadow:
+      0 0 3px #e0fbff,
+      0 0 8px #38e0ff,
+      0 0 16px #22d3ee,
+      0 0 30px #0ea5e9,
+      0 0 52px #0284c7;
+    animation: plateNeonFlicker 2.4s ease-in-out infinite;
+  }
+  /* ネオン管らしい微妙な明滅 */
+  @keyframes plateNeonFlicker {
+    0%, 100% { opacity:1; }
+    46%      { opacity:1; }
+    48%      { opacity:.82; }
+    50%      { opacity:1; }
+    72%      { opacity:1; }
+    73%      { opacity:.9; }
+    74%      { opacity:1; }
+  }
+  /* ---- レーザー刻印アニメーション（ページを開いた時に設備名を刻む） ---- */
+  #laser-machine-title { position:relative; display:inline-block; white-space:nowrap; }
+  .engrave-ch { opacity:0; }
+  .engrave-ch.lit { opacity:1; animation:engraveFlash .4s ease-out; }
+  /* 刻まれた瞬間だけ白熱→通常の彫り込み色へ戻る（100%を空にして元のスタイルへ収束させる） */
+  @keyframes engraveFlash {
+    0% { color:#eafcff; text-shadow:0 0 6px #9df5ff, 0 0 16px #22d3ee, 0 0 30px #0ea5e9; }
+    100% { }
+  }
+  /* レーザーの光点 */
+  .engrave-dot {
+    position:absolute; top:50%; width:7px; height:7px; margin-top:-3.5px; border-radius:50%;
+    background:#fff; pointer-events:none; z-index:3;
+    box-shadow:0 0 6px 2px #9df5ff, 0 0 16px 6px #22d3ee, 0 0 32px 12px rgba(14,165,233,.55);
+  }
+  /* 火花（刻印・切断で共用。JS側でtranslateとフェードをつける） */
+  .engrave-spark {
+    position:absolute; width:2.5px; height:2.5px; border-radius:50%;
+    background:#dffaff; pointer-events:none; z-index:3;
+    box-shadow:0 0 4px #38e0ff, 0 0 9px #22d3ee;
+  }
+  /* ---- カード切断エフェクト（未着手→完了へドロップした時） ---- */
+  .laser-cut-overlay { position:fixed; z-index:9999; pointer-events:none; }
+  .laser-cut-half { position:absolute; inset:0; }
+  .laser-cut-half > * { width:100%; height:100%; margin:0; }
+  .laser-cut-beam {
+    position:absolute; left:0; top:50%; height:2px; margin-top:-1px; width:0; border-radius:2px; z-index:4;
+    background:linear-gradient(90deg, rgba(125,243,255,0), #bff3ff 55%, #ffffff);
+    box-shadow:0 0 6px 1px #9df5ff, 0 0 14px 4px #22d3ee, 0 0 28px 9px rgba(14,165,233,.5);
+  }
+  /* ==================== 発注管理（ECカタログ・カート） ==================== */
+  .pu-tabs { display:flex; gap:6px; }
+  .pu-tab { border:1px solid #cbd5e1; background:#fff; color:#475569; border-radius:8px;
+    padding:6px 16px; font-size:13px; font-weight:700; cursor:pointer; }
+  .pu-tab.active { background:#1d4ed8; border-color:#1d4ed8; color:#fff; }
+  .pu-reqbadge { display:inline-block; min-width:18px; padding:1px 5px; margin-left:6px; border-radius:9px;
+    background:#f59e0b; color:#fff; font-size:11px; font-weight:800; text-align:center; }
+  .pu-toolbar { display:flex; align-items:center; gap:8px; padding:10px 0; flex-wrap:wrap; }
+  .pu-input { border:1px solid #cbd5e1; border-radius:7px; padding:7px 10px; font-size:13px; background:#fff; }
+  #pu-search { width:260px; }
+  .pu-count { font-size:12px; color:#64748b; }
+  .pu-btn { border-radius:7px; padding:7px 14px; font-size:13px; font-weight:700; cursor:pointer; border:1px solid transparent; }
+  .pu-btn.primary { background:#1d4ed8; color:#fff; }
+  .pu-btn.primary:hover { background:#1e40af; }
+  .pu-btn.ghost { background:#fff; color:#475569; border-color:#cbd5e1; }
+  .pu-btn.ghost:hover { background:#f1f5f9; }
+  .pu-btn:disabled { opacity:.5; cursor:default; }
+
+  .pu-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px; }
+  .pu-card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden;
+    display:flex; flex-direction:column; box-shadow:0 1px 2px rgba(0,0,0,.05); transition:box-shadow .15s, transform .15s; }
+  .pu-card:hover { box-shadow:0 4px 14px rgba(0,0,0,.10); transform:translateY(-2px); }
+  .pu-card-img { position:relative; height:120px; background:#f8fafc; display:flex; align-items:center; justify-content:center; border-bottom:1px solid #eef2f7; }
+  .pu-card-img img { max-width:100%; max-height:100%; object-fit:contain; }
+  .pu-card-img .pu-noimg { color:#cbd5e1; }
+  .pu-card-img.admin { cursor:pointer; }
+  .pu-img-edit { position:absolute; right:6px; bottom:6px; font-size:10px; font-weight:700; color:#fff;
+    background:rgba(29,78,216,.85); border-radius:6px; padding:2px 7px; pointer-events:none; }
+  .pu-card-body { padding:8px 10px 4px; flex:1; }
+  .pu-card-name { font-size:13px; font-weight:700; color:#1e293b; line-height:1.35;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:35px; }
+  .pu-card-code { font-size:10px; color:#94a3b8; font-family:monospace; margin-top:2px; }
+  .pu-card-spec { font-size:11px; color:#475569; margin-top:3px; }
+  .pu-card-company { font-size:10px; color:#0369a1; background:#f0f9ff; border:1px solid #e0f2fe;
+    border-radius:5px; padding:1px 6px; display:inline-block; margin-top:5px; max-width:100%;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pu-card-foot { display:flex; align-items:center; gap:6px; padding:8px 10px 10px; }
+  .pu-qty { display:flex; align-items:center; border:1px solid #cbd5e1; border-radius:7px; overflow:hidden; }
+  .pu-qty button { width:26px; height:28px; border:none; background:#f8fafc; color:#334155; font-size:15px; cursor:pointer; }
+  .pu-qty button:hover { background:#e2e8f0; }
+  .pu-qty input { width:40px; height:28px; border:none; text-align:center; font-size:13px; font-weight:700; }
+  .pu-add-btn { flex:1; border:none; border-radius:7px; background:#1d4ed8; color:#fff; height:28px;
+    font-size:12px; font-weight:700; cursor:pointer; }
+  .pu-add-btn:hover { background:#1e40af; }
+  .pu-add-btn.added { background:#059669; }
+  .pu-card-admin { display:flex; gap:8px; padding:0 10px 8px; }
+  .pu-card-admin a { font-size:11px; color:#64748b; cursor:pointer; text-decoration:underline; }
+  .pu-card-admin a.del { color:#dc2626; }
+
+  #pu-cart-btn { position:fixed; right:26px; bottom:26px; z-index:900; width:58px; height:58px; border-radius:50%;
+    border:none; background:#1d4ed8; color:#fff; cursor:pointer; box-shadow:0 4px 14px rgba(29,78,216,.4);
+    display:flex; align-items:center; justify-content:center; transition:transform .15s; }
+  #pu-cart-btn:hover { transform:scale(1.08); }
+  #pu-cart-badge { position:absolute; top:-4px; right:-4px; min-width:22px; height:22px; border-radius:11px;
+    background:#f59e0b; color:#fff; font-size:12px; font-weight:800; display:flex; align-items:center;
+    justify-content:center; padding:0 5px; border:2px solid #fff; }
+
+  .pu-overlay { position:fixed; inset:0; background:rgba(15,23,42,.45); z-index:1000;
+    display:flex; align-items:center; justify-content:center; }
+  .pu-modal { background:#fff; border-radius:12px; width:min(640px, 94vw); max-height:88vh;
+    display:flex; flex-direction:column; box-shadow:0 10px 40px rgba(0,0,0,.25); }
+  .pu-modal-head { display:flex; align-items:center; justify-content:space-between; font-size:15px; font-weight:800;
+    color:#1e293b; padding:14px 16px; border-bottom:1px solid #e2e8f0; }
+  .pu-x { border:none; background:none; font-size:20px; color:#94a3b8; cursor:pointer; }
+  .pu-modal-body { padding:12px 16px; overflow-y:auto; }
+  .pu-modal-foot { padding:12px 16px; border-top:1px solid #e2e8f0; }
+  .pu-form-row { margin-bottom:10px; }
+  .pu-form-row label { display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:3px; }
+  .pu-form-row .pu-input { width:100%; }
+
+  .pu-cart-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #f1f5f9; }
+  .pu-cart-row .nm { flex:1; font-size:13px; font-weight:600; color:#1e293b; }
+  .pu-cart-row .co { font-size:11px; color:#64748b; }
+  .pu-cart-empty { text-align:center; color:#94a3b8; padding:30px 0; font-size:13px; }
+  .pu-cart-x { border:none; background:none; color:#dc2626; font-size:16px; cursor:pointer; }
+
+  .pu-req-card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; margin-bottom:12px; overflow:hidden; }
+  .pu-req-head { display:flex; align-items:center; gap:10px; padding:10px 14px; background:#f8fafc;
+    border-bottom:1px solid #eef2f7; flex-wrap:wrap; }
+  .pu-req-no { font-size:13px; font-weight:800; color:#1e293b; }
+  .pu-req-meta { font-size:12px; color:#64748b; }
+  .pu-status { font-size:11px; font-weight:800; border-radius:6px; padding:2px 10px; }
+  .pu-req-note { font-size:12px; color:#92400e; background:#fffbeb; border-top:1px dashed #fde68a; padding:6px 14px; }
+  .pu-req-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .pu-req-table th { text-align:left; color:#64748b; font-weight:700; padding:6px 14px; background:#fcfcfd; border-bottom:1px solid #f1f5f9; }
+  .pu-req-table td { padding:6px 14px; border-bottom:1px solid #f8fafc; color:#334155; }
+  .pu-req-table td.q { font-weight:800; color:#1d4ed8; white-space:nowrap; }
+  .pu-req-actions { margin-left:auto; display:flex; gap:6px; }
+
+  /* 名前の左右に彫り込んだような二重罫を入れて、間延びを抑える */
+  .machine-plate-name::before, .machine-plate-name::after {
+    content:''; flex:1; max-width:220px; height:5px; border-radius:1px;
+    background:
+      linear-gradient(rgba(0,0,0,.22), rgba(0,0,0,.22)) 0 0/100% 1px no-repeat,
+      linear-gradient(rgba(255,255,255,.85), rgba(255,255,255,.85)) 0 1px/100% 1px no-repeat,
+      linear-gradient(rgba(0,0,0,.22), rgba(0,0,0,.22)) 0 3px/100% 1px no-repeat,
+      linear-gradient(rgba(255,255,255,.85), rgba(255,255,255,.85)) 0 4px/100% 1px no-repeat;
+  }
+  /* プレート上のレーザー種別ロゴ（Fiber laser / CO2 laser） */
+  .machine-plate-logo { height:46px; width:auto; flex-shrink:0; opacity:.78;
+    mix-blend-mode:multiply; filter:drop-shadow(0 1px 0 rgba(255,255,255,.9)); }
+  .machine-plate-logo[src=""] { display:none; }
+  /* ---- レーザー種別ロゴの手書きアニメーション（刻印完了後に一字ずつ書く） ---- */
+  .machine-plate-logo-write { flex-shrink:0; display:inline-flex; align-items:center; min-height:46px; }
+  .logo-write-svg { display:block; overflow:visible; }
+  .logo-write-svg text {
+    font-family:'Segoe Script','Bradley Hand','Comic Sans MS',cursive;
+    font-size:25px; font-style:italic; letter-spacing:1px;
+  }
+  /* 各文字：最初は透明の輪郭だけ。ペンでなぞるようにストロークが伸び、書き終わると中が塗られる */
+  .logo-write-svg .lw-ch {
+    fill:#2b3138; fill-opacity:0;
+    stroke:#2b3138; stroke-width:1.1; stroke-linecap:round; stroke-linejoin:round;
+    stroke-dasharray:140; stroke-dashoffset:140;
+    animation: lwStroke .5s ease-out forwards, lwFill .35s ease forwards;
+  }
+  @keyframes lwStroke { to { stroke-dashoffset:0; } }
+  @keyframes lwFill   { to { fill-opacity:.8; } }
+  /* 四隅の留めネジ */
+  .machine-plate-bolt {
+    width:12px; height:12px; border-radius:50%; flex-shrink:0;
+    background:radial-gradient(circle at 35% 30%, #f6f8f9, #9aa2aa 60%, #6d757d);
+    box-shadow: inset 0 -1px 2px rgba(0,0,0,.35), 0 1px 1px rgba(255,255,255,.6);
+    position:relative;
+  }
+  /* ネジの溝 */
+  .machine-plate-bolt::after {
+    content:''; position:absolute; left:2px; right:2px; top:50%; height:1.5px; transform:translateY(-50%) rotate(-35deg);
+    background:rgba(0,0,0,.35); border-radius:1px;
+  }
+  .laser-inv-add { font-size:11px; font-weight:700; color:#fff; background:#0891b2; border:none; border-radius:6px; padding:3px 12px; cursor:pointer; }
+  .laser-inv-add:hover { background:#0e7490; }
+  .laser-inv-scroll { flex:1; min-height:0; overflow-y:auto; }
+  .laser-inv table { width:100%; border-collapse:collapse; table-layout:fixed; }
+  .laser-inv th, .laser-inv td { border-bottom:1px solid #f1f5f9; padding:4px 6px; font-size:10.5px; vertical-align:middle; word-break:break-all; }
+  .laser-inv thead th { position:sticky; top:0; z-index:1; background:#ecfeff; color:#0e7490; font-weight:700; text-align:left; font-size:10px; border-bottom:1px solid #a5f3fc; white-space:nowrap; }
+  .laser-inv col.iv-name { width:auto; }
+  .laser-inv col.iv-ot   { width:72px; }
+  .laser-inv col.iv-part { width:56px; }
+  .laser-inv col.iv-qty  { width:52px; }
+  .laser-inv col.iv-mach { width:52px; }
+  .laser-inv col.iv-date { width:46px; }
+  .laser-inv col.iv-del  { width:26px; }
+  .laser-inv td.iv-qty input { width:100%; box-sizing:border-box; padding:2px 4px; font-size:11px; font-weight:700; text-align:right; border:1px solid #d1d5db; border-radius:5px; color:#0e7490; }
+  .laser-inv td.iv-date { color:#9ca3af; font-size:9.5px; white-space:nowrap; }
+  .laser-inv td.iv-mach { color:#6b7280; font-size:9.5px; }
+  .laser-inv .iv-del-btn { border:none; background:#f3f4f6; color:#9ca3af; width:18px; height:18px; border-radius:5px; cursor:pointer; font-size:11px; line-height:1; }
+  .laser-inv .iv-del-btn:hover { background:#fee2e2; color:#dc2626; }
+  .laser-inv .iv-empty { text-align:center; color:#9ca3af; padding:22px 6px; font-size:11px; }
+  /* 追加フォーム行 */
+  .laser-inv .iv-form td { background:#f0fdfa; }
+  .laser-inv .iv-form input { width:100%; box-sizing:border-box; padding:2px 4px; font-size:10.5px; border:1px solid #99f6e4; border-radius:5px; }
+  .laser-inv .iv-form .iv-save { border:none; background:#0d9488; color:#fff; border-radius:5px; padding:2px 6px; font-size:10px; font-weight:700; cursor:pointer; }
+  .laser-inv-scroll::-webkit-scrollbar { width:8px; }
+  .laser-inv-scroll::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:4px; }
+
   /* ---- TOP page ---- */
   .top-main { display: grid; grid-template-columns: 1fr 340px; gap: 16px; padding: 20px 24px; max-width: 1200px; }
   .func-section { background: #fff; border-radius: 10px; border: 1px solid #e5e7eb; padding: 18px; margin-bottom: 16px; }
@@ -797,22 +1140,58 @@
     animation: slideUp 0.2s ease; overflow: hidden;
   }
   @keyframes slideUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  /* 受注詳細ヘッダー：ヘアライン加工のステンレス板風 */
   .detail-modal-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 16px 22px; border-bottom: 1px solid #e5e7eb;
-    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+    padding: 14px 22px; border-bottom: 1px solid #8d959d;
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.55) 0 1px, rgba(0,0,0,.045) 1px 2px, rgba(255,255,255,0) 2px 4px),
+      linear-gradient(105deg, #9aa3ab 0%, #e9edf1 18%, #c3cad1 34%, #f4f7f9 52%, #b9c1c9 68%, #e4e9ee 84%, #98a1a9 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.85), inset 0 -2px 4px rgba(0,0,0,.10);
     border-radius: 16px 16px 0 0;
-    flex-wrap: wrap; gap: 8px;
+    flex-wrap: wrap; gap: 8px; position: relative;
   }
-  .detail-modal-title { font-size: 17px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; }
+  /* 上端の鋭いハイライト */
+  .detail-modal-header::before {
+    content:''; position:absolute; left:10px; right:10px; top:3px; height:1px; border-radius:1px;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.95), transparent);
+  }
+  .detail-modal-title {
+    font-size: 17px; font-weight: 800; letter-spacing:0.04em;
+    color: #2b3138; text-shadow: 0 1px 0 rgba(255,255,255,.9), 0 -1px 0 rgba(0,0,0,.22);
+    display: flex; align-items: center; gap: 10px;
+  }
   .detail-modal-title svg { width: 20px; height: 20px; }
+  /* 閉じるボタンは金属になじむ質感に */
   .detail-modal-close {
-    background: rgba(255,255,255,0.15); border: none; border-radius: 8px;
-    width: 34px; height: 34px; cursor: pointer; color: #fff;
-    display: flex; align-items: center; justify-content: center; transition: background 0.15s;
+    background: linear-gradient(#fbfcfd, #d8dee4); border: 1px solid #9aa2aa; border-radius: 8px;
+    width: 34px; height: 34px; cursor: pointer; color: #4b535b;
+    display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 1px 2px rgba(0,0,0,.15);
   }
-  .detail-modal-close:hover { background: rgba(255,255,255,0.25); }
+  .detail-modal-close:hover { background: linear-gradient(#fff, #fee2e2); border-color:#f5a3a3; color:#dc2626; }
   .detail-modal-close svg { width: 17px; height: 17px; }
+  /* 製造履歴：設備タブと検索 */
+  .lh-bar { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .lh-tabs { display:inline-flex; gap:4px; }
+  .lh-tab { font-size:11px; font-weight:700; padding:5px 14px; border-radius:20px; cursor:pointer;
+    border:1px solid #e5e7eb; background:#fff; color:#9ca3af; white-space:nowrap; }
+  .lh-tab:hover { border-color:#ddd6fe; color:#7c3aed; }
+  .lh-tab.active { background:#7c3aed; border-color:#7c3aed; color:#fff; }
+  .lh-search { position:relative; display:inline-flex; align-items:center; }
+  .lh-search input { width:280px; padding:6px 28px 6px 12px; font-size:12px; border:1px solid #ddd6fe;
+    border-radius:20px; box-sizing:border-box; }
+  .lh-search input:focus { outline:none; border-color:#7c3aed; box-shadow:0 0 0 3px rgba(124,58,237,.12); }
+  .lh-clear { position:absolute; right:6px; border:none; background:#f3f4f6; color:#6b7280;
+    width:18px; height:18px; border-radius:50%; cursor:pointer; font-size:11px; line-height:1; }
+  .lh-clear:hover { background:#fee2e2; color:#dc2626; }
+  .lh-table-wrap { border:1px solid #ede9fe; border-radius:10px; overflow:auto; max-height:calc(100vh - 320px); }
+  .lh-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  .lh-table thead th { position:sticky; top:0; background:#f5f3ff; color:#6d28d9; padding:9px 12px;
+    font-size:11px; font-weight:700; white-space:nowrap; border-bottom:1px solid #ddd6fe; }
+  .lh-table td { padding:9px 12px; border-bottom:1px solid #f5f3ff; color:#374151; }
+  .lh-table tbody tr:hover td { background:#faf8ff; }
+  .lh-table td.mono { font-family:'SF Mono','Consolas',monospace; }
   .detail-modal-body { padding: 0; }
 
   /* ==================== DETAIL MODAL v2 (responsive redesign) ==================== */
@@ -1018,11 +1397,12 @@
   /* ==================== EDIT MODE ==================== */
   .detail-edit-btn {
     display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35);
-    color: #fff; border-radius: 6px; padding: 6px 14px; font-size: 12px;
-    font-weight: 600; cursor: pointer; transition: all 0.15s;
+    background: linear-gradient(#fbfcfd, #dce2e8); border: 1px solid #9aa2aa;
+    color: #374151; border-radius: 6px; padding: 6px 14px; font-size: 12px;
+    font-weight: 700; cursor: pointer; transition: all 0.15s;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 1px 2px rgba(0,0,0,.12);
   }
-  .detail-edit-btn:hover { background: rgba(255,255,255,0.28); }
+  .detail-edit-btn:hover { background: linear-gradient(#fff, #dbeafe); border-color:#93c5fd; color:#1d4ed8; }
   .detail-edit-btn svg { width: 13px; height: 13px; }
   .detail-view-mode { display: block; }
   .detail-edit-mode { display: none; }
@@ -1587,6 +1967,24 @@
 </div>
 
 <!-- パレット積み付けシミュレーター -->
+<!-- 製造履歴（設備ごとの完了作業一覧） -->
+<div class="detail-overlay" id="laser-history-overlay" onclick="if(event.target===this)closeLaserHistory()">
+  <div class="detail-modal" style="max-width:1000px;">
+    <div class="detail-modal-header">
+      <div class="detail-modal-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        製造履歴
+      </div>
+      <button class="detail-modal-close" onclick="closeLaserHistory()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="detail-modal-body" style="padding:16px 20px;">
+      <div id="laser-history-body"></div>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="pallet-sim-overlay">
   <div class="modal psim-modal" style="max-width:960px;">
     <div class="modal-head">
@@ -1678,7 +2076,7 @@
 
 <!-- レーザー設備専用ページ（FOM2 / VENTIS / ENSIS 共通） -->
 <div id="page-laser-machine" class="page">
-  <div style="padding:20px 28px;">
+  <div style="padding:10px 28px 12px;">
     <div style="display:flex;align-items:center;gap:12px;">
       <button onclick="showPage('progress', document.querySelector('[data-page=progress]'))" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;font-size:13px;background:#fff;color:#374151;border:1px solid #d1d5db;border-radius:7px;cursor:pointer;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><polyline points="15 18 9 12 15 6"/></svg>
@@ -1692,10 +2090,54 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
         再読込
       </button>
+      <button onclick="openLaserHistory()" title="この設備で完了した作業の履歴を表示します" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;font-size:12px;background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;border-radius:6px;cursor:pointer;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        製造履歴
+      </button>
     </div>
-    <h2 id="laser-machine-title" style="font-size:20px;font-weight:700;color:#111827;margin:18px 0 4px;">-</h2>
-    <p style="font-size:13px;color:#6b7280;margin:0 0 14px;">この設備に振り分けられた作業指示書です。</p>
-    <div id="laser-machine-board" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;"></div>
+    <div class="machine-plate">
+      <span class="machine-plate-bolt left"></span>
+      <h2 class="machine-plate-name"><span id="laser-machine-title">-</span><span id="laser-machine-logo-write" class="machine-plate-logo-write"></span></h2>
+      <span class="machine-plate-bolt right"></span>
+    </div>
+    <p style="font-size:12px;color:#6b7280;margin:0 0 10px;flex-shrink:0;">この設備に振り分けられた作業指示書です。カードを「完了」フィールドへドラッグすると完了、「未着手」へ戻すと未着手になります。</p>
+
+    <div class="laser-machine-layout">
+      <!-- 左カラム：カレンダー（未着手/完了切替）＋ 出荷予定表 -->
+      <div class="laser-side">
+        <div class="laser-side-cal">
+          <div class="laser-cal-tabs">
+            <button id="laser-caltab-todo" class="laser-cal-tab active" onclick="setLaserCalMode('todo')">未着手</button>
+            <button id="laser-caltab-done" class="laser-cal-tab" onclick="setLaserCalMode('done')">完了</button>
+          </div>
+          <div id="laser-side-calendar" class="laser-mini-cal todo"></div>
+        </div>
+        <div id="laser-side-inventory" class="laser-inv"></div>
+      </div>
+
+      <!-- 右カラム：未着手／完了の2フィールド -->
+      <div class="laser-fields">
+        <div class="laser-field">
+          <div class="laser-field-head todo">
+            <span class="laser-field-dot" style="background:#6b7280;"></span>
+            未着手 <span class="laser-field-count" id="laser-todo-count"></span>
+            <span class="lf-datechip" id="laser-todo-datechip" style="display:none;"></span>
+          </div>
+          <div id="laser-machine-todo" class="laser-field-body"
+            data-done="false" ondragover="laserMachineDragOver(event)" ondragleave="laserMachineDragLeave(event)" ondrop="laserMachineDrop(event)"></div>
+        </div>
+
+        <div class="laser-field">
+          <div class="laser-field-head done">
+            <span class="laser-field-dot" style="background:#16a34a;"></span>
+            完了 <span class="laser-field-count" id="laser-done-count"></span>
+            <span class="lf-datechip" id="laser-done-datechip" style="display:none;"></span>
+          </div>
+          <div id="laser-machine-done" class="laser-field-body"
+            data-done="true" ondragover="laserMachineDragOver(event)" ondragleave="laserMachineDragLeave(event)" ondrop="laserMachineDrop(event)"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1723,19 +2165,19 @@
         </div>
       </div>
       <div class="laser-col" style="background:#ecfeff;border:1px solid #a5f3fc;border-radius:12px;padding:12px;">
-        <div style="font-size:13px;font-weight:700;color:#0891b2;margin-bottom:10px;flex-shrink:0;">VENTIS <span class="laser-col-count" data-machine="VENTIS" style="font-size:11px;color:#0891b2;font-weight:400;"></span></div>
+        <div style="font-size:13px;font-weight:700;color:#0891b2;margin-bottom:10px;flex-shrink:0;display:flex;align-items:center;gap:6px;">VENTIS <span class="laser-col-count" data-machine="VENTIS" style="font-size:11px;color:#0891b2;font-weight:400;"></span><button onclick="printMachineLabels(event,'VENTIS')" title="この設備の作業指示書シールをQL-800でまとめて発行します" style="margin-left:auto;font-size:10px;font-weight:700;color:#fff;background:#0891b2;border:none;border-radius:6px;padding:3px 10px;cursor:pointer;">シール発行</button></div>
         <div class="laser-col-body">
           <div class="laser-dropzone" data-machine="VENTIS" ondragover="laserDragOver(event)" ondragleave="laserDragLeave(event)" ondrop="laserDrop(event)" style="display:flex;flex-direction:column;gap:8px;"></div>
         </div>
       </div>
       <div class="laser-col" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px;">
-        <div style="font-size:13px;font-weight:700;color:#15803d;margin-bottom:10px;flex-shrink:0;">ENSIS <span class="laser-col-count" data-machine="ENSIS" style="font-size:11px;color:#15803d;font-weight:400;"></span></div>
+        <div style="font-size:13px;font-weight:700;color:#15803d;margin-bottom:10px;flex-shrink:0;display:flex;align-items:center;gap:6px;">ENSIS <span class="laser-col-count" data-machine="ENSIS" style="font-size:11px;color:#15803d;font-weight:400;"></span><button onclick="printMachineLabels(event,'ENSIS')" title="この設備の作業指示書シールをQL-800でまとめて発行します" style="margin-left:auto;font-size:10px;font-weight:700;color:#fff;background:#15803d;border:none;border-radius:6px;padding:3px 10px;cursor:pointer;">シール発行</button></div>
         <div class="laser-col-body">
           <div class="laser-dropzone" data-machine="ENSIS" ondragover="laserDragOver(event)" ondragleave="laserDragLeave(event)" ondrop="laserDrop(event)" style="display:flex;flex-direction:column;gap:8px;"></div>
         </div>
       </div>
       <div class="laser-col" style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:12px;">
-        <div style="font-size:13px;font-weight:700;color:#c2410c;margin-bottom:10px;flex-shrink:0;">FOM2 <span class="laser-col-count" data-machine="FOM2" style="font-size:11px;color:#c2410c;font-weight:400;"></span></div>
+        <div style="font-size:13px;font-weight:700;color:#c2410c;margin-bottom:10px;flex-shrink:0;display:flex;align-items:center;gap:6px;">FOM2 <span class="laser-col-count" data-machine="FOM2" style="font-size:11px;color:#c2410c;font-weight:400;"></span><button onclick="printMachineLabels(event,'FOM2')" title="この設備の作業指示書シールをQL-800でまとめて発行します" style="margin-left:auto;font-size:10px;font-weight:700;color:#fff;background:#c2410c;border:none;border-radius:6px;padding:3px 10px;cursor:pointer;">シール発行</button></div>
         <div class="laser-col-body">
           <div class="laser-dropzone" data-machine="FOM2" ondragover="laserDragOver(event)" ondragleave="laserDragLeave(event)" ondrop="laserDrop(event)" style="display:flex;flex-direction:column;gap:8px;"></div>
         </div>
@@ -1752,12 +2194,88 @@
   </div>
 </div>
 <div id="page-purchase" class="page">
-  <div class="coming-soon">
-    <svg viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v5"/><circle cx="18" cy="18" r="3"/><circle cx="9" cy="18" r="3"/><path d="M15 5v6H9V5"/></svg>
-    <h3>発注管理</h3>
-    <p>この機能は現在開発中です</p>
+  <div class="orders-list-card">
+    <div class="orders-list-header">
+      <div class="orders-list-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1.6"/><circle cx="19" cy="21" r="1.6"/><path stroke-linecap="round" stroke-linejoin="round" d="M2 2h3l2.7 12.4a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+        発注管理
+      </div>
+      <div class="pu-tabs">
+        <button id="pu-tab-catalog" class="pu-tab active" onclick="puSwitchTab('catalog')">物品カタログ</button>
+        <button id="pu-tab-requests" class="pu-tab" onclick="puSwitchTab('requests')">依頼一覧<span id="pu-req-badge" class="pu-reqbadge" style="display:none;"></span></button>
+      </div>
+    </div>
+
+    <!-- カタログ -->
+    <div id="pu-catalog-view">
+      <div class="pu-toolbar">
+        <input id="pu-search" class="pu-input" type="text" placeholder="品名・商品コードで検索" oninput="puOnFilter()">
+        <select id="pu-company" class="pu-input" onchange="puOnFilter()"><option value="">仕入先: すべて</option></select>
+        <span id="pu-count" class="pu-count"></span>
+        <span style="flex:1;"></span>
+        <span id="pu-admin-tools" style="display:none;gap:6px;">
+          <button class="pu-btn ghost" onclick="document.getElementById('pu-csv-file').click()">CSVインポート</button>
+          <button class="pu-btn primary" onclick="puOpenItemModal(null)">＋ 物品追加</button>
+        </span>
+      </div>
+      <div id="pu-grid" class="pu-grid"></div>
+      <div style="text-align:center;padding:10px 0 4px;">
+        <button id="pu-more" class="pu-btn ghost" onclick="puShowMore()" style="display:none;">さらに表示</button>
+      </div>
+    </div>
+
+    <!-- 依頼一覧 -->
+    <div id="pu-requests-view" style="display:none;">
+      <div id="pu-req-list"></div>
+    </div>
   </div>
+
+  <!-- カートボタン（このページ表示中のみ見える） -->
+  <button id="pu-cart-btn" onclick="puOpenCart()" title="カートを見る">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px;"><circle cx="9" cy="21" r="1.6"/><circle cx="19" cy="21" r="1.6"/><path stroke-linecap="round" stroke-linejoin="round" d="M2 2h3l2.7 12.4a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+    <span id="pu-cart-badge" style="display:none;">0</span>
+  </button>
+
+  <!-- カートモーダル -->
+  <div id="pu-cart-modal" class="pu-overlay" style="display:none;" onclick="if(event.target===this)puCloseCart()">
+    <div class="pu-modal">
+      <div class="pu-modal-head">🛒 カート <button class="pu-x" onclick="puCloseCart()">×</button></div>
+      <div id="pu-cart-body" class="pu-modal-body"></div>
+      <div class="pu-modal-foot">
+        <textarea id="pu-cart-note" class="pu-input" rows="2" placeholder="管理者へのメモ（任意）" style="width:100%;resize:vertical;"></textarea>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
+          <button class="pu-btn ghost" onclick="puCloseCart()">閉じる</button>
+          <button id="pu-send-btn" class="pu-btn primary" onclick="puSendRequest()">この内容で依頼する</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 物品追加/編集モーダル（管理者） -->
+  <div id="pu-item-modal" class="pu-overlay" style="display:none;" onclick="if(event.target===this)puCloseItemModal()">
+    <div class="pu-modal" style="max-width:480px;">
+      <div class="pu-modal-head"><span id="pu-item-modal-title">物品追加</span> <button class="pu-x" onclick="puCloseItemModal()">×</button></div>
+      <div class="pu-modal-body">
+        <div class="pu-form-row"><label>品名 <span style="color:#dc2626;">*</span></label><input id="pu-f-name" class="pu-input"></div>
+        <div class="pu-form-row"><label>商品コード</label><input id="pu-f-code" class="pu-input"></div>
+        <div class="pu-form-row" style="display:flex;gap:8px;">
+          <div style="flex:1;"><label>入数</label><input id="pu-f-amount" class="pu-input" type="number" min="0"></div>
+          <div style="flex:1;"><label>単位</label><input id="pu-f-unit" class="pu-input" placeholder="本入り など"></div>
+          <div style="flex:1;"><label>荷姿</label><input id="pu-f-box" class="pu-input" placeholder="箱/バラ など"></div>
+        </div>
+        <div class="pu-form-row"><label>仕入先</label><input id="pu-f-company" class="pu-input" list="pu-company-list"><datalist id="pu-company-list"></datalist></div>
+      </div>
+      <div class="pu-modal-foot" style="display:flex;justify-content:flex-end;gap:8px;">
+        <button class="pu-btn ghost" onclick="puCloseItemModal()">キャンセル</button>
+        <button class="pu-btn primary" onclick="puSaveItem()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="pu-img-file" accept="image/png,image/jpeg,image/webp" style="display:none;" onchange="puImageSelected(event)">
+  <input type="file" id="pu-csv-file" accept=".csv" style="display:none;" onchange="puCsvSelected(event)">
 </div>
+
 
 <!-- ==================== PRODUCTDATE PAGE ==================== -->
 <div id="page-productdate" class="page">
@@ -4614,34 +5132,584 @@ let _laserDragKey = null;
 let _laserMachineCurrent = null;  // 現在表示中の設備専用ページの設備名（FOM2/VENTIS/ENSIS）
 let _laserCalMonth = null;   // カレンダー表示中の月（Date、月初）
 let _laserCalSelected = null; // 選択中の納期日（'YYYY-MM-DD'）。未選択はnull
+let _laserCalMode = 'todo';     // 左カラムのカレンダーの表示モード（'todo'|'done'）
+let _laserSideCalMonth = null;  // 左カラムのカレンダーの表示月
+let _laserFieldDate = null;     // カレンダーで選んだ納期（'YYYY-MM-DD'）。フィールドの絞り込みに使う
 
 // レーザー設備専用ページを開く（FOM2 / VENTIS / ENSIS 共通）
+// レーザー種別ロゴ（透過PNG）。VENTIS/ENSIS=Fiber laser、FOM2=CO2 laser
+const LASER_TYPE_LOGO = {
+  'VENTIS': 'data:image/png;base64,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',
+  'ENSIS':  'data:image/png;base64,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',
+  'FOM2':   'data:image/png;base64,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',
+};
 function openLaserMachinePage(equip) {
   _laserMachineCurrent = equip;
+  _laserCalMode = 'todo';       // 開くたび未着手モードから
+  _laserSideCalMonth = null;    // データに応じた月を再計算
+  _laserFieldDate = null;       // 日付の絞り込みは解除した状態で開く
+  _laserInvFilter = equip;      // 在庫リストは既定で自分の設備
   showPage('laser-machine', null);
   loadLaserMachinePage();
 }
 
 async function loadLaserMachinePage() {
   if (!_laserMachineCurrent) return;
-  document.getElementById('laser-machine-title').textContent = _laserMachineCurrent;
+  laserEngraveTitle(_laserMachineCurrent);   // 設備名をレーザーで刻印する演出付きで表示
+  // 手書きロゴは刻印完了後にlaserEngraveTitle側から書き始めるので、ここでは前のロゴを消すだけ
+  const logoWrap = document.getElementById('laser-machine-logo-write');
+  if (logoWrap) logoWrap.innerHTML = '';
   // 作業振り分けボタンは ENSIS の画面のみ表示
   const assignBtn = document.getElementById('laser-machine-assign-btn');
   if (assignBtn) assignBtn.style.display = (_laserMachineCurrent === 'ENSIS') ? 'inline-flex' : 'none';
   await loadLaserAssign();  // _laserGroups / _laserCopies を最新化（内部で renderLaserAssign も呼ばれるが、
                              // 振り分けページが非表示の場合は該当要素なしで何もしない）
   renderLaserMachinePage();
+  loadLaserInventory();      // 在庫リスト（設備ごと）を読込
+}
+
+// 設備名をレーザーで刻印するアニメーション。光点が左→右へ走り、通過した文字が
+// 白熱フラッシュとともに現れる。光点の位置では火花が散る。
+function laserEngraveTitle(text) {
+  const el = document.getElementById('laser-machine-title');
+  if (!el) return;
+  el.innerHTML = '';
+  const chars = [...String(text)];
+  const chEls = chars.map(ch => {
+    const s = document.createElement('span');
+    s.className = 'engrave-ch';
+    s.textContent = ch;
+    el.appendChild(s);
+    return s;
+  });
+  const dot = document.createElement('span');
+  dot.className = 'engrave-dot';
+  el.appendChild(dot);
+
+  requestAnimationFrame(() => {
+    const w = el.offsetWidth;
+    const centers = chEls.map(s => s.offsetLeft + s.offsetWidth / 2);
+    const dur = Math.max(750, chars.length * 190);   // 文字数に応じて約0.8〜1.2秒
+    const t0 = performance.now();
+    let litIdx = 0;
+    let lastSpark = 0;
+    function step(now) {
+      const p = Math.min(1, (now - t0) / dur);
+      const x = -6 + (w + 12) * p;
+      dot.style.left = x + 'px';
+      // 走行中も光点の位置から小さな火花を出す（45ms間隔）
+      if (now - lastSpark > 45 && p < 1) { laserSparks(el, x, null, 2); lastSpark = now; }
+      // 光点が文字の中心を通過したら刻む＋大きめの火花
+      while (litIdx < chEls.length && x >= centers[litIdx]) {
+        chEls[litIdx].classList.add('lit');
+        laserSparks(el, centers[litIdx], null, 5);
+        litIdx++;
+      }
+      if (p < 1) requestAnimationFrame(step);
+      else {
+        dot.remove();
+        chEls.forEach(s => s.classList.add('lit'));   // 念のため全文字を点灯
+        laserWriteLogo(_laserMachineCurrent);         // 続けてレーザー種別ロゴを手書きする
+      }
+    }
+    requestAnimationFrame(step);
+  });
+}
+
+// レーザー種別の表記（VENTIS/ENSIS=Fiber laser、FOM2=CO2 laser）
+const LASER_TYPE_TEXT = { 'VENTIS': 'Fiber laser', 'ENSIS': 'Fiber laser', 'FOM2': 'CO2 laser' };
+
+// 刻印アニメーション完了後に呼ばれ、レーザー種別ロゴを手書き風フォントのSVGで
+// 一字ずつペンでなぞるように描く（輪郭ストローク→塗り、文字ごとに時間差）。
+function laserWriteLogo(machine) {
+  const wrap = document.getElementById('laser-machine-logo-write');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  const label = LASER_TYPE_TEXT[machine] || '';
+  if (!label) return;
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('class', 'logo-write-svg');
+  svg.setAttribute('height', '46');
+  const text = document.createElementNS(ns, 'text');
+  text.setAttribute('x', '2');
+  text.setAttribute('y', '33');
+  const chars = [...label];
+  chars.forEach((ch, i) => {
+    const t = document.createElementNS(ns, 'tspan');
+    t.textContent = ch;
+    t.setAttribute('class', 'lw-ch');
+    // 1文字あたり0.22秒ずつずらして書いていく。塗りはストロークが書き終わる頃に始める
+    t.style.animationDelay = (i * 0.22) + 's, ' + (i * 0.22 + 0.35) + 's';
+    text.appendChild(t);
+  });
+  svg.appendChild(text);
+  wrap.appendChild(svg);
+  // 描画後に実際の文字幅を測ってSVGサイズを合わせる（フォント差異に対応）
+  requestAnimationFrame(() => {
+    try {
+      const bb = text.getBBox();
+      const w = Math.ceil(bb.x + bb.width + 6);
+      svg.setAttribute('viewBox', '0 0 ' + w + ' 46');
+      svg.setAttribute('width', w);
+    } catch (e) {
+      svg.setAttribute('viewBox', '0 0 170 46');
+      svg.setAttribute('width', '170');
+    }
+  });
+}
+
+// 火花を散らす共通関数。container内の(x,y)からn個の粒を放射状に飛ばして消す。
+// yを省略するとcontainerの縦中央から。
+function laserSparks(container, x, y, n) {
+  if (!container || !container.isConnected) return;
+  const count = n || (4 + Math.floor(Math.random() * 3));
+  const baseY = (y == null) ? container.offsetHeight / 2 : y;
+  for (let i = 0; i < count; i++) {
+    const sp = document.createElement('span');
+    sp.className = 'engrave-spark';
+    sp.style.left = x + 'px';
+    sp.style.top = baseY + 'px';
+    container.appendChild(sp);
+    const ang = Math.random() * Math.PI * 2;
+    const dist = 12 + Math.random() * 26;
+    const dx = Math.cos(ang) * dist;
+    const dy = Math.sin(ang) * dist - 8;   // 少し上向きに散らすと火花らしい
+    const life = 320 + Math.random() * 300;
+    if (sp.animate) {
+      sp.animate(
+        [{ transform: 'translate(0,0)', opacity: 1 }, { transform: 'translate(' + dx + 'px,' + dy + 'px)', opacity: 0 }],
+        { duration: life, easing: 'cubic-bezier(.2,.7,.3,1)' }
+      ).onfinish = () => sp.remove();
+      setTimeout(() => sp.remove(), life + 200);   // 保険
+    } else { sp.remove(); }
+  }
+}
+
+// カードをレーザーで切断する演出。実カードは隠し、上下半分ずつのクローンを重ねて
+// ビームを走らせたあと2つに割れて消える。終了時にresolveする。
+function laserCutCard(key) {
+  return new Promise(resolve => {
+    let el = null;
+    document.querySelectorAll('#laser-machine-todo .laser-card').forEach(c => {
+      if (c.dataset.key === key) el = c;
+    });
+    if (!el) { resolve(); return; }
+    const rect = el.getBoundingClientRect();
+    const ov = document.createElement('div');
+    ov.className = 'laser-cut-overlay';
+    ov.style.left = rect.left + 'px';
+    ov.style.top = rect.top + 'px';
+    ov.style.width = rect.width + 'px';
+    ov.style.height = rect.height + 'px';
+    const mkHalf = (clip) => {
+      const half = document.createElement('div');
+      half.className = 'laser-cut-half';
+      half.style.clipPath = clip;
+      const clone = el.cloneNode(true);
+      clone.style.visibility = 'visible';
+      half.appendChild(clone);
+      return half;
+    };
+    const topH = mkHalf('inset(0 0 50% 0)');
+    const botH = mkHalf('inset(50% 0 0 0)');
+    const beam = document.createElement('div');
+    beam.className = 'laser-cut-beam';
+    ov.appendChild(topH); ov.appendChild(botH); ov.appendChild(beam);
+    document.body.appendChild(ov);
+    el.style.visibility = 'hidden';
+
+    let finished = false;
+    const finish = () => { if (finished) return; finished = true; ov.remove(); resolve(); };
+    setTimeout(finish, 1200);   // 何かあっても必ず処理を進める保険
+
+    const sweep = 420;
+    const t0 = performance.now();
+    let lastSpark = 0;
+    function step(now) {
+      const p = Math.min(1, (now - t0) / sweep);
+      const x = rect.width * p;
+      beam.style.width = x + 'px';
+      if (now - lastSpark > 40) { laserSparks(ov, x, rect.height / 2, 3); lastSpark = now; }
+      if (p < 1) requestAnimationFrame(step);
+      else split();
+    }
+    function split() {
+      beam.remove();
+      // 切断面を一瞬光らせてから上下に割る
+      topH.style.boxShadow = 'inset 0 -2px 6px rgba(56,224,255,.9)';
+      botH.style.boxShadow = 'inset 0 2px 6px rgba(56,224,255,.9)';
+      if (!topH.animate) { finish(); return; }
+      const opts = { duration: 300, easing: 'ease-in', fill: 'forwards' };
+      topH.animate(
+        [{ transform: 'translateY(0) rotate(0deg)', opacity: 1 }, { transform: 'translateY(-8px) rotate(-1.6deg)', opacity: 0 }], opts);
+      botH.animate(
+        [{ transform: 'translateY(0) rotate(0deg)', opacity: 1 }, { transform: 'translateY(10px) rotate(1.2deg)', opacity: 0 }], opts
+      ).onfinish = finish;
+    }
+    requestAnimationFrame(step);
+  });
 }
 
 function renderLaserMachinePage() {
   if (!_laserMachineCurrent) return;
-  const board = document.getElementById('laser-machine-board');
-  if (!board) return;
-  const groups = _laserGroups.filter(g => g.machine === _laserMachineCurrent);
-  const copies = _laserCopies.filter(c => c.machine === _laserMachineCurrent);
-  const html = groups.map(g => laserCardHtml(g)).join('') + copies.map(c => laserCardHtml(c)).join('');
-  board.innerHTML = html ||
-    '<div style="grid-column:1/-1;text-align:center;color:#9ca3af;font-size:13px;padding:40px 0;">この設備に振り分けられた作業指示書はありません</div>';
+  const todoBox = document.getElementById('laser-machine-todo');
+  const doneBox = document.getElementById('laser-machine-done');
+  if (!todoBox || !doneBox) return;
+
+  const all = [
+    ..._laserGroups.filter(g => g.machine === _laserMachineCurrent),
+    ..._laserCopies.filter(c => c.machine === _laserMachineCurrent),
+  ];
+  const allTodo = all.filter(x => !x.done);
+  const allDone = all.filter(x => x.done);
+  // カレンダーで日付を選んでいれば、その納期のカードだけに絞り込む
+  const byDate = (list) => _laserFieldDate
+    ? list.filter(x => (x.childDelivery || '') === _laserFieldDate) : list;
+  const todo = byDate(allTodo);
+  const done = byDate(allDone);
+
+  const emptyTodo = _laserFieldDate ? 'この納期の未着手はありません' : '未着手の作業はありません';
+  const emptyDone = _laserFieldDate ? 'この納期の完了はありません' : '完了した作業はここに表示されます';
+  todoBox.innerHTML = todo.map(x => laserCardHtml(x, { hideCopy: true })).join('')
+    || '<div class="laser-field-empty">' + emptyTodo + '</div>';
+  doneBox.innerHTML = done.map(x => laserCardHtml(x, { hideCopy: true })).join('')
+    || '<div class="laser-field-empty">' + emptyDone + '</div>';
+
+  const tc = document.getElementById('laser-todo-count');
+  const dc = document.getElementById('laser-done-count');
+  if (tc) tc.textContent = '(' + todo.length + '件' + (_laserFieldDate ? ' / 全' + allTodo.length + '件' : '') + ')';
+  if (dc) dc.textContent = '(' + done.length + '件' + (_laserFieldDate ? ' / 全' + allDone.length + '件' : '') + ')';
+
+  // ヘッダーに絞り込み中の納期と解除ボタンを表示
+  ['todo', 'done'].forEach(w => {
+    const el = document.getElementById('laser-' + w + '-datechip');
+    if (!el) return;
+    if (_laserFieldDate) {
+      el.style.display = '';
+      el.innerHTML = '<span class="lf-date">📅 ' + _laserFieldDate + ' で絞り込み中</span>'
+        + '<button class="lf-clear" onclick="clearLaserFieldDate()">解除</button>';
+    } else { el.style.display = 'none'; el.innerHTML = ''; }
+  });
+
+  // 左カラム：カレンダー（現在のモードのフィールド件数）を再描画。
+  // 在庫リストはカードと独立なのでここでは触らない（loadLaserInventoryで読込）
+  renderLaserSideCal();
+  // カードの高さは内容で変わるため、実測して「ちょうど2行分」の高さに揃える
+  fitLaserFieldRows(todoBox);
+  fitLaserFieldRows(doneBox);
+}
+
+// フィールドの高さを、実際のカード2行分（カード高×2＋行間＋上下パディング）に合わせる。
+// これでカードの内容が変わっても常に2行表示になり、3行目以降はこの中でスクロールする。
+function fitLaserFieldRows(box, rows = 2) {
+  if (!box) return;
+  // 前回の指定を外してから測る（残っていると本来の高さが測れない）
+  box.style.minHeight = '';
+  box.style.maxHeight = '';
+  const card = box.querySelector('.laser-card');
+  if (!card) return;
+  const cs = getComputedStyle(box);
+  const gap = parseFloat(cs.rowGap) || 0;
+  const padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+  // 万一カードが切れていても本来の高さを採るため scrollHeight とも比較する
+  const h = Math.max(card.getBoundingClientRect().height, card.scrollHeight);
+  // heightで指定するとカードが縮んで内容が切れるため max-height で指定する
+  box.style.maxHeight = Math.round(h * rows + gap * (rows - 1) + padY) + 'px';
+}
+
+// 左カラムのカレンダー。_laserCalMode（'todo'|'done'）のフィールドのカードを集計し、
+// childDelivery別件数を各日付にバッジ表示する。タブで未着手／完了を切り替える。
+function laserCurrentCards(mode) {
+  const wantDone = (mode === 'done');
+  return [
+    ..._laserGroups.filter(g => g.machine === _laserMachineCurrent && !!g.done === wantDone),
+    ..._laserCopies.filter(c => c.machine === _laserMachineCurrent && !!c.done === wantDone),
+  ];
+}
+function setLaserCalMode(mode) {
+  _laserCalMode = mode;
+  _laserSideCalMonth = null;  // モード切替でデータに応じた月を再計算
+  document.getElementById('laser-caltab-todo').classList.toggle('active', mode === 'todo');
+  document.getElementById('laser-caltab-done').classList.toggle('active', mode === 'done');
+  const cal = document.getElementById('laser-side-calendar');
+  if (cal) cal.className = 'laser-mini-cal ' + mode;   // バッジ色を未着手=青/完了=緑で切替
+  renderLaserSideCal();
+}
+function renderLaserSideCal() {
+  const wrap = document.getElementById('laser-side-calendar');
+  if (!wrap) return;
+  const cards = laserCurrentCards(_laserCalMode);
+
+  const counts = new Map();
+  cards.forEach(c => { if (c.childDelivery) counts.set(c.childDelivery, (counts.get(c.childDelivery) || 0) + 1); });
+
+  let cur = _laserSideCalMonth;
+  if (!cur) {
+    const base = counts.size ? [...counts.keys()].sort()[0] : null;
+    const d = base ? new Date(base + 'T00:00:00') : new Date();
+    cur = new Date(d.getFullYear(), d.getMonth(), 1);
+    _laserSideCalMonth = cur;
+  }
+
+  const year = cur.getFullYear(), month = cur.getMonth();
+  const startDow = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayStr = (() => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`; })();
+  const dow = ['日','月','火','水','木','金','土'];
+
+  let html = '<div class="lmc-head">'
+    + '<div class="lmc-nav"><button onclick="laserSideCalNav(-1)">‹</button></div>'
+    + '<div class="lmc-title">' + year + '年' + (month + 1) + '月</div>'
+    + '<div class="lmc-nav"><button onclick="laserSideCalNav(1)">›</button></div>'
+    + '</div><div class="lmc-grid">';
+  dow.forEach((d, i) => { html += '<div class="lmc-dow' + (i===0?' sun':i===6?' sat':'') + '">' + d + '</div>'; });
+  for (let i = 0; i < startDow; i++) html += '<div class="lmc-cell empty"></div>';
+  for (let day = 1; day <= daysInMonth; day++) {
+    const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const c = counts.get(ds) || 0;
+    const dowIdx = new Date(year, month, day).getDay();
+    const cls = ['lmc-cell'];
+    if (c > 0) cls.push('has');
+    if (ds === todayStr) cls.push('today');
+    if (ds === _laserFieldDate) cls.push('picked');
+    if (dowIdx === 0) cls.push('sun'); if (dowIdx === 6) cls.push('sat');
+    // 件数がある日、または選択中の日はクリックで絞り込み／解除できる
+    const clickable = (c > 0 || ds === _laserFieldDate);
+    html += '<div class="' + cls.join(' ') + '"'
+      + (clickable ? ' onclick="pickLaserFieldDate(\'' + ds + '\')" title="この納期で絞り込む"' : '') + '>'
+      + '<span class="lmc-daynum">' + day + '</span>'
+      + (c > 0 ? '<span class="lmc-badge">' + c + '件</span>' : '')
+      + '</div>';
+  }
+  html += '</div>';
+  wrap.innerHTML = html;
+}
+
+// カレンダーの日付を押してフィールドを絞り込む（同じ日をもう一度押すと解除）
+function pickLaserFieldDate(ds) {
+  _laserFieldDate = (_laserFieldDate === ds) ? null : ds;
+  renderLaserMachinePage();
+}
+function clearLaserFieldDate() {
+  _laserFieldDate = null;
+  renderLaserMachinePage();
+}
+
+function laserSideCalNav(delta) {
+  const cur = _laserSideCalMonth || new Date();
+  _laserSideCalMonth = new Date(cur.getFullYear(), cur.getMonth() + delta, 1);
+  renderLaserSideCal();
+}
+
+// ==================== 設備ごとの在庫リスト（laser_inventoryテーブル） ====================
+// 各設備（FOM2/VENTIS/ENSIS）が自分の在庫を個別管理する。品名・OT・部位・数量・設備名・登録日・変更日。
+let _laserInventory = [];      // 表示中の在庫行
+let _laserInvFormOpen = false; // 追加フォーム行の表示状態
+let _laserInvNew = { name: '', ot: '', part: '' }; // カードから引き継いだ品名・OT
+let _laserInvFilter = null;    // 表示する設備（null=未設定。開いた設備を既定にする。'ALL'で全設備）
+
+async function loadLaserInventory() {
+  if (!_laserMachineCurrent) return;
+  if (!_laserInvFilter) _laserInvFilter = _laserMachineCurrent;  // 既定は自分の設備
+  try {
+    const filter = (_laserInvFilter === 'ALL')
+      ? ''
+      : `machine=eq.${encodeURIComponent(_laserInvFilter)}&`;
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/laser_inventory?${filter}select=*&order=id.asc`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }
+    );
+    _laserInventory = res.ok ? await res.json() : [];
+  } catch(e) { _laserInventory = []; }
+  renderLaserInventory();
+}
+
+// 在庫リストの表示設備を切り替える（VENTIS / ENSIS / FOM2 / すべて）
+function setLaserInvFilter(machine) {
+  _laserInvFilter = machine;
+  _laserInvFormOpen = false;   // 切替時は入力途中のフォームを閉じる
+  loadLaserInventory();
+}
+
+function laserInvDate(v) {
+  if (!v) return '';
+  const d = new Date(v);
+  return isNaN(d) ? '' : `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function renderLaserInventory() {
+  const wrap = document.getElementById('laser-side-inventory');
+  if (!wrap) return;
+
+  const formRow = _laserInvFormOpen
+    ? '<tr class="iv-form">'
+      + '<td>' + esc(_laserInvNew.name || '') + '</td>'
+      + '<td>' + esc(_laserInvNew.ot || '') + '</td>'
+      + '<td><input id="iv-new-part" placeholder="部位" value="' + esc(_laserInvNew.part || '') + '"></td>'
+      + '<td><input id="iv-new-qty" type="number" min="0" value="1"></td>'
+      + '<td class="iv-mach">' + esc(_laserMachineCurrent || '') + '</td>'
+      + '<td colspan="2"><button class="iv-save" onclick="laserInvAdd()">登録</button> '
+      + '<button class="iv-save" style="background:#9ca3af;" onclick="laserInvCancel()">取消</button></td>'
+      + '<td></td>'
+      + '</tr>'
+    : '';
+
+  const rows = _laserInventory.map(r =>
+    '<tr>'
+    + '<td>' + esc(r.product_name || '') + '</td>'
+    + '<td>' + esc(r.ot_number || '') + '</td>'
+    + '<td>' + esc(r.part || '') + '</td>'
+    + '<td class="iv-qty"><input type="number" min="0" value="' + (r.quantity ?? 0) + '"'
+      + ' onchange="laserInvQty(' + r.id + ', this.value)"></td>'
+    + '<td class="iv-mach">' + esc(r.machine || '') + '</td>'
+    + '<td class="iv-date">' + laserInvDate(r.created_at) + '</td>'
+    + '<td class="iv-date">' + laserInvDate(r.updated_at) + '</td>'
+    + '<td style="text-align:center;"><button class="iv-del-btn" onclick="laserInvDelete(' + r.id + ')" title="削除">&times;</button></td>'
+    + '</tr>'
+  ).join('');
+
+  wrap.innerHTML =
+    '<div class="laser-inv-head">'
+    + '<span class="laser-inv-title">📦 在庫リスト</span>'
+    + '<span class="laser-inv-tabs">'
+    + ['VENTIS','ENSIS','FOM2','ALL'].map(m =>
+        '<button class="laser-inv-tab' + (_laserInvFilter === m ? ' active' : '') + '"'
+        + ' onclick="setLaserInvFilter(\'' + m + '\')">' + (m === 'ALL' ? 'すべて' : m) + '</button>'
+      ).join('')
+    + '</span>'
+    + '</div>'
+    + '<div class="laser-inv-scroll"><table>'
+    + '<colgroup><col class="iv-name"><col class="iv-ot"><col class="iv-part"><col class="iv-qty"><col class="iv-mach"><col class="iv-date"><col class="iv-date"><col class="iv-del"></colgroup>'
+    + '<thead><tr><th>品名</th><th>OT</th><th>部位</th><th>数量</th><th>設備名</th><th>登録日</th><th>変更日</th><th></th></tr></thead>'
+    + '<tbody>' + formRow + (rows || (!_laserInvFormOpen ? '<tr><td class="iv-empty" colspan="8">在庫はまだ登録されていません</td></tr>' : '')) + '</tbody>'
+    + '</table></div>';
+}
+
+// カードの「在庫追加」ボタンから呼ばれる。品名とOT番号を引き継いでフォーム行を開く。
+function openLaserInvAdd(ev, name, ot) {
+  if (ev) ev.stopPropagation();   // カードのクリック（詳細表示）を抑止
+  _laserInvNew = { name: name || '', ot: ot || '', part: '' };
+  _laserInvFormOpen = true;
+  renderLaserInventory();
+  const el = document.getElementById('iv-new-part');
+  if (el) { el.focus(); el.scrollIntoView({ block: 'nearest' }); }
+}
+
+function laserInvCancel() {
+  _laserInvFormOpen = false;
+  _laserInvNew = { name: '', ot: '', part: '' };
+  renderLaserInventory();
+}
+
+async function laserInvAdd() {
+  const name = (_laserInvNew.name || '').trim();
+  const ot   = (_laserInvNew.ot || '').trim();
+  const part = (document.getElementById('iv-new-part')?.value || '').trim();
+  const qty  = parseInt(document.getElementById('iv-new-qty')?.value);
+  if (!name) { alert('品名がありません。カードの「在庫追加」から登録してください。'); return; }
+  if (isNaN(qty) || qty < 0) { alert('数量は0以上の数字で入力してください。'); return; }
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/laser_inventory`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
+                 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ product_name: name, ot_number: ot || null, part: part || null,
+                             quantity: qty, machine: _laserMachineCurrent })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    _laserInvFormOpen = false;
+    _laserInvNew = { name: '', ot: '', part: '' };
+    // 他設備を表示中でも登録した行が見えるよう自分の設備に戻す
+    if (_laserInvFilter !== 'ALL') _laserInvFilter = _laserMachineCurrent;
+    await loadLaserInventory();
+  } catch(e) { alert('在庫の登録に失敗しました: ' + e.message); }
+}
+
+async function laserInvQty(id, value) {
+  const qty = parseInt(value);
+  if (isNaN(qty) || qty < 0) { alert('数量は0以上の数字で入力してください。'); renderLaserInventory(); return; }
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/laser_inventory?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
+                 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ quantity: qty, updated_at: new Date().toISOString() })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const row = _laserInventory.find(r => r.id === id);
+    if (row) { row.quantity = qty; row.updated_at = new Date().toISOString(); }
+    renderLaserInventory();
+  } catch(e) { alert('数量の変更に失敗しました: ' + e.message); renderLaserInventory(); }
+}
+
+async function laserInvDelete(id) {
+  const row = _laserInventory.find(r => r.id === id);
+  if (!confirm(`「${row ? row.product_name : ''}」を在庫リストから削除しますか？`)) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/laser_inventory?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=minimal' }
+    });
+    if (!res.ok) throw new Error(await res.text());
+    await loadLaserInventory();
+  } catch(e) { alert('削除に失敗しました: ' + e.message); }
+}
+
+// 設備ページ内の未着手⇄完了フィールド間のドラッグ&ドロップ
+function laserMachineDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function laserMachineDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+async function laserMachineDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const key = _laserDragKey;
+  _laserDragKey = null;
+  if (!key) return;
+  const toDone = e.currentTarget.dataset.done === 'true';   // ドロップ先が完了フィールドか
+
+  // 対象カード（グループまたはコピー）を探す。コピーのキーは "copy:ID" 形式
+  let card;
+  if (key.startsWith('copy:')) {
+    const cid = Number(key.slice(5));
+    card = _laserCopies.find(c => c.id === cid);
+  } else {
+    card = _laserGroups.find(g => g.key === key);
+  }
+  if (!card) return;
+  if (card.done === toDone) return;   // 同じフィールド内なら何もしない
+
+  // 未着手→完了なら、カードをレーザーで切断する演出を先に見せる
+  if (toDone) await laserCutCard(key);
+
+  // まず画面を即時更新（体感を良くする）
+  card.done = toDone;
+  renderLaserMachinePage();
+
+  // DBの状態を更新（コピーはlaser_assign_copy.done、通常はorders_child.laser_done）
+  try {
+    if (typeof rtSuppress === 'function') rtSuppress();
+    const H = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+    const nowIso = new Date().toISOString();   // 完了にした日時＝製造日
+    card.doneAt = toDone ? nowIso : null;
+    if (key.startsWith('copy:')) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/laser_assign_copy?id=eq.${card.id}`,
+        { method: 'PATCH', headers: H, body: JSON.stringify({ done: toDone, done_at: toDone ? nowIso : null }) });
+      if (!res.ok) throw new Error(await res.text());
+    } else {
+      const ids = card.childIds || [];
+      for (let i = 0; i < ids.length; i += 150) {
+        const chunk = ids.slice(i, i + 150);
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/orders_child?id=in.(${chunk.join(',')})`,
+          { method: 'PATCH', headers: H, body: JSON.stringify({ laser_done: toDone, laser_done_at: toDone ? nowIso : null }) });
+        if (!res.ok) throw new Error(await res.text());
+      }
+    }
+  } catch(err) {
+    // 失敗したら元に戻す
+    card.done = !toDone;
+    renderLaserMachinePage();
+    alert('状態の更新に失敗しました: ' + err.message);
+  }
 }
 
 // レーザー作業振り分けページの「戻る」→ 直前に見ていた設備ページへ
@@ -4661,20 +5729,32 @@ async function loadLaserAssign() {
   const board = document.getElementById('laser-assign-board');
   const H = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
   try {
-    // 1) レーザー工程を含む固有ルートの child_id を集める
-    const routeRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/orders_child_route?step_name=eq.${encodeURIComponent('レーザー')}&select=child_id`,
-      { headers: H }
-    );
-    const routeRows = routeRes.ok ? await routeRes.json() : [];
-    const laserChildIds = new Set(routeRows.map(r => r.child_id));
+    // 1) レーザー工程を含む固有ルートの child_id を集める（1000件上限対策でページング）
+    const laserChildIds = new Set();
+    for (let offset = 0; ; offset += 1000) {
+      const routeRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/orders_child_route?step_name=eq.${encodeURIComponent('レーザー')}&select=child_id&order=child_id.asc&limit=1000&offset=${offset}`,
+        { headers: H }
+      );
+      if (!routeRes.ok) break;
+      const rows = await routeRes.json();
+      rows.forEach(r => laserChildIds.add(r.child_id));
+      if (rows.length < 1000) break;
+    }
 
-    // 1b) 加えて、子データの納期（orders_child.delivery）が入ったものもすべて対象にする
-    const delivRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/orders_child?delivery=not.is.null&select=id`,
-      { headers: H }
-    );
-    if (delivRes.ok) (await delivRes.json()).forEach(c => laserChildIds.add(c.id));
+    // 1b) 加えて、子データの納期（orders_child.delivery）が入ったものもすべて対象にする。
+    // Supabaseは1リクエスト1000件が上限のため、id順にページングして取りこぼしを防ぐ
+    // （上限に達すると分納の片方だけカードが消える等の不具合になる）
+    for (let offset = 0; ; offset += 1000) {
+      const delivRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/orders_child?delivery=not.is.null&select=id&order=id.asc&limit=1000&offset=${offset}`,
+        { headers: H }
+      );
+      if (!delivRes.ok) break;
+      const rows = await delivRes.json();
+      rows.forEach(c => laserChildIds.add(c.id));
+      if (rows.length < 1000) break;   // 最終ページ
+    }
 
     const laserChildIdList = [...laserChildIds];
     if (!laserChildIdList.length) {
@@ -4688,7 +5768,7 @@ async function loadLaserAssign() {
     for (let i = 0; i < laserChildIdList.length; i += 150) {
       const chunk = laserChildIdList.slice(i, i + 150);
       const cRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/orders_child?id=in.(${chunk.join(',')})&select=id,order_id,sealno,laser_machine,laser_done,delivery`,
+        `${SUPABASE_URL}/rest/v1/orders_child?id=in.(${chunk.join(',')})&select=id,order_id,sealno,laser_machine,laser_done,laser_done_at,delivery`,
         { headers: H }
       );
       if (cRes.ok) children.push(...await cRes.json());
@@ -4726,7 +5806,10 @@ async function loadLaserAssign() {
       if (!o) return;
       const pd = o.drawingno ? pdMap.get(o.drawingno) : null;
       const productNo = o.productno || '(製番なし)';
-      const key = String(o.order_id) + '|||' + productNo;  // 同製番でも別受注は別カードに
+      // 分納（子データの納期が複数）の場合は納期ごとに別カードにする。
+      // これで各納期のカレンダーに出て、カードの数量もその納期の子データ数になる。
+      const deliv = c.delivery || '';
+      const key = String(o.order_id) + '|||' + productNo + '|||' + deliv;
       if (!groups.has(key)) {
         groups.set(key, {
           key, productNo,
@@ -4744,13 +5827,14 @@ async function loadLaserAssign() {
           deliverydate: o.deliverydate || '-',
           quantity: o.quantity != null ? o.quantity : '-',
           unit: o.unit || '-',
-          childIds: [], machines: new Set(), doneFlags: [], deliveries: []
+          childIds: [], machines: new Set(), doneFlags: [], deliveries: [], doneAts: []
         });
       }
       const g = groups.get(key);
       g.childIds.push(c.id);
       g.machines.add(c.laser_machine || '');
       g.doneFlags.push(c.laser_done === true);
+      if (c.laser_done_at) g.doneAts.push(c.laser_done_at);
       if (c.delivery) g.deliveries.push(c.delivery);
     });
 
@@ -4759,9 +5843,11 @@ async function loadLaserAssign() {
       const machine = (ms.length === 1 && g.machines.size === 1) ? ms[0] : '';
       // 全子データが完了なら完了扱い
       const done = g.doneFlags.length > 0 && g.doneFlags.every(Boolean);
-      // 子データの納期のうち最も早い日をカードの代表納期にする（カレンダー集計・絞り込みに使用）
-      const childDelivery = g.deliveries.length ? g.deliveries.slice().sort()[0] : '';
-      return { ...g, machine, done, count: g.childIds.length, childDelivery };
+      // このカードの納期（分納は納期ごとにカードを分けているので1種類）
+      const childDelivery = g.deliveries.length ? g.deliveries[0] : '';
+      // 製造日＝完了にした日時（複数あれば最も新しいもの）
+      const doneAt = g.doneAts.length ? g.doneAts.slice().sort().pop() : '';
+      return { ...g, machine, done, count: g.childIds.length, childDelivery, doneAt };
     });
 
     // order_id → 表示情報マップ（コピーカードの表示に流用）
@@ -4795,6 +5881,7 @@ async function loadLaserCopies() {
         productCategory: g?.productCategory || '',
         quantity: g?.quantity != null ? g.quantity : '-', unit: g?.unit || '-',
         count: g?.count || 0, isCopy: true, done: r.done === true,
+        doneAt: r.done_at || '',
       };
     });
   } catch (e) { console.warn('[laser] コピー読込失敗', e); _laserCopies = []; }
@@ -4912,16 +5999,18 @@ function laserCalClear() {
   renderLaserAssign();
 }
 
-function laserCardHtml(g) {
+function laserCardHtml(g, opts) {
+  const _o = opts || {};
   const isCopy = !!g.isCopy;
   const dataKey = isCopy ? ('copy:' + g.id) : g.key.replace(/"/g,'&quot;');
   const copyBadge = isCopy
     ? '<span style="font-size:8px;font-weight:700;color:#fff;background:#f59e0b;border-radius:6px;padding:1px 5px;margin-left:5px;">コピー</span>'
     : '';
   const labelBtn = '<button onclick="printLaserLabel(event,' + g.orderId + ')" title="データシールを発行" style="font-size:10px;color:#7c3aed;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:5px;padding:2px 8px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:10px;height:10px;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>シール発行</button>';
-  const actionBtn = isCopy
+  // 設備画面（未着手/完了フィールド）ではコピー／削除ボタンは表示しない
+  const actionBtn = _o.hideCopy ? '' : (isCopy
     ? '<button onclick="deleteLaserCopy(event,' + g.id + ')" title="コピーを削除" style="font-size:10px;color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:5px;padding:2px 8px;cursor:pointer;">削除</button>'
-    : '<button onclick="copyLaserCard(event,' + g.orderId + ')" title="この作業指示書を複製" style="font-size:10px;color:#0891b2;background:#ecfeff;border:1px solid #a5f3fc;border-radius:5px;padding:2px 8px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:10px;height:10px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>コピー</button>';
+    : '<button onclick="copyLaserCard(event,' + g.orderId + ')" title="この作業指示書を複製" style="font-size:10px;color:#0891b2;background:#ecfeff;border:1px solid #a5f3fc;border-radius:5px;padding:2px 8px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:10px;height:10px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>コピー</button>');
   // レーザー工程ステータス（未振り分け=未着手 / 設備にあり未完了=仕掛中 / done=完了）
   const status = g.done ? 'done' : (g.machine ? 'wip' : 'todo');
   const statusMeta = {
@@ -4934,14 +6023,12 @@ function laserCardHtml(g) {
       '<span style="width:6px;height:6px;border-radius:50%;background:' + statusMeta.color + ';"></span>' +
       '<span style="font-size:11px;font-weight:800;color:' + statusMeta.color + ';">' + statusMeta.label + '</span>' +
     '</div>';
-  // 「作業終了」ボタン：設備にあって未完了の時だけ表示
-  const finishBtn = (g.machine && !g.done)
-    ? '<button onclick="finishLaserTask(event,\'' + (isCopy?('copy:'+g.id):('order:'+g.orderId)) + '\')" title="この作業を完了にする" style="font-size:10px;color:#fff;background:#2563eb;border:none;border-radius:5px;padding:2px 10px;cursor:pointer;font-weight:600;">作業終了</button>'
+  // 「在庫追加」ボタン：設備ページのカードに表示。品名とOT番号を引き継いで在庫登録する
+  const invEsc = (s) => String(s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  const finishBtn = g.machine
+    ? '<button onclick="openLaserInvAdd(event,\'' + invEsc(g.productName) + '\',\'' + invEsc(g.otNumber) + '\')" title="この製品を在庫リストに追加する" style="font-size:10px;color:#fff;background:#0891b2;border:none;border-radius:5px;padding:2px 10px;cursor:pointer;font-weight:600;">在庫追加</button>'
     : '';
-  // 完了済みカードを未完了に戻すボタン
-  const reopenBtn = (g.machine && g.done)
-    ? '<button onclick="reopenLaserTask(event,\'' + (isCopy?('copy:'+g.id):('order:'+g.orderId)) + '\')" title="完了を取り消す" style="font-size:10px;color:#6b7280;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:5px;padding:2px 10px;cursor:pointer;">完了取消</button>'
-    : '';
+  const reopenBtn = '';
   return '<div class="laser-card" draggable="true" data-key="' + dataKey + '" data-orderid="' + g.orderId + '" ' +
     'ondragstart="laserDragStart(event)" ondragend="laserDragEnd(event)" onclick="laserCardClick(event,' + g.orderId + ')" ' +
     'style="background:#fff;border:1px solid ' + (isCopy?'#fcd34d':'#cbd5e1') + ';border-radius:7px;padding:0;cursor:grab;box-shadow:0 1px 2px rgba(0,0,0,0.06);overflow:hidden;">' +
@@ -4964,7 +6051,7 @@ function laserCardHtml(g) {
         '<span style="color:#6b7280;font-size:9px;">納期 <strong style="color:#0d9488;">' + (g.childDelivery||'-') + '</strong></span>' +
       '</div>' +
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px;">' +
-        '<span style="color:#6b7280;font-size:9px;">数量 <strong style="color:#111827;">' + g.quantity + '</strong> ' + g.unit + '</span>' +
+        '<span style="color:#6b7280;font-size:9px;">数量 <strong style="color:#111827;">' + (g.count != null ? g.count : g.quantity) + '</strong> ' + g.unit + '</span>' +
         statusHtml +
       '</div>' +
       '<div style="margin-top:3px;display:flex;gap:4px;justify-content:flex-end;align-items:center;flex-wrap:wrap;">' + finishBtn + reopenBtn + labelBtn + actionBtn + '</div>' +
@@ -5004,6 +6091,150 @@ async function printLaserLabel(e, orderId) {
   } catch (err) {
     alert('印刷サーバーに接続できません。print_server.py が起動しているか確認してください。\n' + err.message);
   }
+}
+
+// 作業振り分け画面：設備列のカードぶんの作業指示書シールをQL-800でまとめて発行する
+async function printMachineLabels(e, machine) {
+  e.stopPropagation();
+  const btn = e.currentTarget;
+  const cards = [
+    ..._laserGroups.filter(g => g.machine === machine),
+    ..._laserCopies.filter(c => c.machine === machine),
+  ];
+  if (!cards.length) { alert(machine + ' に振り分けられたカードがありません。'); return; }
+  if (!confirm(`${machine} の作業指示書シールを ${cards.length}枚 発行します。よろしいですか？`)) return;
+
+  const orig = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.innerHTML = '発行中…'; }
+  let ok = 0; const errors = [];
+  for (const g of cards) {
+    const payload = {
+      productno:   g.productNo || '',
+      productname: g.productName || '',
+      otnumber:    g.otNumber || '',
+      quantity:    (g.count != null ? g.count : (g.quantity != null ? g.quantity : '')) + (g.unit ? (' ' + g.unit) : ''),
+      delivery:    g.childDelivery || g.deliverydate || '',
+      client:      g.client || '',
+    };
+    try {
+      const res = await fetch('http://localhost:8765/print_label', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) ok++;
+      else errors.push(`${g.productNo || '(製番なし)'}: ${data.error || ('HTTP ' + res.status)}`);
+    } catch (err) {
+      errors.push('印刷サーバーに接続できません（print_server.py が起動しているか確認してください）');
+      break;   // 接続不可なら残りも失敗するので中断
+    }
+  }
+  if (btn) { btn.disabled = false; btn.innerHTML = ok && !errors.length ? '✓ 発行済' : orig;
+             if (ok && !errors.length) setTimeout(() => { btn.innerHTML = orig; }, 1500); }
+  if (errors.length) alert(`${ok}枚発行しました。\n\n失敗 ${errors.length}件:\n` + errors.slice(0, 8).join('\n'));
+}
+
+// ==================== 製造履歴（この設備で完了した作業の一覧） ====================
+let _laserHistMachine = 'ALL';   // 製造履歴の設備フィルター（'ALL'=すべて）
+let _laserHistQuery = '';        // 製造履歴の検索文字（製番・品名・OT番号）
+
+function openLaserHistory() {
+  if (!_laserMachineCurrent) return;
+  _laserHistMachine = _laserMachineCurrent;   // 既定は今開いている設備
+  _laserHistQuery = '';
+  document.getElementById('laser-history-overlay').classList.add('open');
+  renderLaserHistory();
+}
+function closeLaserHistory() {
+  document.getElementById('laser-history-overlay').classList.remove('open');
+}
+function setLaserHistMachine(m) { _laserHistMachine = m; renderLaserHistory(); }
+function setLaserHistQuery(v) {
+  _laserHistQuery = v;
+  renderLaserHistoryTable();   // 入力のたびに表だけ描き直す（入力欄のフォーカスを保つ）
+}
+function clearLaserHistQuery() { _laserHistQuery = ''; renderLaserHistory(); }
+
+// 製造日時の表示（YYYY/MM/DD HH:MM）
+function laserDoneAtText(v) {
+  if (!v) return '-';
+  const d = new Date(v);
+  if (isNaN(d)) return '-';
+  const p2 = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}/${p2(d.getMonth()+1)}/${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}`;
+}
+
+// 絞り込み後の履歴データ
+function laserHistoryRows() {
+  let rows = [
+    ..._laserGroups.filter(g => g.done && g.machine),
+    ..._laserCopies.filter(c => c.done && c.machine),
+  ];
+  if (_laserHistMachine !== 'ALL') rows = rows.filter(r => r.machine === _laserHistMachine);
+  const q = (_laserHistQuery || '').trim().toLowerCase();
+  if (q) {
+    rows = rows.filter(r =>
+      String(r.productNo || '').toLowerCase().includes(q) ||
+      String(r.productName || '').toLowerCase().includes(q) ||
+      String(r.otNumber || '').toLowerCase().includes(q)
+    );
+  }
+  // 製造日の新しい順（未記録は末尾）
+  rows.sort((a, b) => String(b.doneAt || '').localeCompare(String(a.doneAt || '')));
+  return rows;
+}
+
+function renderLaserHistory() {
+  const box = document.getElementById('laser-history-body');
+  if (!box) return;
+  const tabs = ['VENTIS', 'ENSIS', 'FOM2', 'ALL'].map(m =>
+    '<button class="lh-tab' + (_laserHistMachine === m ? ' active' : '') + '"'
+    + ' onclick="setLaserHistMachine(\'' + m + '\')">' + (m === 'ALL' ? 'すべて' : m) + '</button>'
+  ).join('');
+
+  box.innerHTML =
+    '<div class="lh-bar">'
+    + '<span class="lh-tabs">' + tabs + '</span>'
+    + '<span class="lh-search">'
+    + '<input id="lh-q" type="text" placeholder="製番・品名・OT番号で検索" value="' + esc(_laserHistQuery) + '"'
+    + ' oninput="setLaserHistQuery(this.value)">'
+    + (_laserHistQuery ? '<button class="lh-clear" onclick="clearLaserHistQuery()">×</button>' : '')
+    + '</span>'
+    + '</div>'
+    + '<div id="laser-history-table"></div>';
+  renderLaserHistoryTable();
+  const q = document.getElementById('lh-q');
+  if (q && _laserHistQuery) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
+}
+
+function renderLaserHistoryTable() {
+  const box = document.getElementById('laser-history-table');
+  if (!box) return;
+  const rows = laserHistoryRows();
+  if (!rows.length) {
+    box.innerHTML = '<div style="text-align:center;color:#9ca3af;font-size:13px;padding:40px 0;">'
+      + (_laserHistQuery ? '該当する製造履歴はありません' : 'この条件の製造履歴はまだありません') + '</div>';
+    return;
+  }
+  const body = rows.map(r =>
+    '<tr>'
+    + '<td class="mono">' + esc(r.productNo || '-') + '</td>'
+    + '<td>' + esc(r.productName || '-') + '</td>'
+    + '<td class="mono">' + esc(r.drawingNo || '-') + '</td>'
+    + '<td class="mono" style="color:#7c3aed;">' + esc(r.otNumber || '-') + '</td>'
+    + '<td style="text-align:right;">' + (r.count != null ? r.count : (r.quantity != null ? r.quantity : '-')) + '</td>'
+    + '<td class="mono">' + esc(r.childDelivery || '-') + '</td>'
+    + '<td class="mono">' + esc(r.machine || '-') + '</td>'
+    + '<td class="mono">' + laserDoneAtText(r.doneAt) + '</td>'
+    + '</tr>'
+  ).join('');
+  const heads = ['製番','品名','図番','OT番号','数量','納期','設備名','製造日'];
+  box.innerHTML =
+    '<div style="font-size:12px;color:#6b7280;margin:0 0 8px;">' + rows.length + '件</div>'
+    + '<div class="lh-table-wrap"><table class="lh-table">'
+    + '<thead><tr>' + heads.map((h, i) =>
+        '<th style="text-align:' + (i === 4 ? 'right' : 'left') + ';">' + h + '</th>').join('')
+    + '</tr></thead><tbody>' + body + '</tbody></table></div>';
 }
 
 async function finishLaserTask(e, token) { return _setLaserDone(e, token, true); }
@@ -5146,6 +6377,490 @@ async function laserDrop(e) {
   }
 }
 
+// ==================== 発注管理（物品カタログ・カート・依頼） ====================
+// ユーザー種別: 管理者(永冨)=マスタ編集・画像登録・依頼ステータス変更 / 発注者(製造部)=カートで依頼
+const PU_IMG_BUCKET = 'purchase-images';
+let _puItems = [];            // 物品マスタ（全件キャッシュ）
+let _puLoaded = false;
+let _puFiltered = [];         // フィルター後
+let _puShown = 60;            // カタログの表示件数（「さらに表示」で+60）
+let _puCart = new Map();      // itemId -> { item, qty }
+let _puRequests = [];         // 依頼一覧
+let _puReqItems = new Map();  // request_id -> 明細[]
+let _puEditingId = null;      // 物品編集中のid
+let _puImgTargetId = null;    // 画像アップロード対象のid
+
+const PU_H = () => ({ 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' });
+const puEsc = (s) => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
+// 管理者判定: 永冨アカウント、またはloginuser.authorityに「管理」「admin」を含む場合
+function puIsAdmin() {
+  const name = (currentUser?.loginname || '') + '|' + (currentUser?.userid || '');
+  const auth = String(currentUser?.authority || '');
+  return name.includes('永冨') || name.toLowerCase().includes('nagatomi')
+    || auth.includes('管理') || auth.toLowerCase().includes('admin');
+}
+function puUserName() { return currentUser?.loginname || currentUser?.userid || '不明'; }
+
+function puToast(msg, color) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:2000;'
+    + 'background:' + (color || '#1d4ed8') + ';color:#fff;font-size:13px;font-weight:700;'
+    + 'padding:10px 18px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.25);opacity:0;transition:opacity .2s;';
+  document.body.appendChild(t);
+  requestAnimationFrame(() => { t.style.opacity = '1'; });
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 2200);
+}
+
+async function puFetchAll(url) {
+  const PAGE = 1000;
+  let all = [], offset = 0;
+  while (true) {
+    const res = await fetch(url + '&limit=' + PAGE + '&offset=' + offset, { headers: PU_H() });
+    if (!res.ok) break;
+    const rows = await res.json();
+    all = all.concat(rows);
+    if (rows.length < PAGE) break;
+    offset += PAGE;
+  }
+  return all;
+}
+
+// ---- ページ表示 ----
+async function loadPurchasePage() {
+  const tools = document.getElementById('pu-admin-tools');
+  if (tools) tools.style.display = puIsAdmin() ? 'inline-flex' : 'none';
+  if (!_puLoaded) {
+    _puItems = await puFetchAll(`${SUPABASE_URL}/rest/v1/purchase_items?select=*&order=id.asc`);
+    _puLoaded = true;
+    puBuildCompanyFilter();
+  }
+  puOnFilter();
+  puUpdateCartBadge();
+  puLoadRequests();   // 件数バッジのため裏で読み込む
+}
+
+function puBuildCompanyFilter() {
+  const sel = document.getElementById('pu-company');
+  const dl = document.getElementById('pu-company-list');
+  if (!sel) return;
+  const cur = sel.value;
+  const companies = [...new Set(_puItems.map(i => i.company).filter(Boolean))].sort((a,b) => a.localeCompare(b,'ja'));
+  sel.innerHTML = '<option value="">仕入先: すべて</option>'
+    + companies.map(c => '<option value="' + puEsc(c) + '">' + puEsc(c) + '</option>').join('');
+  sel.value = cur;
+  if (dl) dl.innerHTML = companies.map(c => '<option value="' + puEsc(c) + '">').join('');
+}
+
+function puSwitchTab(tab) {
+  document.getElementById('pu-tab-catalog').classList.toggle('active', tab === 'catalog');
+  document.getElementById('pu-tab-requests').classList.toggle('active', tab === 'requests');
+  document.getElementById('pu-catalog-view').style.display = (tab === 'catalog') ? '' : 'none';
+  document.getElementById('pu-requests-view').style.display = (tab === 'requests') ? '' : 'none';
+  if (tab === 'requests') puLoadRequests(true);
+}
+
+// ---- カタログ ----
+// 検索用正規化: NFKCで全角英数記号⇔半角カナの表記ゆれを統一し、大文字小文字も無視
+function puNormalizeSearch(s) {
+  if (!s) return '';
+  return String(s).normalize('NFKC').toLowerCase();
+}
+
+function puOnFilter() {
+  const q = puNormalizeSearch(document.getElementById('pu-search')?.value || '').trim();
+  const co = document.getElementById('pu-company')?.value || '';
+  _puFiltered = _puItems.filter(i => {
+    if (co && i.company !== co) return false;
+    if (!q) return true;
+    return puNormalizeSearch(i.product_name).includes(q) || puNormalizeSearch(i.product_code).includes(q);
+  });
+  _puShown = 60;
+  puRenderGrid();
+}
+
+function puShowMore() { _puShown += 60; puRenderGrid(); }
+
+function puRenderGrid() {
+  const grid = document.getElementById('pu-grid');
+  if (!grid) return;
+  const admin = puIsAdmin();
+  const list = _puFiltered.slice(0, _puShown);
+  document.getElementById('pu-count').textContent = _puFiltered.length + '件';
+  grid.innerHTML = list.map(i => puCardHtml(i, admin)).join('')
+    || '<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:40px 0;">該当する物品がありません</div>';
+  const more = document.getElementById('pu-more');
+  if (more) more.style.display = (_puFiltered.length > _puShown) ? '' : 'none';
+}
+
+function puCardHtml(i, admin) {
+  const inCart = _puCart.has(i.id);
+  const spec = [];
+  if (i.amount != null) spec.push('入数 ' + i.amount + (i.unit || ''));
+  else if (i.unit) spec.push(i.unit);
+  if (i.box) spec.push('荷姿: ' + i.box);
+  const img = i.image_url
+    ? '<img src="' + puEsc(i.image_url) + '" loading="lazy" alt="">'
+    : '<svg class="pu-noimg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" style="width:44px;height:44px;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
+  return '<div class="pu-card">'
+    + '<div class="pu-card-img' + (admin ? ' admin" onclick="puPickImage(' + i.id + ')" title="クリックで画像を登録/変更' : '') + '">'
+      + img + (admin ? '<span class="pu-img-edit">📷 画像</span>' : '') + '</div>'
+    + '<div class="pu-card-body">'
+      + '<div class="pu-card-name" title="' + puEsc(i.product_name) + '">' + puEsc(i.product_name) + '</div>'
+      + (i.product_code ? '<div class="pu-card-code">' + puEsc(i.product_code) + '</div>' : '')
+      + (spec.length ? '<div class="pu-card-spec">' + puEsc(spec.join(' ・ ')) + '</div>' : '')
+      + (i.company ? '<div class="pu-card-company" title="' + puEsc(i.company) + '">' + puEsc(i.company) + '</div>' : '')
+    + '</div>'
+    + '<div class="pu-card-foot">'
+      + '<div class="pu-qty">'
+        + '<button onclick="puQtyStep(' + i.id + ',-1)">−</button>'
+        + '<input id="pu-qty-' + i.id + '" type="number" min="1" value="' + (inCart ? _puCart.get(i.id).qty : 1) + '">'
+        + '<button onclick="puQtyStep(' + i.id + ',1)">＋</button>'
+      + '</div>'
+      + '<button class="pu-add-btn' + (inCart ? ' added' : '') + '" id="pu-add-' + i.id + '" onclick="puAddCart(' + i.id + ')">'
+        + (inCart ? '✓ カート内' : 'カートへ') + '</button>'
+    + '</div>'
+    + (admin ? '<div class="pu-card-admin"><a onclick="puOpenItemModal(' + i.id + ')">編集</a>'
+             + '<a class="del" onclick="puDeleteItem(' + i.id + ')">削除</a></div>' : '')
+    + '</div>';
+}
+
+function puQtyStep(id, d) {
+  const inp = document.getElementById('pu-qty-' + id);
+  if (!inp) return;
+  inp.value = Math.max(1, (parseInt(inp.value, 10) || 1) + d);
+  if (_puCart.has(id)) { _puCart.get(id).qty = parseInt(inp.value, 10); puUpdateCartBadge(); }
+}
+
+// ---- カート ----
+function puAddCart(id) {
+  const item = _puItems.find(i => i.id === id);
+  if (!item) return;
+  const qty = Math.max(1, parseInt(document.getElementById('pu-qty-' + id)?.value, 10) || 1);
+  _puCart.set(id, { item, qty });
+  const btn = document.getElementById('pu-add-' + id);
+  if (btn) { btn.classList.add('added'); btn.textContent = '✓ カート内'; }
+  puUpdateCartBadge();
+  puToast('カートに追加しました');
+}
+
+function puRemoveCart(id) {
+  _puCart.delete(id);
+  puUpdateCartBadge();
+  puRenderCart();
+  const btn = document.getElementById('pu-add-' + id);
+  if (btn) { btn.classList.remove('added'); btn.textContent = 'カートへ'; }
+  const inp = document.getElementById('pu-qty-' + id);
+  if (inp) inp.value = 1;
+}
+
+function puUpdateCartBadge() {
+  const b = document.getElementById('pu-cart-badge');
+  if (!b) return;
+  const n = _puCart.size;
+  b.style.display = n ? 'flex' : 'none';
+  b.textContent = n;
+}
+
+function puOpenCart() { document.getElementById('pu-cart-modal').style.display = 'flex'; puRenderCart(); }
+function puCloseCart() { document.getElementById('pu-cart-modal').style.display = 'none'; }
+
+function puRenderCart() {
+  const body = document.getElementById('pu-cart-body');
+  if (!body) return;
+  if (!_puCart.size) { body.innerHTML = '<div class="pu-cart-empty">カートは空です。カタログから物品を追加してください。</div>'; }
+  else {
+    body.innerHTML = [..._puCart.values()].map(({ item, qty }) =>
+      '<div class="pu-cart-row">'
+      + '<div style="flex:1;min-width:0;">'
+        + '<div class="nm">' + puEsc(item.product_name) + '</div>'
+        + '<div class="co">' + puEsc(item.company || '') + (item.amount != null ? ' ・ 入数' + item.amount + puEsc(item.unit || '') : '') + '</div>'
+      + '</div>'
+      + '<div class="pu-qty">'
+        + '<button onclick="puCartQty(' + item.id + ',-1)">−</button>'
+        + '<input type="number" min="1" value="' + qty + '" onchange="puCartQtySet(' + item.id + ',this.value)">'
+        + '<button onclick="puCartQty(' + item.id + ',1)">＋</button>'
+      + '</div>'
+      + '<button class="pu-cart-x" onclick="puRemoveCart(' + item.id + ')" title="カートから外す">✕</button>'
+      + '</div>').join('');
+  }
+  document.getElementById('pu-send-btn').disabled = !_puCart.size;
+}
+
+function puCartQty(id, d) {
+  const c = _puCart.get(id); if (!c) return;
+  c.qty = Math.max(1, c.qty + d);
+  puRenderCart();
+  const inp = document.getElementById('pu-qty-' + id); if (inp) inp.value = c.qty;
+}
+function puCartQtySet(id, v) {
+  const c = _puCart.get(id); if (!c) return;
+  c.qty = Math.max(1, parseInt(v, 10) || 1);
+  puRenderCart();
+}
+
+// 依頼を送信: purchase_requests を1件作り、明細をまとめてINSERT
+async function puSendRequest() {
+  if (!_puCart.size) return;
+  const btn = document.getElementById('pu-send-btn');
+  btn.disabled = true;
+  try {
+    const note = document.getElementById('pu-cart-note').value.trim();
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_requests`, {
+      method: 'POST',
+      headers: { ...PU_H(), 'Prefer': 'return=representation' },
+      body: JSON.stringify({ requested_by: puUserName(), note: note, status: 'pending' })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const reqId = (await res.json())[0].id;
+    // 明細（PostgRESTの一括INSERTは全行のキー構成を揃える）
+    const rows = [..._puCart.values()].map(({ item, qty }) => ({
+      request_id: reqId, item_id: item.id,
+      product_code: item.product_code || '', product_name: item.product_name,
+      company: item.company || '', qty: qty,
+      amount: item.amount == null ? null : item.amount,
+      unit: item.unit || '', box: item.box || ''
+    }));
+    const res2 = await fetch(`${SUPABASE_URL}/rest/v1/purchase_request_items`, {
+      method: 'POST', headers: { ...PU_H(), 'Prefer': 'return=minimal' }, body: JSON.stringify(rows)
+    });
+    if (!res2.ok) throw new Error(await res2.text());
+    _puCart.clear();
+    document.getElementById('pu-cart-note').value = '';
+    puCloseCart(); puUpdateCartBadge(); puRenderGrid();
+    puToast('✅ 依頼を送信しました（依頼No.' + reqId + '）', '#059669');
+    puSwitchTab('requests');
+  } catch (err) {
+    alert('依頼の送信に失敗しました: ' + err.message);
+  } finally { btn.disabled = false; }
+}
+
+// ---- 依頼一覧 ----
+const PU_STATUS = {
+  pending: { label: '依頼中',   color: '#d97706', bg: '#fffbeb', bd: '#fde68a' },
+  ordered: { label: '発注済み', color: '#2563eb', bg: '#eff6ff', bd: '#bfdbfe' },
+  done:    { label: '完了',     color: '#059669', bg: '#ecfdf5', bd: '#a7f3d0' },
+};
+
+async function puLoadRequests(render) {
+  _puRequests = await puFetchAll(`${SUPABASE_URL}/rest/v1/purchase_requests?select=*&order=id.desc`);
+  _puReqItems = new Map();
+  const ids = _puRequests.map(r => r.id);
+  for (let i = 0; i < ids.length; i += 150) {
+    const chunk = ids.slice(i, i + 150);
+    const rows = await puFetchAll(`${SUPABASE_URL}/rest/v1/purchase_request_items?select=*&request_id=in.(${chunk.join(',')})&order=id.asc`);
+    rows.forEach(r => {
+      if (!_puReqItems.has(r.request_id)) _puReqItems.set(r.request_id, []);
+      _puReqItems.get(r.request_id).push(r);
+    });
+  }
+  // タブの「依頼中」件数バッジ（管理者が気づけるように）
+  const badge = document.getElementById('pu-req-badge');
+  if (badge) {
+    const n = _puRequests.filter(r => r.status === 'pending').length;
+    badge.style.display = n ? '' : 'none';
+    badge.textContent = n;
+  }
+  if (render || document.getElementById('pu-requests-view').style.display !== 'none') puRenderRequests();
+}
+
+function puRenderRequests() {
+  const box = document.getElementById('pu-req-list');
+  if (!box) return;
+  const admin = puIsAdmin();
+  const me = puUserName();
+  if (!_puRequests.length) {
+    box.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:40px 0;">依頼はまだありません</div>';
+    return;
+  }
+  box.innerHTML = _puRequests.map(r => {
+    const st = PU_STATUS[r.status] || PU_STATUS.pending;
+    const items = _puReqItems.get(r.id) || [];
+    const dt = (s) => s ? new Date(s).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+    let actions = '';
+    if (admin) {
+      if (r.status === 'pending') actions += '<button class="pu-btn primary" onclick="puSetStatus(' + r.id + ',\'ordered\')">発注済みにする</button>';
+      if (r.status === 'ordered') actions += '<button class="pu-btn ghost" onclick="puSetStatus(' + r.id + ',\'pending\')">依頼中に戻す</button>'
+        + '<button class="pu-btn primary" onclick="puSetStatus(' + r.id + ',\'done\')">完了にする</button>';
+      if (r.status === 'done') actions += '<button class="pu-btn ghost" onclick="puSetStatus(' + r.id + ',\'ordered\')">発注済みに戻す</button>';
+    }
+    if (admin || (r.status === 'pending' && r.requested_by === me))
+      actions += '<button class="pu-btn ghost" style="color:#dc2626;border-color:#fecaca;" onclick="puDeleteRequest(' + r.id + ')">削除</button>';
+    return '<div class="pu-req-card">'
+      + '<div class="pu-req-head">'
+        + '<span class="pu-req-no">依頼 #' + r.id + '</span>'
+        + '<span class="pu-status" style="color:' + st.color + ';background:' + st.bg + ';border:1px solid ' + st.bd + ';">' + st.label + '</span>'
+        + '<span class="pu-req-meta">依頼者: ' + puEsc(r.requested_by) + ' ・ ' + dt(r.created_at)
+          + (r.ordered_at ? ' ／ 発注: ' + dt(r.ordered_at) : '') + (r.done_at ? ' ／ 完了: ' + dt(r.done_at) : '') + '</span>'
+        + '<span class="pu-req-actions">' + actions + '</span>'
+      + '</div>'
+      + (r.note ? '<div class="pu-req-note">📝 ' + puEsc(r.note) + '</div>' : '')
+      + '<table class="pu-req-table"><tr><th>品名</th><th>商品コード</th><th>仕入先</th><th style="text-align:right;">数量</th><th>入数</th></tr>'
+      + items.map(it => '<tr><td>' + puEsc(it.product_name) + '</td>'
+          + '<td style="font-family:monospace;">' + puEsc(it.product_code || '') + '</td>'
+          + '<td>' + puEsc(it.company || '') + '</td>'
+          + '<td class="q" style="text-align:right;">' + it.qty + '</td>'
+          + '<td>' + (it.amount != null ? it.amount + puEsc(it.unit || '') : puEsc(it.unit || '')) + '</td></tr>').join('')
+      + '</table></div>';
+  }).join('');
+}
+
+async function puSetStatus(id, status) {
+  const body = { status };
+  if (status === 'ordered') { body.ordered_at = new Date().toISOString(); body.done_at = null; }
+  if (status === 'pending') { body.ordered_at = null; body.done_at = null; }
+  if (status === 'done')    { body.done_at = new Date().toISOString(); }
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_requests?id=eq.${id}`,
+    { method: 'PATCH', headers: { ...PU_H(), 'Prefer': 'return=minimal' }, body: JSON.stringify(body) });
+  if (!res.ok) { alert('更新に失敗しました: ' + await res.text()); return; }
+  await puLoadRequests(true);
+}
+
+async function puDeleteRequest(id) {
+  if (!confirm('依頼 #' + id + ' を削除します。よろしいですか？')) return;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_requests?id=eq.${id}`,
+    { method: 'DELETE', headers: { ...PU_H(), 'Prefer': 'return=minimal' } });
+  if (!res.ok) { alert('削除に失敗しました: ' + await res.text()); return; }
+  await puLoadRequests(true);
+}
+
+// ---- 物品マスタ管理（管理者） ----
+function puOpenItemModal(id) {
+  _puEditingId = id;
+  document.getElementById('pu-item-modal-title').textContent = id ? '物品を編集' : '物品追加';
+  const it = id ? _puItems.find(i => i.id === id) : null;
+  document.getElementById('pu-f-name').value = it?.product_name || '';
+  document.getElementById('pu-f-code').value = it?.product_code || '';
+  document.getElementById('pu-f-amount').value = it?.amount ?? '';
+  document.getElementById('pu-f-unit').value = it?.unit || '';
+  document.getElementById('pu-f-box').value = it?.box || '';
+  document.getElementById('pu-f-company').value = it?.company || '';
+  document.getElementById('pu-item-modal').style.display = 'flex';
+}
+function puCloseItemModal() { document.getElementById('pu-item-modal').style.display = 'none'; }
+
+async function puSaveItem() {
+  const name = document.getElementById('pu-f-name').value.trim();
+  if (!name) { alert('品名を入力してください'); return; }
+  const amtRaw = document.getElementById('pu-f-amount').value.trim();
+  const body = {
+    product_name: name,
+    product_code: document.getElementById('pu-f-code').value.trim(),
+    amount: amtRaw === '' ? null : parseInt(amtRaw, 10),
+    unit: document.getElementById('pu-f-unit').value.trim(),
+    box: document.getElementById('pu-f-box').value.trim(),
+    company: document.getElementById('pu-f-company').value.trim(),
+    updated_at: new Date().toISOString()
+  };
+  try {
+    if (_puEditingId) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_items?id=eq.${_puEditingId}`,
+        { method: 'PATCH', headers: { ...PU_H(), 'Prefer': 'return=representation' }, body: JSON.stringify(body) });
+      if (!res.ok) throw new Error(await res.text());
+      const updated = (await res.json())[0];
+      const idx = _puItems.findIndex(i => i.id === _puEditingId);
+      if (idx >= 0) _puItems[idx] = updated;
+    } else {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_items`,
+        { method: 'POST', headers: { ...PU_H(), 'Prefer': 'return=representation' }, body: JSON.stringify(body) });
+      if (!res.ok) throw new Error(await res.text());
+      _puItems.push((await res.json())[0]);
+    }
+    puCloseItemModal(); puBuildCompanyFilter(); puOnFilter();
+    puToast('✅ 保存しました', '#059669');
+  } catch (err) { alert('保存に失敗しました: ' + err.message); }
+}
+
+async function puDeleteItem(id) {
+  const it = _puItems.find(i => i.id === id);
+  if (!it) return;
+  if (!confirm('「' + it.product_name + '」をマスタから削除します。よろしいですか？\n（過去の依頼明細はそのまま残ります）')) return;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_items?id=eq.${id}`,
+    { method: 'DELETE', headers: { ...PU_H(), 'Prefer': 'return=minimal' } });
+  if (!res.ok) { alert('削除に失敗しました: ' + await res.text()); return; }
+  _puItems = _puItems.filter(i => i.id !== id);
+  _puCart.delete(id); puUpdateCartBadge();
+  puOnFilter();
+}
+
+// ---- 画像登録（カードの画像エリアをクリック） ----
+function puPickImage(id) {
+  _puImgTargetId = id;
+  document.getElementById('pu-img-file').click();
+}
+
+async function puImageSelected(e) {
+  const file = e.target.files[0];
+  e.target.value = '';
+  const id = _puImgTargetId;
+  _puImgTargetId = null;
+  if (!file || !id) return;
+  if (file.size > 5 * 1024 * 1024) { alert('画像は5MB以下にしてください'); return; }
+  const ext = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' }[file.type];
+  if (!ext) { alert('PNG / JPEG / WebP の画像を選んでください'); return; }
+  try {
+    const path = 'item_' + id + '.' + ext;
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${PU_IMG_BUCKET}/${path}`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
+                 'Content-Type': file.type, 'x-upsert': 'true' },
+      body: file
+    });
+    if (!res.ok) throw new Error('アップロード失敗 (' + res.status + '): ' + await res.text());
+    // キャッシュ避けのためURL末尾にバージョンを付ける
+    const url = `${SUPABASE_URL}/storage/v1/object/public/${PU_IMG_BUCKET}/${path}?v=` + Date.now();
+    const res2 = await fetch(`${SUPABASE_URL}/rest/v1/purchase_items?id=eq.${id}`,
+      { method: 'PATCH', headers: { ...PU_H(), 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ image_url: url, updated_at: new Date().toISOString() }) });
+    if (!res2.ok) throw new Error(await res2.text());
+    const it = _puItems.find(i => i.id === id);
+    if (it) it.image_url = url;
+    puRenderGrid();
+    puToast('✅ 画像を登録しました', '#059669');
+  } catch (err) { alert('画像の登録に失敗しました: ' + err.message); }
+}
+
+// ---- CSVインポート（管理者・追加分の取り込み用） ----
+async function puCsvSelected(e) {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  try {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+    if (!rows.length) { alert('データがありません'); return; }
+    // 列名: productID, productName, amount, unit, Box, Company（配布CSVと同じ形式）
+    const exist = new Set(_puItems.map(i => (i.product_code || '') + '|' + i.product_name));
+    const news = [];
+    rows.forEach(r => {
+      const name = String(r.productName || r['品名'] || '').trim();
+      if (!name) return;
+      const code = String(r.productID || r['商品コード'] || '').trim();
+      if (exist.has(code + '|' + name)) return;   // 既存と同じコード+品名はスキップ
+      const amt = parseInt(String(r.amount || '').trim(), 10);
+      news.push({
+        product_code: code, product_name: name,
+        amount: isNaN(amt) ? null : amt,
+        unit: String(r.unit || '').trim(), box: String(r.Box || r.box || '').trim(),
+        company: String(r.Company || r.company || '').trim()
+      });
+    });
+    if (!news.length) { alert('新規の物品はありませんでした（既存と重複）'); return; }
+    if (!confirm(news.length + '件の新規物品を追加します。よろしいですか？')) return;
+    for (let i = 0; i < news.length; i += 200) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_items`,
+        { method: 'POST', headers: { ...PU_H(), 'Prefer': 'return=minimal' },
+          body: JSON.stringify(news.slice(i, i + 200)) });
+      if (!res.ok) throw new Error(await res.text());
+    }
+    _puLoaded = false;
+    await loadPurchasePage();
+    puToast('✅ ' + news.length + '件を追加しました', '#059669');
+  } catch (err) { alert('CSVの取り込みに失敗しました: ' + err.message); }
+}
+
 function showPage(name, navEl) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -5155,6 +6870,7 @@ function showPage(name, navEl) {
   if (name === 'productdate') loadProductdate();
   if (name === 'progress') renderFloors();
   if (name === 'schedule') loadShippingPage();
+  if (name === 'purchase') loadPurchasePage();
 }
 
 // ---- Drop zone ----
