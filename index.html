@@ -301,6 +301,30 @@
   .pu-card-img img { max-width:100%; max-height:100%; object-fit:contain; }
   .pu-card-img .pu-noimg { color:#cbd5e1; }
   .pu-card-img.admin { cursor:pointer; }
+
+  /* ---- 素材/処理バッジ（三価・SUS・NDS-R・NDS-GN） ---- */
+  .pu-mat-badges { display:flex; flex-wrap:wrap; gap:4px; margin:4px 0 2px; min-height:22px; }
+  .pu-mat-badge { position:relative; overflow:hidden; min-width:42px; height:18px; box-sizing:border-box;
+    display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; padding:0 7px;
+    border-radius:5px; box-shadow:0 1px 3px rgba(0,0,0,.3); letter-spacing:.02em; white-space:nowrap; }
+  /* 光沢（つや）を全バッジ共通で重ねる */
+  .pu-mat-badge::after {
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(115deg, rgba(255,255,255,.65) 0%, rgba(255,255,255,.15) 28%, rgba(255,255,255,0) 45%, rgba(255,255,255,0) 70%, rgba(255,255,255,.22) 100%);
+    pointer-events:none;
+  }
+  .pu-mat-badge > span { position:relative; z-index:1; }
+  .pu-mat-badge.mb-sanka { background:linear-gradient(155deg,#fff3a0,#eab308 55%,#a16207); color:#4a2c05; font-weight:900; text-shadow:0 1px 0 rgba(255,255,255,.45); }
+  /* SUS: ヘアライン(髪目)加工されたステンレスを連想させる金属グラデーション */
+  .pu-mat-badge.mb-sus {
+    color:#1e293b; text-shadow:0 1px 0 rgba(255,255,255,.5);
+    background:
+      repeating-linear-gradient(100deg, rgba(255,255,255,.55) 0 1px, rgba(255,255,255,0) 1px 3px),
+      linear-gradient(155deg, #f8fafc 0%, #cbd5e1 30%, #94a3b8 55%, #e2e8f0 75%, #94a3b8 100%);
+    border:1px solid #94a3b8;
+  }
+  .pu-mat-badge.mb-ndsr { background:linear-gradient(155deg,#fca5a5,#dc2626 55%,#7f1d1d); color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.25); }
+  .pu-mat-badge.mb-ndsgn { background:linear-gradient(155deg,#93c5fd,#2563eb 55%,#1e3a8a); color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.25); }
   .pu-img-edit { position:absolute; right:6px; bottom:6px; font-size:10px; font-weight:700; color:#fff;
     background:rgba(100,116,139,.85); border-radius:6px; padding:2px 7px; pointer-events:none; }
   .pu-card-body { padding:8px 10px 4px; flex:1; }
@@ -380,12 +404,70 @@
   .pu-req-table { width:100%; border-collapse:collapse; font-size:12px; }
   .pu-req-table th { text-align:left; color:#64748b; font-weight:700; padding:6px 14px; background:#fcfcfd; border-bottom:1px solid #f1f5f9; }
   .pu-req-table td { padding:6px 14px; border-bottom:1px solid #f8fafc; color:#334155; }
+
+  /* ---- 依頼履歴: Excel風テーブル ---- */
+  .pu-xl-wrap { overflow:auto; border:1px solid #cbd5e1; border-radius:4px; max-height:70vh; background:#fff; }
+  .pu-xl-table { width:100%; border-collapse:collapse; font-size:12px; font-family:'Yu Gothic UI', 'Meiryo', sans-serif; }
+  .pu-xl-table th, .pu-xl-table td { border:1px solid #d7dee6; padding:5px 10px; white-space:nowrap; }
+  .pu-xl-table thead th { position:sticky; top:0; z-index:2; background:#eef2f7; color:#334155; font-weight:700;
+    text-align:left; box-shadow:0 1px 0 #cbd5e1; }
+  .pu-xl-table thead th.pu-xl-col-a { left:0; z-index:3; }
+  .pu-xl-table tbody tr:nth-child(even) { background:#f8fafc; }
+  .pu-xl-table tbody tr:hover { background:#eff6ff; }
+  .pu-xl-table td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .pu-xl-table td.pu-xl-name { white-space:normal; min-width:180px; }
+  .pu-xl-status { display:inline-block; padding:1px 8px; border-radius:4px; font-size:11px; font-weight:700; }
+  .pu-xl-thumb { width:30px; height:30px; border-radius:4px; background:#f8fafc; border:1px solid #eef2f7;
+    display:flex; align-items:center; justify-content:center; overflow:hidden; }
   .pu-req-table td.q { font-weight:800; color:#1d4ed8; white-space:nowrap; }
   .pu-req-actions { margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; }
   .pu-ri-input { border:1px solid transparent; background:transparent; padding:2px 4px; border-radius:4px; }
   .pu-ri-input:hover, .pu-ri-input:focus { border-color:#cbd5e1; background:#fff; }
 
   .pu-sup-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:12px; }
+
+  /* ---- ジャンル絞り込みボタン ---- */
+  .pu-genre-row { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 10px; }
+  .pu-genre-btn { position:relative; overflow:hidden; padding:5px 14px; font-size:12px; font-weight:700; border-radius:20px; border:1px solid #d1d5db;
+    background:#f9fafb; color:#475569; cursor:pointer; transition:transform .15s, background .15s, border-color .15s, color .15s; white-space:nowrap; }
+  .pu-genre-btn:hover { border-color:#93c5fd; background:#eff6ff; }
+  .pu-genre-btn.active { background:#1d4ed8; border-color:#1d4ed8; color:#fff; }
+  #pu-genre2-row .pu-genre-btn { padding:4px 12px; font-size:11.5px; background:#fff; border-color:#e2e8f0; color:#64748b; }
+  #pu-genre2-row .pu-genre-btn.active { background:#0369a1; border-color:#0369a1; color:#fff; }
+
+  /* ジャンルボタン押下エフェクト（波紋＋ポップ） */
+  .pu-genre-btn.pu-genre-pop { animation: pgPop .38s ease; }
+  @keyframes pgPop {
+    0%   { transform:scale(1); }
+    40%  { transform:scale(.90); }
+    70%  { transform:scale(1.07); }
+    100% { transform:scale(1); }
+  }
+  .pu-genre-ripple {
+    position:absolute; border-radius:50%; background:rgba(255,255,255,.65);
+    transform:scale(0); opacity:1; pointer-events:none; animation:pgRipple .55s ease-out forwards;
+  }
+  @keyframes pgRipple { to { transform:scale(1); opacity:0; } }
+
+  /* ---- 依頼送信完了ポップアップ（画面中央） ---- */
+  .pu-send-success {
+    position:fixed; left:50%; top:50%; transform:translate(-50%,-50%) scale(0.85); z-index:3000;
+    background:#fff; border-radius:18px; padding:36px 52px; text-align:center;
+    box-shadow:0 20px 50px rgba(0,0,0,.28), 0 0 0 1px rgba(0,0,0,.04);
+    opacity:0; transition:opacity .25s ease, transform .25s cubic-bezier(.34,1.56,.64,1);
+    pointer-events:none;
+  }
+  .pu-send-success.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
+  .pu-send-success-icon {
+    width:72px; height:72px; margin:0 auto 16px; border-radius:50%;
+    background:linear-gradient(155deg,#34d399,#059669); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 8px 18px rgba(5,150,105,.35);
+  }
+  .pu-send-success-icon svg { width:38px; height:38px; }
+  .pu-send-success-icon.cancel { background:linear-gradient(155deg,#f87171,#dc2626); box-shadow:0 8px 18px rgba(220,38,38,.35); }
+  .pu-send-success-title { font-size:20px; font-weight:800; color:#1e293b; margin-bottom:4px; }
+  .pu-send-success-sub { font-size:13px; font-weight:600; color:#94a3b8; }
   .pu-sup-btn { position:relative; background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:16px 14px;
     text-align:center; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,.05); transition:box-shadow .15s, transform .15s; }
   .pu-sup-btn:hover { box-shadow:0 4px 14px rgba(0,0,0,.10); transform:translateY(-2px); }
@@ -2307,6 +2389,7 @@
       <div class="pu-tabs">
         <button id="pu-tab-catalog" class="pu-tab active" onclick="puSwitchTab('catalog')">物品カタログ</button>
         <button id="pu-tab-requests" class="pu-tab" onclick="puSwitchTab('requests')">依頼一覧<span id="pu-req-badge" class="pu-reqbadge" style="display:none;"></span></button>
+        <button id="pu-tab-history" class="pu-tab" onclick="puSwitchTab('history')">依頼履歴</button>
       </div>
     </div>
 
@@ -2322,6 +2405,8 @@
           <button class="pu-btn primary" onclick="puOpenItemModal(null)">＋ 物品追加</button>
         </span>
       </div>
+      <div id="pu-genre1-row" class="pu-genre-row"></div>
+      <div id="pu-genre2-row" class="pu-genre-row" style="display:none;"></div>
       <div id="pu-grid" class="pu-grid"></div>
       <div style="text-align:center;padding:10px 0 4px;">
         <button id="pu-more" class="pu-btn ghost" onclick="puShowMore()" style="display:none;">さらに表示</button>
@@ -2342,6 +2427,41 @@
           <button class="pu-btn ghost" onclick="puShowSupplierList()">← 仕入先一覧に戻る</button>
         </div>
         <div id="pu-req-list"></div>
+      </div>
+    </div>
+
+    <!-- 依頼履歴（Excel風の一覧表） -->
+    <div id="pu-history-view" style="display:none;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
+        <input type="text" id="pu-history-search" class="pu-input" placeholder="品名・依頼者・仕入先・宛先で検索..." style="flex:1;min-width:200px;" oninput="puRenderHistory()">
+        <select id="pu-history-status" class="pu-input" style="width:140px;" onchange="puRenderHistory()">
+          <option value="">状態: すべて</option>
+          <option value="pending">依頼中</option>
+          <option value="ordered">発注済み</option>
+          <option value="done">完了</option>
+        </select>
+        <span id="pu-history-count" style="font-size:12px;color:#64748b;white-space:nowrap;"></span>
+      </div>
+      <div class="pu-xl-wrap">
+        <table class="pu-xl-table">
+          <thead>
+            <tr>
+              <th class="pu-xl-col-a">日付・時刻</th>
+              <th>画像</th>
+              <th>依頼者</th>
+              <th>仕入先</th>
+              <th>品名</th>
+              <th>商品コード</th>
+              <th style="text-align:right;">入数</th>
+              <th style="text-align:right;">注文数</th>
+              <th>荷姿</th>
+              <th>宛先</th>
+              <th>状態</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="pu-history-tbody"></tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -6543,6 +6663,12 @@ function puIsAdmin() {
   return name.includes('永冨') || name.toLowerCase().includes('nagatomi')
     || auth.includes('管理') || auth.toLowerCase().includes('admin');
 }
+// テロップ・依頼一覧タブの閲覧権限（永冨・山下のみ）
+function puCanSeeRequestsTab() {
+  const name = (currentUser?.loginname || '') + '|' + (currentUser?.userid || '');
+  return name.includes('永冨') || name.includes('山下')
+    || name.toLowerCase().includes('nagatomi') || name.toLowerCase().includes('yamashita');
+}
 function puUserName() { return currentUser?.loginname || currentUser?.userid || '不明'; }
 
 function puToast(msg, color) {
@@ -6596,11 +6722,19 @@ async function puFetchAll(url) {
 async function loadPurchasePage() {
   const tools = document.getElementById('pu-admin-tools');
   if (tools) tools.style.display = puIsAdmin() ? 'inline-flex' : 'none';
+  const reqTabBtn = document.getElementById('pu-tab-requests');
+  const canSeeReq = puCanSeeRequestsTab();
+  if (reqTabBtn) reqTabBtn.style.display = canSeeReq ? '' : 'none';
+  if (!canSeeReq && document.getElementById('pu-requests-view').style.display !== 'none') {
+    puSwitchTab('catalog');
+  }
   if (!_puLoaded) {
     _puItems = await puFetchAll(`${SUPABASE_URL}/rest/v1/purchase_items?select=*&order=id.asc`);
+    _puItems.forEach(i => { const g = puClassifyGenre(i.product_name); i._g1 = g.g1; i._g2 = g.g2; });
     _puItemsById = new Map(_puItems.map(i => [i.id, i]));
     _puLoaded = true;
     puBuildCompanyFilter();
+    puRenderGenreButtons();
   }
   puOnFilter();
   puUpdateCartBadge();
@@ -6666,9 +6800,12 @@ function puBuildCompanyFilter() {
 function puSwitchTab(tab) {
   document.getElementById('pu-tab-catalog').classList.toggle('active', tab === 'catalog');
   document.getElementById('pu-tab-requests').classList.toggle('active', tab === 'requests');
+  document.getElementById('pu-tab-history').classList.toggle('active', tab === 'history');
   document.getElementById('pu-catalog-view').style.display = (tab === 'catalog') ? '' : 'none';
   document.getElementById('pu-requests-view').style.display = (tab === 'requests') ? '' : 'none';
+  document.getElementById('pu-history-view').style.display = (tab === 'history') ? '' : 'none';
   if (tab === 'requests') { puShowSupplierList(); puLoadRequests(true); }
+  if (tab === 'history') { puLoadRequests(true); }
 }
 
 // ---- 依頼一覧: 仕入先ボタン一覧 ----
@@ -6790,6 +6927,7 @@ function puRenderTickerInto(wrapId, trackId, pendingCount) {
 function puUpdateTopTicker() {
   const wrap = document.getElementById('top-req-ticker-wrap');
   if (!wrap) return; // TOP画面の要素が無ければ何もしない
+  if (!puCanSeeRequestsTab()) { wrap.style.display = 'none'; return; }
   const groups = puGroupRequests();
   const pendingCount = new Map();
   groups.forEach(g => { if (g.status === 'pending') pendingCount.set(g.company, (pendingCount.get(g.company) || 0) + 1); });
@@ -6800,7 +6938,245 @@ function puUpdateTopTicker() {
 // 検索用正規化: NFKCで全角英数記号⇔半角カナの表記ゆれを統一し、大文字小文字も無視
 function puNormalizeSearch(s) {
   if (!s) return '';
-  return String(s).normalize('NFKC').toLowerCase();
+  // NFKC正規化（半角/全角ゆれを統一）→小文字化→×をxに統一→ひらがなをカタカナに統一→ハイフン・空白を除去
+  // 例:「3 x 4」「3ｘ4」「3×4」を同一視／「SSD-54」「SSD54」を同一視／ひらがな・カタカナを同一視してヒットさせるため
+  return String(s).normalize('NFKC').toLowerCase().replace(/×/g, 'x')
+    .replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60)) // ひらがな→カタカナ
+    .replace(/[-\u2010-\u2015]/g, '') // 各種ハイフン・ダッシュ記号を除去（"-" と U+2010〜U+2015 のダッシュ類のみ。全角－はNFKCで既に半角化済み）
+    .replace(/\s+/g, '');
+}
+
+// ---- ジャンル分類（第一階層／第二階層） ----
+// 品名のキーワードから自動判定。カテゴリの並び順＝優先順位（上のカテゴリのキーワードが先に一致する）。
+// 第二階層は未定義（後日追加予定）。
+const PU_GENRE_TREE = {
+  'ネジ': ['トラスコネジ', 'サラコネジ', 'ナベコネジ', 'スリムヘッドコネジ', 'ハイブリッドコネジ'],
+  'ボルト': ['キャップボルト', 'サラキャップボルト', 'フランジボタンキャップボルト', 'ボタンキャップボルト', 'WAボタンボルト', 'ローヘッドボルト', '極低頭キャップボルト', 'スタッドボルト'],
+  'ナット': ['高ナット', 'ロックナット', 'T型ナット', 'フクロナット', 'インサートナット'],
+  'ピン/スプリング': ['平行ピン', 'スプリングピン', 'リンクピン', 'カシメピン'],
+  'ベアリング': ['ベアリング', 'TOK'],
+  'ワッシャー/止め輪': ['歯付きワッシャー', '止め輪', 'スプリングワッシャー', 'ジュラコンワッシャー', 'シールワッシャー', 'シムリング', 'ポリスライダーワッシャー', 'ポリアセタールワッシャー', 'ウェーブワッシャー', '丸ワッシャー'],
+  'スペーサー': ['三価', 'SUS', 'ジュラコン'],
+  'リベット': ['POP', 'トップ', '福井鋲螺', '関西リベット', 'ニッセン', 'Huck', 'その他'],
+  'プラグ': [],
+  'ブッシュ': [],
+  'カムフォロア': [],
+  'ワイパー': [],
+  'ゴム': ['クッションゴム', 'パッキン'],
+  '工具': ['スパナ', '六角レンチ', 'ビット', 'タップ'],
+  '保護具': [],
+  'ケミカル用品': ['ラッカースプレー', 'グリススプレー', 'さび止めスプレー', '潤滑スプレー', '脱脂洗浄スプレー', '黒染めスプレー', 'チッピングスプレー', 'ゆるみ止め接着剤', '錆取り剤', 'シリコン', 'シンナー'],
+  '研磨剤': ['ディスク', 'ペーパー', 'スコッチ'],
+  '副資材': ['テープ', 'ストレッチフィルム', 'PEシート'],
+  '樹脂パーツ': ['スライドシュー', 'ストッパー', '角棒'],
+  'その他': [],
+};
+function puEscRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function puGenreRule(g1, keywords) {
+  // 半角カナ/全角カナの表記ゆれを吸収するため、キーワード・品名ともにNFKC正規化した上で比較する
+  return { g1, re: new RegExp(keywords.map(k => puEscRe(k.normalize('NFKC'))).join('|'), 'i') };
+}
+const PU_GENRE_RULES = [
+  puGenreRule('ネジ', ['ﾄﾗｽｺ', 'ｻﾗｺ', 'ﾅﾍﾞｺ', 'ｱﾌﾟｾｯﾄ', 'ｸﾎﾞﾐｻｷ', 'ｽﾘﾑﾍｯﾄﾞ', 'ｻﾑｽｸﾘｭ-', 'Wﾎﾟｲﾝﾄ', 'ﾋﾞｮｳ', 'HB']),
+  puGenreRule('ボルト', ['ﾛｰﾍｯﾄﾞ', 'ﾄﾘｰﾏP', 'CAP', 'WAﾎﾞﾀﾝ', 'スタッドボルト']),
+  puGenreRule('ナット', ['ﾀｶNT', 'Uﾅｯﾄ', 'ﾛｯｸN', 'ﾌｸﾛNT', 'ﾏｸﾞﾅﾛｯｸ', 'ｶﾄﾞﾐﾚｽ', 'Tｶﾞﾀﾖｳｾﾂ', 'Tｶﾞﾀ']),
+  puGenreRule('ピン/スプリング', ['ﾍｲｺｳP', 'ｽﾌﾟﾘﾝｸﾞﾋﾟﾝ', 'ﾘﾝｸﾋﾟﾝ', 'ｶｼﾒﾋﾟﾝ']),
+  puGenreRule('ベアリング', ['ﾍﾞｱﾘﾝｸﾞ', 'ＴＯＫ']),
+  puGenreRule('ワッシャー/止め輪', ['ﾏﾙW', 'ｼﾑﾘﾝｸﾞ', 'ｼﾞｭﾗｺﾝW', 'SW', 'W(ISO', 'ﾄﾒﾜ', 'ﾎﾟﾘｽﾗｲﾀﾞｰＷ', 'ﾎﾟﾘｱｾW', 'ｳｪｰﾌﾞﾜｯｼｬ', 'ｼｰﾙW', 'ｶﾞﾀﾄﾒﾜ', 'ﾊﾂｷW']),
+  puGenreRule('スペーサー', ['ｽﾍﾟｰｻｰ']),
+  puGenreRule('リベット', ['ﾘﾍﾞｯﾄ', 'KRS', 'ﾏｸﾞﾅﾛｯｸ', 'B.R', 'ﾏﾙﾁﾊﾞﾙﾌﾞ', 'NBK', 'SSK', 'POP', 'TIW', 'SS N', 'NST', 'MGL']),
+  puGenreRule('プラグ', ['ﾌﾟﾗｸﾞ']),
+  puGenreRule('ブッシュ', ['ｵｲﾚｽ工業', 'ﾌﾞｯｼｭ']),
+  puGenreRule('カムフォロア', ['CF-4B', 'CF-5B', 'CF-6B', 'CF-8B', 'CF-10B']),
+  puGenreRule('ワイパー', ['ワイパー']),
+  puGenreRule('ゴム', ['帯ﾊﾟｯｷﾝ', 'ｸｯｼｮﾝｺﾞﾑ', 'TP', 'ﾊﾟｯｷﾝ']),
+  puGenreRule('工具', ['ｽﾊﾟﾅ', 'ﾚﾝﾁ', 'ﾋﾞｯﾄ', 'ﾀｯﾌﾟ']),
+  puGenreRule('保護具', ['前掛', '保護メガネ', '腕カバー', '汗水吸', '背抜き手袋']),
+  puGenreRule('ケミカル用品', ['ｽﾌﾟﾚｰ', 'ﾌﾟﾛ ﾎﾜｲﾄ', 'SR', 'ﾊﾟﾝﾄﾞｰ', 'ｸﾞﾘｽ', 'ﾛｯｸﾀｲﾄ', 'ﾊﾟｰﾂｸﾘｰﾅｰ', 'ﾗﾊﾞｰﾁｯﾋﾟﾝｸﾞ', 'ラッカー', 'ｼﾘｺﾝｼｰﾗﾝﾄ', 'ｽﾘｰﾎﾞﾝﾄﾞ', 'ｻﾋﾞﾄﾞﾒ', '錆取り剤', 'ｸﾞﾘｰｽ', 'ﾓﾘﾌﾞﾃﾞﾝ', 'EP-2', 'ｸﾛｿﾞﾒ', 'ｼﾘｺﾝ', 'シンナー']),
+  puGenreRule('研磨剤', ['ﾚﾁﾞﾎﾞﾝ ｽｷﾙﾀｯﾁ', 'ﾒﾀｺﾝﾃﾞｨｽｸ', '砥石', 'ﾃﾞｲｽｸ', 'ﾌﾞﾙｰｾﾗ', 'ｽｺｯﾁ', 'ﾘｺﾏｼﾞｯｸ', 'ｽﾊﾟｲﾀﾞｰﾈｯﾄ', 'H.L ﾍﾞﾙﾄ', 'ﾏﾙﾁｿﾌﾄ', 'ﾍﾟｰﾊﾟｰ', 'ﾍﾞﾙﾄ', 'ﾌﾞﾙｰｾﾗｯｸ']),
+  puGenreRule('副資材', ['ｽﾄﾚｯﾁﾌｨﾙﾑ', 'PEﾌｨﾙﾑ', 'ﾃｰﾌﾟ', 'PEｼｰﾄ']),
+  puGenreRule('樹脂パーツ', ['ｽﾗｲﾄﾞｼｭｰ', 'ｼﾞｭﾗｺﾝ', 'ｽﾄｯﾊﾟｰ', '角棒']),
+];
+
+// 個別の例外指定（品名にキーワード全般では拾いきれない/誤分類してしまう特定商品を、キーワードより優先して判定）
+const PU_GENRE_OVERRIDES = [
+  { test: new RegExp('ﾆﾄﾘﾙ背抜き手袋|背抜き手袋'.normalize('NFKC'), 'i'), g1: '保護具' },
+  { test: new RegExp('ﾄﾗｽｺ.*ﾓﾘﾌﾞﾃﾞﾝｸﾞﾘｽｽﾌﾟﾚｰ'.normalize('NFKC'), 'i'), g1: 'ケミカル用品' },
+];
+
+// 第二階層ルール（各第一階層ジャンルの中で、より詳細に分類する）。
+// 「CAP」のような広いキーワードより先に、具体的なキーワードを判定する順にしている。
+const PU_GENRE_SUBRULES = {
+  'ネジ': [
+    puGenreRule('トラスコネジ', ['ﾄﾗｽｺ']),
+    puGenreRule('サラコネジ', ['ｻﾗｺ']),
+    puGenreRule('ナベコネジ', ['ﾅﾍﾞｺ']),
+    puGenreRule('スリムヘッドコネジ', ['ｽﾘﾑﾍｯﾄﾞ']),
+    puGenreRule('ハイブリッドコネジ', ['HB']),
+  ],
+  'ボルト': [
+    puGenreRule('サラキャップボルト', ['ｻﾗCAP']),
+    puGenreRule('フランジボタンキャップボルト', ['ﾌﾗﾝｼﾞﾎﾞﾀﾝCAP']),
+    puGenreRule('ボタンキャップボルト', ['ﾎﾞﾀﾝCAP']),
+    puGenreRule('極低頭キャップボルト', ['ｺﾞｸﾃｲﾄｳCAP']),
+    puGenreRule('WAボタンボルト', ['WAﾎﾞﾀﾝ']),
+    puGenreRule('ローヘッドボルト', ['NSﾛｰﾍｯﾄﾞ', 'ﾛｰﾍｯﾄﾞ']),
+    puGenreRule('スタッドボルト', ['ｽﾀｯﾄﾞﾎﾞﾙﾄ']),
+    puGenreRule('キャップボルト', ['10.9CAP', 'ﾄﾘｰﾏP', 'CAP']),
+  ],
+  'ナット': [
+    puGenreRule('高ナット', ['ﾀｶNT']),
+    puGenreRule('ロックナット', ['Uﾅｯﾄ', 'ﾛｯｸN']),
+    puGenreRule('T型ナット', ['Tｶﾞﾀ']),
+    puGenreRule('フクロナット', ['ﾌｸﾛNT']),
+    puGenreRule('インサートナット', ['ｶﾄﾞﾐﾚｽ']),
+  ],
+  'ピン/スプリング': [
+    puGenreRule('平行ピン', ['ﾍｲｺｳP']),
+    puGenreRule('スプリングピン', ['ｽﾌﾟﾘﾝｸﾞﾋﾟﾝ']),
+    puGenreRule('リンクピン', ['ﾘﾝｸﾋﾟﾝ']),
+    puGenreRule('カシメピン', ['ｶｼﾒﾋﾟﾝ']),
+  ],
+  'ベアリング': [
+    puGenreRule('TOK', ['ＴＯＫ']),
+    puGenreRule('ベアリング', ['ﾍﾞｱﾘﾝｸﾞ']),
+  ],
+  'ワッシャー/止め輪': [
+    // 「丸ワッシャー」は W 単独という広いキーワードを含むため、他の具体的なものを判定した後、最後に判定する
+    puGenreRule('歯付きワッシャー', ['ﾊﾂｷW']),
+    puGenreRule('止め輪', ['ﾄﾒﾜ']),
+    puGenreRule('スプリングワッシャー', ['SW']),
+    puGenreRule('ジュラコンワッシャー', ['ｼﾞｭﾗｺﾝW']),
+    puGenreRule('シールワッシャー', ['ｼｰﾙW']),
+    puGenreRule('シムリング', ['ｼﾑﾘﾝｸﾞ']),
+    puGenreRule('ポリスライダーワッシャー', ['ﾎﾟﾘｽﾗｲﾀﾞｰＷ']),
+    puGenreRule('ポリアセタールワッシャー', ['ﾎﾟﾘｱｾW']),
+    puGenreRule('ウェーブワッシャー', ['ｳｪｰﾌﾞﾜｯｼｬ']),
+    puGenreRule('丸ワッシャー', ['ﾏﾙW', 'W']),
+  ],
+  'スペーサー': [
+    puGenreRule('三価', ['3ｶ-W', '3ｶｰW']),
+    puGenreRule('SUS', ['SUS']),
+    puGenreRule('ジュラコン', ['ｼﾞｭﾗｺﾝｽﾍﾟｰｻｰ']),
+  ],
+  'ゴム': [
+    puGenreRule('クッションゴム', ['TP', 'ｸｯｼｮﾝｺﾞﾑ']),
+    puGenreRule('パッキン', ['ﾊﾟｯｷﾝ']),
+  ],
+  '工具': [
+    puGenreRule('スパナ', ['ｽﾊﾟﾅ']),
+    puGenreRule('六角レンチ', ['六角ﾚﾝﾁ']),
+    puGenreRule('ビット', ['ﾋﾞｯﾄ']),
+    puGenreRule('タップ', ['ﾀｯﾌﾟ']),
+  ],
+  'ケミカル用品': [
+    puGenreRule('ラッカースプレー', ['ｽﾌﾟﾚｰﾗｯｶｰ']),
+    puGenreRule('グリススプレー', ['ｸﾞﾘｰｽｽﾌﾟﾚｰ']),
+    puGenreRule('さび止めスプレー', ['ｻﾋﾞﾄﾞﾒ']),
+    puGenreRule('潤滑スプレー', ['ﾊﾟﾝﾄﾞｰ', 'ﾓﾘﾌﾞﾃﾞﾝ', 'EP-2']),
+    puGenreRule('脱脂洗浄スプレー', ['ﾊﾟｰﾂｸﾘｰﾅｰ']),
+    puGenreRule('黒染めスプレー', ['ｸﾛｿﾞﾒ']),
+    puGenreRule('チッピングスプレー', ['ﾗﾊﾞｰﾁｯﾋﾟﾝｸﾞ']),
+    puGenreRule('ゆるみ止め接着剤', ['ﾛｯｸﾀｲﾄ', 'ｽﾘｰﾎﾞﾝﾄﾞ']),
+    puGenreRule('錆取り剤', ['錆取り剤']),
+    puGenreRule('シリコン', ['SR', 'ｼﾘｺﾝ']),
+    puGenreRule('シンナー', ['シンナー']),
+  ],
+  '研磨剤': [
+    puGenreRule('ディスク', ['ﾃﾞｨｽｸ', '砥石', 'ｽﾊﾟｲﾀﾞｰﾈｯﾄ', 'ﾌﾞﾙｰｾﾗｯｸ']),
+    puGenreRule('ペーパー', ['ﾍﾟｰﾊﾟｰ', 'ﾍﾞﾙﾄ']),
+    puGenreRule('スコッチ', ['ｽｺｯﾁ', 'ﾏﾙﾁｿﾌﾄ']),
+  ],
+  '副資材': [
+    puGenreRule('テープ', ['ﾃｰﾌﾟ']),
+    puGenreRule('ストレッチフィルム', ['ｽﾄﾚｯﾁﾌｨﾙﾑ']),
+    puGenreRule('PEシート', ['PEｼｰﾄ']),
+  ],
+  '樹脂パーツ': [
+    puGenreRule('スライドシュー', ['ｽﾗｲﾄﾞｼｭｰ']),
+    puGenreRule('ストッパー', ['ｽﾄｯﾊﾟｰ']),
+    puGenreRule('角棒', ['角棒']),
+  ],
+  'リベット': [
+    puGenreRule('POP', ['POP']),
+    puGenreRule('トップ', ['TIW']),
+    puGenreRule('福井鋲螺', ['SS N']),
+    puGenreRule('関西リベット', ['KRS']),
+    puGenreRule('ニッセン', ['NST']),
+    puGenreRule('Huck', ['MGL']),
+  ],
+};
+
+function puClassifyGenre(name) {
+  const s = String(name || '').normalize('NFKC');
+  let g1 = null;
+  for (const ov of PU_GENRE_OVERRIDES) {
+    if (ov.test.test(s)) { g1 = ov.g1; break; }
+  }
+  if (!g1) {
+    for (const rule of PU_GENRE_RULES) {
+      if (rule.re.test(s)) { g1 = rule.g1; break; }
+    }
+  }
+  if (!g1) return { g1: 'その他', g2: '' };
+  let g2 = '';
+  const subrules = PU_GENRE_SUBRULES[g1];
+  if (subrules) {
+    const sub = subrules.find(r => r.re.test(s));
+    if (sub) g2 = sub.g1; // puGenreRuleの第一引数をg2名として流用している
+    else if (PU_GENRE_TREE[g1] && PU_GENRE_TREE[g1].includes('その他')) g2 = 'その他';
+  }
+  return { g1, g2 };
+}
+
+let _puGenre1 = '';
+let _puGenre2 = '';
+
+// ジャンルボタン押下時の演出（波紋＋ポップ）
+function puGenreEffect(btn, ev) {
+  if (!btn) return;
+  const ripple = document.createElement('span');
+  ripple.className = 'pu-genre-ripple';
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height) * 1.7;
+  ripple.style.width = ripple.style.height = size + 'px';
+  const cx = (ev && ev.clientX ? ev.clientX - rect.left : rect.width / 2) - size / 2;
+  const cy = (ev && ev.clientY ? ev.clientY - rect.top : rect.height / 2) - size / 2;
+  ripple.style.left = cx + 'px';
+  ripple.style.top = cy + 'px';
+  btn.appendChild(ripple);
+  btn.classList.remove('pu-genre-pop'); void btn.offsetWidth; btn.classList.add('pu-genre-pop');
+  setTimeout(() => ripple.remove(), 550);
+}
+
+function puRenderGenreButtons() {
+  const row1 = document.getElementById('pu-genre1-row');
+  const row2 = document.getElementById('pu-genre2-row');
+  if (!row1) return;
+  const genres1 = Object.keys(PU_GENRE_TREE);
+  row1.innerHTML = '<button class="pu-genre-btn' + (!_puGenre1 ? ' active' : '') + '" onclick="puGenreEffect(this,event);puSelectGenre1(\'\')">すべて</button>'
+    + genres1.map(g => '<button class="pu-genre-btn' + (_puGenre1 === g ? ' active' : '') + '" onclick="puGenreEffect(this,event);puSelectGenre1(\'' + g.replace(/'/g, "\\'") + '\')">' + puEsc(g) + '</button>').join('');
+  if (_puGenre1 && PU_GENRE_TREE[_puGenre1] && PU_GENRE_TREE[_puGenre1].length) {
+    row2.style.display = 'flex';
+    row2.innerHTML = '<button class="pu-genre-btn' + (!_puGenre2 ? ' active' : '') + '" onclick="puGenreEffect(this,event);puSelectGenre2(\'\')">すべて</button>'
+      + PU_GENRE_TREE[_puGenre1].map(g2 => '<button class="pu-genre-btn' + (_puGenre2 === g2 ? ' active' : '') + '" onclick="puGenreEffect(this,event);puSelectGenre2(\'' + g2.replace(/'/g, "\\'") + '\')">' + puEsc(g2) + '</button>').join('');
+  } else {
+    row2.style.display = 'none';
+    row2.innerHTML = '';
+  }
+}
+
+function puSelectGenre1(g) {
+  _puGenre1 = g;
+  _puGenre2 = '';
+  puRenderGenreButtons();
+  puOnFilter();
+}
+
+function puSelectGenre2(g2) {
+  _puGenre2 = g2;
+  puRenderGenreButtons();
+  puOnFilter();
 }
 
 function puOnFilter() {
@@ -6808,6 +7184,8 @@ function puOnFilter() {
   const co = document.getElementById('pu-company')?.value || '';
   _puFiltered = _puItems.filter(i => {
     if (co && i.company !== co) return false;
+    if (_puGenre1 && i._g1 !== _puGenre1) return false;
+    if (_puGenre2 && i._g2 !== _puGenre2) return false;
     if (!q) return true;
     return puNormalizeSearch(i.product_name).includes(q) || puNormalizeSearch(i.product_code).includes(q);
   });
@@ -6829,6 +7207,31 @@ function puRenderGrid() {
   if (more) more.style.display = (_puFiltered.length > _puShown) ? '' : 'none';
 }
 
+// 素材/処理バッジ判定（品名に含まれるパターンから判定。複数該当は複数表示）
+function puMaterialBadges(name) {
+  const s = String(name || '').normalize('NFKC');
+  const badges = [];
+  // NFKC正規化後は半角ｶ→全角カ、半角ｰ→全角ーになるため、全角側でマッチさせる
+  if (/3カ[-ー]W/i.test(s)) badges.push({ cls: 'mb-sanka', label: '三価' });
+  if (/SUS|ｽﾃﾝ|ステン/i.test(s)) badges.push({ cls: 'mb-sus', label: 'SUS' });
+  // リベットの品名で「SS N」表記（ステンレス系リベットの型番）が入るものもSUS扱いにする
+  // NFKC正規化後は半角ﾘﾍﾞｯﾄ→全角リベットになるため、全角側でマッチさせる
+  if (/リベット/i.test(s) && /SS\s?N/i.test(s)) {
+    if (!badges.some(b => b.cls === 'mb-sus')) badges.push({ cls: 'mb-sus', label: 'SUS' });
+  }
+  if (/NDS-R\b/i.test(s)) badges.push({ cls: 'mb-ndsr', label: 'NDS-R' });
+  if (/NDS-GN/i.test(s)) badges.push({ cls: 'mb-ndsgn', label: 'NDS-GN' });
+  return badges;
+}
+function puMaterialBadgesHtml(name) {
+  const badges = puMaterialBadges(name);
+  // バッジが無いカードも同じ高さの枠を確保し、グリッド内でのズレを防ぐ
+  if (!badges.length) return '<div class="pu-mat-badges pu-mat-badges-empty"></div>';
+  return '<div class="pu-mat-badges">' + badges.map(b =>
+    '<span class="pu-mat-badge ' + b.cls + '"><span>' + puEsc(b.label) + '</span></span>'
+  ).join('') + '</div>';
+}
+
 function puCardHtml(i, admin) {
   const inCart = _puCart.has(i.id);
   const spec = [];
@@ -6843,7 +7246,7 @@ function puCardHtml(i, admin) {
       + img + (admin ? '<span class="pu-img-edit">📷 画像</span>' : '') + '</div>'
     + '<div class="pu-card-body">'
       + '<div class="pu-card-name" title="' + puEsc(i.product_name) + '">' + puEsc(i.product_name) + '</div>'
-      + (i.product_code ? '<div class="pu-card-code">' + puEsc(i.product_code) + '</div>' : '')
+      + puMaterialBadgesHtml(i.product_name)
       + (spec.length ? '<div class="pu-card-spec">' + puEsc(spec.join(' ・ ')) + '</div>' : '')
       + (i.company ? '<div class="pu-card-company" title="' + puEsc(i.company) + '">'
           + (PU_SUPPLIER_LOGO[i.company] ? '<img class="pu-card-company-logo" src="' + PU_SUPPLIER_LOGO[i.company] + '" alt="" onerror="this.remove()">' : '')
@@ -7013,11 +7416,36 @@ async function puSendRequest() {
     _puCart.clear();
     document.getElementById('pu-cart-note').value = '';
     puCloseCart(); puUpdateCartBadge(); puRenderGrid();
-    puToast('✅ 依頼を送信しました（依頼No.' + reqId + '）', '#059669');
-    puSwitchTab('requests');
+    puShowSendSuccess(reqId);
   } catch (err) {
     alert('依頼の送信に失敗しました: ' + err.message);
   } finally { btn.disabled = false; }
+}
+
+// 依頼送信完了の演出（画面中央に大きく表示）。送信後も物品カタログ画面のまま維持する
+// 画面中央に大きく表示する完了ポップアップ（送信・取消し共通）
+// icon: 'check'（緑のチェック）または 'cancel'（グレーの取消しマーク）
+function puShowCenterPopup(title, sub, icon) {
+  const el = document.createElement('div');
+  el.className = 'pu-send-success';
+  const iconCls = icon === 'cancel' ? 'pu-send-success-icon cancel' : 'pu-send-success-icon';
+  const svg = icon === 'cancel'
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  el.innerHTML = '<div class="' + iconCls + '">' + svg + '</div>'
+    + '<div class="pu-send-success-title">' + puEsc(title) + '</div>'
+    + (sub ? '<div class="pu-send-success-sub">' + puEsc(sub) + '</div>' : '');
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.remove(), 300);
+  }, 2200);
+}
+
+// 依頼送信完了の演出（画面中央に大きく表示）。送信後も物品カタログ画面のまま維持する
+function puShowSendSuccess(reqId) {
+  puShowCenterPopup('依頼を送信しました', '依頼No.' + reqId, 'check');
 }
 
 // ---- 依頼一覧 ----
@@ -7060,7 +7488,93 @@ async function puLoadRequests(render) {
     puRenderSupplierList();
     if (_puSelectedCompany) puRenderRequests();
   }
+  if (document.getElementById('pu-history-view').style.display !== 'none') puRenderHistory();
   puUpdateTopTicker();
+}
+
+// ---- 依頼履歴（Excel風の一覧表） ----
+function puRenderHistory() {
+  const tbody = document.getElementById('pu-history-tbody');
+  const countEl = document.getElementById('pu-history-count');
+  if (!tbody) return;
+  const q = puNormalizeSearch((document.getElementById('pu-history-search')?.value || '').trim());
+  const statusFilter = document.getElementById('pu-history-status')?.value || '';
+
+  // 依頼日時（新しい順）で個々の品目を1行ずつ並べる
+  const reqById = new Map(_puRequests.map(r => [r.id, r]));
+  let rows = [];
+  for (const [reqId, items] of _puReqItems.entries()) {
+    const r = reqById.get(reqId);
+    if (!r) continue;
+    items.forEach(it => rows.push({ req: r, it }));
+  }
+  rows.sort((a, b) => (b.req.created_at || '').localeCompare(a.req.created_at || ''));
+
+  if (statusFilter) rows = rows.filter(({ req }) => req.status === statusFilter);
+  if (q) {
+    rows = rows.filter(({ req, it }) => {
+      const hay = puNormalizeSearch([it.product_name, req.requested_by, it.company, it.destination].filter(Boolean).join(' '));
+      return hay.includes(q);
+    });
+  }
+
+  countEl.textContent = rows.length + ' 件';
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:#94a3b8;padding:24px;">データがありません</td></tr>';
+    return;
+  }
+
+  const me = puUserName();
+  const canCancelAll = puCanSeeRequestsTab();
+  tbody.innerHTML = rows.map(({ req, it }) => {
+    const st = PU_STATUS[req.status] || PU_STATUS.pending;
+    const destination = it.destination || puDefaultDestination(req.requested_by);
+    const dt = (req.created_at || '').slice(0, 10);
+    const tm = (req.created_at || '').slice(11, 16); // HH:MM
+    const catalogItem = it.item_id != null ? _puItemsById.get(it.item_id) : null;
+    const thumbHtml = catalogItem && catalogItem.image_url
+      ? '<img src="' + catalogItem.image_url + '" alt="" style="width:100%;height:100%;object-fit:contain;">'
+      : '<span style="font-size:8px;color:#cbd5e1;">No Image</span>';
+    const canCancel = canCancelAll || req.requested_by === me;
+    const cancelBtn = canCancel
+      ? '<a style="font-size:11px;color:#dc2626;font-weight:700;cursor:pointer;" onclick="puCancelHistoryItem(' + it.id + ')">取消し</a>'
+      : '';
+    return '<tr>'
+      + '<td class="pu-xl-col-a">' + puEsc(puFmtDate(dt)) + (tm ? ' <span style="color:#94a3b8;">' + tm + '</span>' : '') + '</td>'
+      + '<td><div class="pu-xl-thumb">' + thumbHtml + '</div></td>'
+      + '<td>' + puEsc(req.requested_by) + '</td>'
+      + '<td>' + puEsc(it.company || '') + '</td>'
+      + '<td class="pu-xl-name">' + puEsc(it.product_name) + '</td>'
+      + '<td style="font-family:monospace;">' + puEsc(it.product_code || '') + '</td>'
+      + '<td class="num">' + (it.amount != null ? it.amount : '') + '</td>'
+      + '<td class="num">' + it.qty + '</td>'
+      + '<td>' + puEsc(it.box || '') + '</td>'
+      + '<td>' + puEsc(destination) + '</td>'
+      + '<td><span class="pu-xl-status" style="color:' + st.color + ';background:' + st.bg + ';border:1px solid ' + st.bd + ';">' + st.label + '</span></td>'
+      + '<td>' + cancelBtn + '</td>'
+      + '</tr>';
+  }).join('');
+}
+
+// 依頼履歴からの取消し（品目単位で削除）。自分の依頼分のみ／永冨・山下は全件可
+async function puCancelHistoryItem(itemId) {
+  let target = null;
+  for (const [reqId, items] of _puReqItems.entries()) {
+    const it = items.find(x => x.id === itemId);
+    if (it) { target = { req: _puRequests.find(r => r.id === reqId), it }; break; }
+  }
+  if (!target || !target.req) return;
+  const me = puUserName();
+  if (!(puCanSeeRequestsTab() || target.req.requested_by === me)) {
+    alert('この依頼を取消しする権限がありません');
+    return;
+  }
+  if (!confirm(puEsc(target.it.product_name) + '（' + target.req.requested_by + ' 様）の依頼を取消します。よろしいですか？')) return;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_request_items?id=eq.${itemId}`,
+    { method: 'DELETE', headers: { ...PU_H(), 'Prefer': 'return=minimal' } });
+  if (!res.ok) { alert('取消しに失敗しました: ' + await res.text()); return; }
+  puShowCenterPopup('取消しました', target.it.product_name, 'cancel');
+  await puLoadRequests(true);
 }
 
 function puDefaultDestination(requester) {
@@ -7133,7 +7647,7 @@ function puRenderRequests() {
         + '<button class="pu-btn ghost" onclick="puOpenOrderPreview(\'' + g.key.replace(/'/g, "\\'") + '\')">注文書を見る</button>';
       }
     }
-    if (admin || (g.status === 'pending' && g.requester === me))
+    if (puCanSeeRequestsTab() || g.requester === me)
       actions += '<button class="pu-btn ghost" style="color:#dc2626;border-color:#fecaca;" onclick="puDeleteGroup(\'' + g.key.replace(/'/g, "\\'") + '\')">削除</button>';
     const notes = [...g.notes];
     const keyEsc = g.key.replace(/'/g, "\\'");
