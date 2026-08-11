@@ -6663,6 +6663,14 @@ function puIsAdmin() {
   return name.includes('永冨') || name.toLowerCase().includes('nagatomi')
     || auth.includes('管理') || auth.toLowerCase().includes('admin');
 }
+// 物品カタログの物品追加・画像登録・編集/削除ができるユーザー
+function puCanManageCatalog() {
+  const name = (currentUser?.loginname || '') + '|' + (currentUser?.userid || '');
+  const allowed = ['永冨', 'nagatomi', '山下', 'yamashita', '三宅', 'miyake',
+    '岡本', 'okamoto', '下岡', 'shimooka', '冨田', 'tomita', '瀧本', 'takimoto',
+    '井戸', 'ido', '足立', 'adachi', '宮本'];
+  return allowed.some(a => name.includes(a));
+}
 // テロップ・依頼一覧タブの閲覧権限（永冨・山下のみ）
 function puCanSeeRequestsTab() {
   const name = (currentUser?.loginname || '') + '|' + (currentUser?.userid || '');
@@ -6721,7 +6729,7 @@ async function puFetchAll(url) {
 // ---- ページ表示 ----
 async function loadPurchasePage() {
   const tools = document.getElementById('pu-admin-tools');
-  if (tools) tools.style.display = puIsAdmin() ? 'inline-flex' : 'none';
+  if (tools) tools.style.display = puCanManageCatalog() ? 'inline-flex' : 'none';
   const reqTabBtn = document.getElementById('pu-tab-requests');
   const canSeeReq = puCanSeeRequestsTab();
   if (reqTabBtn) reqTabBtn.style.display = canSeeReq ? '' : 'none';
@@ -7198,7 +7206,7 @@ function puShowMore() { _puShown += 60; puRenderGrid(); }
 function puRenderGrid() {
   const grid = document.getElementById('pu-grid');
   if (!grid) return;
-  const admin = puIsAdmin();
+  const admin = puCanManageCatalog();
   const list = _puFiltered.slice(0, _puShown);
   document.getElementById('pu-count').textContent = _puFiltered.length + '件';
   grid.innerHTML = list.map(i => puCardHtml(i, admin)).join('')
@@ -8129,6 +8137,11 @@ async function puCsvSelected(e) {
 }
 
 function showPage(name, navEl) {
+  // 許可されたユーザー以外はTOP・発注管理以外のページに入れない
+  if (!canAccessFullSystem() && name !== 'purchase' && name !== 'top') {
+    name = 'purchase';
+    navEl = document.querySelector('[data-page=purchase]');
+  }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
@@ -8138,6 +8151,30 @@ function showPage(name, navEl) {
   if (name === 'progress') renderFloors();
   if (name === 'schedule') loadShippingPage();
   if (name === 'purchase') loadPurchasePage();
+}
+
+// フルアクセス許可ユーザー（それ以外は発注管理のみ利用可）
+function canAccessFullSystem() {
+  const name = (currentUser?.loginname || '') + '|' + (currentUser?.userid || '');
+  const allowed = ['永冨', 'nagatomi', '山下', 'yamashita', '三宅', 'miyake',
+    '岡本', 'okamoto', '下岡', 'shimooka', '冨田', 'tomita', '瀧本', 'takimoto'];
+  return allowed.some(a => name.includes(a));
+}
+
+// ログイン直後に呼び出し、許可されないユーザーはナビを発注管理のみに絞って強制遷移させる
+function applyAccessRestriction() {
+  const full = canAccessFullSystem();
+  document.querySelectorAll('.nav-item').forEach(el => {
+    if (el.dataset.page !== 'purchase' && el.dataset.page !== 'top') el.style.display = full ? '' : 'none';
+  });
+  const funcGrid = document.querySelector('.func-grid');
+  if (funcGrid) {
+    funcGrid.querySelectorAll('[onclick*="showPage("]').forEach(el => {
+      const isPurchaseBtn = el.getAttribute('onclick').includes("showPage('purchase'");
+      el.style.display = (full || isPurchaseBtn) ? '' : 'none';
+    });
+  }
+  if (!full) showPage('top', document.querySelector('[data-page=top]'));
 }
 
 // ---- Drop zone ----
@@ -11135,6 +11172,8 @@ async function doLogin() {
     // 発注管理の依頼データ購読＆TOP画面テロップの初期化（ログイン中は常時稼働）
     puLoadRequests();
     puStartAutoRefresh();
+    // 許可されたユーザー以外は発注管理のみ利用可能にする
+    applyAccessRestriction();
 
   } catch (e) {
     let msg = e.message;
