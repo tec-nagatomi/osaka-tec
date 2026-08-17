@@ -2366,6 +2366,7 @@
       <div class="pu-tabs">
         <button id="pu-tab-catalog" class="pu-tab active" onclick="puSwitchTab('catalog')">物品カタログ</button>
         <button id="pu-tab-requests" class="pu-tab" onclick="puSwitchTab('requests')">依頼一覧<span id="pu-req-badge" class="pu-reqbadge" style="display:none;"></span></button>
+        <button id="pu-tab-orderhistory" class="pu-tab" onclick="puSwitchTab('orderhistory')" style="display:none;">発注履歴</button>
         <button id="pu-tab-history" class="pu-tab" onclick="puSwitchTab('history')">依頼履歴</button>
       </div>
     </div>
@@ -2407,6 +2408,11 @@
       </div>
     </div>
 
+    <!-- 発注履歴（完了した依頼をデータカードのまま表示。永冨・山下のみ） -->
+    <div id="pu-orderhistory-view" style="display:none;">
+      <div id="pu-orderhistory-list"></div>
+    </div>
+
     <!-- 依頼履歴（Excel風の一覧表） -->
     <div id="pu-history-view" style="display:none;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
@@ -2417,6 +2423,8 @@
           <option value="ordered">発注済み</option>
           <option value="done">完了</option>
         </select>
+        <button type="button" class="pu-btn ghost" onclick="puOpenHistorySupplierPopup()">🏭 仕入先リスト</button>
+        <span id="pu-history-supplier-chip" style="display:none;"></span>
         <span id="pu-history-count" style="font-size:12px;color:#64748b;white-space:nowrap;"></span>
       </div>
       <div class="pu-xl-wrap">
@@ -2425,7 +2433,6 @@
             <tr>
               <th class="pu-xl-col-a">日付・時刻</th>
               <th>画像</th>
-              <th>依頼者</th>
               <th>仕入先</th>
               <th>品名</th>
               <th>商品コード</th>
@@ -6708,9 +6715,14 @@ async function loadPurchasePage() {
   const tools = document.getElementById('pu-admin-tools');
   if (tools) tools.style.display = puCanManageCatalog() ? 'inline-flex' : 'none';
   const reqTabBtn = document.getElementById('pu-tab-requests');
+  const orderHistTabBtn = document.getElementById('pu-tab-orderhistory');
   const canSeeReq = puCanSeeRequestsTab();
   if (reqTabBtn) reqTabBtn.style.display = canSeeReq ? '' : 'none';
+  if (orderHistTabBtn) orderHistTabBtn.style.display = canSeeReq ? '' : 'none';
   if (!canSeeReq && document.getElementById('pu-requests-view').style.display !== 'none') {
+    puSwitchTab('catalog');
+  }
+  if (!canSeeReq && document.getElementById('pu-orderhistory-view').style.display !== 'none') {
     puSwitchTab('catalog');
   }
   if (!_puLoaded) {
@@ -6785,11 +6797,14 @@ function puBuildCompanyFilter() {
 function puSwitchTab(tab) {
   document.getElementById('pu-tab-catalog').classList.toggle('active', tab === 'catalog');
   document.getElementById('pu-tab-requests').classList.toggle('active', tab === 'requests');
+  document.getElementById('pu-tab-orderhistory').classList.toggle('active', tab === 'orderhistory');
   document.getElementById('pu-tab-history').classList.toggle('active', tab === 'history');
   document.getElementById('pu-catalog-view').style.display = (tab === 'catalog') ? '' : 'none';
   document.getElementById('pu-requests-view').style.display = (tab === 'requests') ? '' : 'none';
+  document.getElementById('pu-orderhistory-view').style.display = (tab === 'orderhistory') ? '' : 'none';
   document.getElementById('pu-history-view').style.display = (tab === 'history') ? '' : 'none';
   if (tab === 'requests') { puShowSupplierList(); puLoadRequests(true); }
+  if (tab === 'orderhistory') { puLoadRequests(true); }
   if (tab === 'history') { puLoadRequests(true); }
 }
 
@@ -7473,11 +7488,67 @@ async function puLoadRequests(render) {
     puRenderSupplierList();
     if (_puSelectedCompany) puRenderRequests();
   }
+  if (render || document.getElementById('pu-orderhistory-view').style.display !== 'none') puRenderOrderHistory();
   if (document.getElementById('pu-history-view').style.display !== 'none') puRenderHistory();
   puUpdateTopTicker();
 }
 
 // ---- 依頼履歴（Excel風の一覧表） ----
+// ---- 依頼履歴: 仕入先リストのポップアップ絞り込み ----
+let _puHistorySelectedCompany = null;
+
+function puOpenHistorySupplierPopup() {
+  const companies = new Set(_puItems.map(i => i.company).filter(Boolean));
+  (_puRequests || []).forEach(r => (_puReqItems.get(r.id) || []).forEach(it => { if (it.company) companies.add(it.company); }));
+  const list = [...companies].sort((a, b) => a.localeCompare(b, 'ja'));
+  const allBtn = '<div class="pu-sup-btn" onclick="puSelectHistorySupplier(null)">'
+    + '<div class="pu-sup-logo" style="height:36px;width:36px;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;background:#94a3b8;color:#fff;font-weight:800;font-size:15px;">全</div>'
+    + '<div class="pu-sup-name">すべて表示</div></div>';
+  const btns = list.map(c => {
+    const logo = PU_SUPPLIER_LOGO[c]
+      ? '<img class="pu-sup-logo" src="' + PU_SUPPLIER_LOGO[c] + '" alt="" onerror="puLogoFallback(this,\'' + c.replace(/'/g, "\\'") + '\')">'
+      : puSupplierBadgeHtml(c);
+    return '<div class="pu-sup-btn" onclick="puSelectHistorySupplier(\'' + c.replace(/'/g, "\\'") + '\')">'
+      + logo + '<div class="pu-sup-name">' + puEsc(c) + '</div></div>';
+  }).join('');
+
+  const ov = document.createElement('div');
+  ov.id = 'pu-hist-sup-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:3000;'
+    + 'display:flex;align-items:center;justify-content:center;padding:24px;';
+  ov.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:760px;width:100%;max-height:80vh;overflow:auto;padding:22px;">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">'
+      + '<div style="font-size:15px;font-weight:800;color:#111827;">仕入先で絞り込み</div>'
+      + '<button onclick="puCloseHistorySupplierPopup()" style="border:none;background:none;font-size:22px;line-height:1;color:#6b7280;cursor:pointer;">×</button>'
+    + '</div>'
+    + '<div class="pu-sup-grid">' + allBtn + btns + '</div>'
+    + '</div>';
+  ov.addEventListener('click', (e) => { if (e.target === ov) puCloseHistorySupplierPopup(); });
+  document.body.appendChild(ov);
+}
+
+function puCloseHistorySupplierPopup() {
+  const ov = document.getElementById('pu-hist-sup-overlay');
+  if (ov) ov.remove();
+}
+
+function puSelectHistorySupplier(company) {
+  _puHistorySelectedCompany = company;
+  puCloseHistorySupplierPopup();
+  puRenderHistory();
+}
+
+function puUpdateHistorySupplierChip() {
+  const chip = document.getElementById('pu-history-supplier-chip');
+  if (!chip) return;
+  if (!_puHistorySelectedCompany) { chip.style.display = 'none'; chip.innerHTML = ''; return; }
+  chip.style.display = '';
+  chip.style.cssText += 'display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#1d4ed8;'
+    + 'background:#eff6ff;border:1px solid #bfdbfe;border-radius:20px;padding:4px 10px;';
+  chip.innerHTML = '絞込み: ' + puEsc(_puHistorySelectedCompany)
+    + ' <span style="cursor:pointer;color:#6b7280;" onclick="puSelectHistorySupplier(null)">✕</span>';
+}
+
 function puRenderHistory() {
   const tbody = document.getElementById('pu-history-tbody');
   const countEl = document.getElementById('pu-history-count');
@@ -7496,6 +7567,7 @@ function puRenderHistory() {
   rows.sort((a, b) => (b.req.created_at || '').localeCompare(a.req.created_at || ''));
 
   if (statusFilter) rows = rows.filter(({ req }) => req.status === statusFilter);
+  if (_puHistorySelectedCompany) rows = rows.filter(({ it }) => it.company === _puHistorySelectedCompany);
   if (q) {
     rows = rows.filter(({ req, it }) => {
       const hay = puNormalizeSearch([it.product_name, req.requested_by, it.company, it.destination].filter(Boolean).join(' '));
@@ -7504,8 +7576,9 @@ function puRenderHistory() {
   }
 
   countEl.textContent = rows.length + ' 件';
+  puUpdateHistorySupplierChip();
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:#94a3b8;padding:24px;">データがありません</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:#94a3b8;padding:24px;">データがありません</td></tr>';
     return;
   }
 
@@ -7527,7 +7600,6 @@ function puRenderHistory() {
     return '<tr>'
       + '<td class="pu-xl-col-a">' + puEsc(puFmtDate(dt)) + (tm ? ' <span style="color:#94a3b8;">' + tm + '</span>' : '') + '</td>'
       + '<td><div class="pu-xl-thumb">' + thumbHtml + '</div></td>'
-      + '<td>' + puEsc(req.requested_by) + '</td>'
       + '<td>' + puEsc(it.company || '') + '</td>'
       + '<td class="pu-xl-name">' + puEsc(it.product_name) + '</td>'
       + '<td style="font-family:monospace;">' + puEsc(it.product_code || '') + '</td>'
@@ -7594,6 +7666,12 @@ function puGroupRequests() {
   const list = [...groups.values()].map(g => {
     // 複数の元依頼が混ざる場合は最も進んでいない状態をグループの状態とする
     g.status = PU_STATUS_ORDER.find(s => g.statuses.has(s)) || 'pending';
+    // ドラッグ&ドロップでまとめた場合も含め、同じ宛先の品目がまとまって見えるよう宛先順に並べる
+    g.items.sort((a, b) => {
+      const da = a.destination || puDefaultDestination(g.requester);
+      const db = b.destination || puDefaultDestination(g.requester);
+      return da.localeCompare(db, 'ja') || a.id - b.id;
+    });
     return g;
   });
   list.sort((a, b) => (b.date).localeCompare(a.date)
@@ -7616,46 +7694,72 @@ function puRenderRequests() {
   // タブの閲覧権限と同じ永冨・山下のみに許可する
   const admin = puCanSeeRequestsTab();
   const me = puUserName();
-  const groups = puGroupRequests().filter(g => !_puSelectedCompany || g.company === _puSelectedCompany);
+  // 完了（done）した依頼は依頼一覧からは除外し、発注履歴タブへ移す
+  const groups = puGroupRequests()
+    .filter(g => g.status !== 'done')
+    .filter(g => !_puSelectedCompany || g.company === _puSelectedCompany);
   if (!groups.length) {
     box.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:40px 0;">依頼はまだありません</div>';
+  } else {
+    box.innerHTML = groups.map(g => puBuildGroupCardHtml(g, admin, me)).join('');
+  }
+  puRenderOrderHistory();
+}
+
+// 依頼一覧・発注履歴で共通のデータカードHTMLを組み立てる
+function puBuildGroupCardHtml(g, admin, me) {
+  const st = PU_STATUS[g.status] || PU_STATUS.pending;
+  let actions = '';
+  if (admin) {
+    if (g.status === 'pending') actions += '<button class="pu-btn primary" onclick="puMarkGroupOrdered(\'' + g.key.replace(/'/g, "\\'") + '\')">材料発注登録</button>';
+    if (g.status === 'ordered') actions += '<button class="pu-btn ghost" onclick="puSetGroupStatus(\'' + g.key.replace(/'/g, "\\'") + '\',\'pending\')">依頼中に戻す</button>'
+      + '<button class="pu-btn primary" onclick="puSetGroupStatus(\'' + g.key.replace(/'/g, "\\'") + '\',\'done\')">完了にする</button>'
+      + '<button class="pu-btn ghost" onclick="puOpenOrderPreview(\'' + g.key.replace(/'/g, "\\'") + '\')">注文書を見る</button>';
+    if (g.status === 'done') {
+      actions += '<button class="pu-btn ghost" onclick="puSetGroupStatus(\'' + g.key.replace(/'/g, "\\'") + '\',\'ordered\')">発注済みに戻す</button>'
+      + '<button class="pu-btn ghost" onclick="puOpenOrderPreview(\'' + g.key.replace(/'/g, "\\'") + '\')">注文書を見る</button>';
+    }
+  }
+  if (puCanSeeRequestsTab() || g.requester === me)
+    actions += '<button class="pu-btn ghost" style="color:#dc2626;border-color:#fecaca;" onclick="puDeleteGroup(\'' + g.key.replace(/'/g, "\\'") + '\')">削除</button>';
+  const notes = [...g.notes];
+  const keyEsc = g.key.replace(/'/g, "\\'");
+  // ドラッグ&ドロップでのまとめ機能は、まだ動いている依頼（依頼中・発注済み）同士でのみ有効にする
+  const dragAttrs = (admin && g.status !== 'done')
+    ? ' draggable="true" ondragstart="puDragStartGroup(event,\'' + keyEsc + '\')" '
+      + 'ondragover="puDragOverGroup(event)" ondragleave="puDragLeaveGroup(event)" '
+      + 'ondrop="puDropGroup(event,\'' + keyEsc + '\')" ondragend="puDragEndGroup(event)"'
+    : '';
+  return '<div class="pu-req-card" data-group-key="' + puEsc(g.key) + '"' + dragAttrs + '>'
+    + '<div class="pu-req-head">'
+      + (dragAttrs ? '<span class="pu-req-drag" title="ドラッグして他の依頼にまとめる">⠿</span>' : '')
+      + '<span class="pu-req-no">' + puEsc(puFmtDate(g.date)) + ' ・ ' + puEsc(g.requester) + '</span>'
+      + '<span class="pu-status" style="color:' + st.color + ';background:' + st.bg + ';border:1px solid ' + st.bd + ';">' + st.label + '</span>'
+      + '<span class="pu-req-meta">仕入先: ' + puEsc(g.company) + '</span>'
+      + '<span class="pu-req-actions">' + actions + '</span>'
+    + '</div>'
+    + notes.map(n => '<div class="pu-req-note">📝 ' + puEsc(n) + '</div>').join('')
+    + '<table class="pu-req-table"><tr><th>品名</th><th style="text-align:right;">入数</th><th style="text-align:right;">注文数</th><th>荷姿</th><th>宛先</th>' + (admin ? '<th colspan="2"></th>' : '') + '</tr>'
+    + g.items.map(it => puReqItemRow(it, admin, g.requester)).join('')
+    + '</table></div>';
+}
+
+// 発注履歴：完了（done）した依頼をデータカードのまま一覧表示する（永冨・山下のみ閲覧可）
+function puRenderOrderHistory() {
+  const box = document.getElementById('pu-orderhistory-list');
+  if (!box) return;
+  if (!puCanSeeRequestsTab()) {
+    box.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:40px 0;">閲覧権限がありません</div>';
     return;
   }
-  box.innerHTML = groups.map(g => {
-    const st = PU_STATUS[g.status] || PU_STATUS.pending;
-    let actions = '';
-    if (admin) {
-      if (g.status === 'pending') actions += '<button class="pu-btn primary" onclick="puMarkGroupOrdered(\'' + g.key.replace(/'/g, "\\'") + '\')">材料発注登録</button>';
-      if (g.status === 'ordered') actions += '<button class="pu-btn ghost" onclick="puSetGroupStatus(\'' + g.key.replace(/'/g, "\\'") + '\',\'pending\')">依頼中に戻す</button>'
-        + '<button class="pu-btn primary" onclick="puSetGroupStatus(\'' + g.key.replace(/'/g, "\\'") + '\',\'done\')">完了にする</button>'
-        + '<button class="pu-btn ghost" onclick="puOpenOrderPreview(\'' + g.key.replace(/'/g, "\\'") + '\')">注文書を見る</button>';
-      if (g.status === 'done') {
-        actions += '<button class="pu-btn ghost" onclick="puSetGroupStatus(\'' + g.key.replace(/'/g, "\\'") + '\',\'ordered\')">発注済みに戻す</button>'
-        + '<button class="pu-btn ghost" onclick="puOpenOrderPreview(\'' + g.key.replace(/'/g, "\\'") + '\')">注文書を見る</button>';
-      }
-    }
-    if (puCanSeeRequestsTab() || g.requester === me)
-      actions += '<button class="pu-btn ghost" style="color:#dc2626;border-color:#fecaca;" onclick="puDeleteGroup(\'' + g.key.replace(/'/g, "\\'") + '\')">削除</button>';
-    const notes = [...g.notes];
-    const keyEsc = g.key.replace(/'/g, "\\'");
-    const dragAttrs = admin
-      ? ' draggable="true" ondragstart="puDragStartGroup(event,\'' + keyEsc + '\')" '
-        + 'ondragover="puDragOverGroup(event)" ondragleave="puDragLeaveGroup(event)" '
-        + 'ondrop="puDropGroup(event,\'' + keyEsc + '\')" ondragend="puDragEndGroup(event)"'
-      : '';
-    return '<div class="pu-req-card" data-group-key="' + puEsc(g.key) + '"' + dragAttrs + '>'
-      + '<div class="pu-req-head">'
-        + (admin ? '<span class="pu-req-drag" title="ドラッグして他の依頼にまとめる">⠿</span>' : '')
-        + '<span class="pu-req-no">' + puEsc(puFmtDate(g.date)) + ' ・ ' + puEsc(g.requester) + '</span>'
-        + '<span class="pu-status" style="color:' + st.color + ';background:' + st.bg + ';border:1px solid ' + st.bd + ';">' + st.label + '</span>'
-        + '<span class="pu-req-meta">仕入先: ' + puEsc(g.company) + '</span>'
-        + '<span class="pu-req-actions">' + actions + '</span>'
-      + '</div>'
-      + notes.map(n => '<div class="pu-req-note">📝 ' + puEsc(n) + '</div>').join('')
-      + '<table class="pu-req-table"><tr><th>品名</th><th style="text-align:right;">入数</th><th style="text-align:right;">注文数</th><th>荷姿</th><th>宛先</th>' + (admin ? '<th colspan="2"></th>' : '') + '</tr>'
-      + g.items.map(it => puReqItemRow(it, admin, g.requester)).join('')
-      + '</table></div>';
-  }).join('');
+  const admin = puCanSeeRequestsTab();
+  const me = puUserName();
+  const groups = puGroupRequests().filter(g => g.status === 'done');
+  if (!groups.length) {
+    box.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:40px 0;">完了した発注はまだありません</div>';
+    return;
+  }
+  box.innerHTML = groups.map(g => puBuildGroupCardHtml(g, admin, me)).join('');
 }
 
 // ---- 依頼カードのドラッグ＆ドロップ統合 ----
