@@ -7612,7 +7612,9 @@ function puFmtDate(dateKey) {
 function puRenderRequests() {
   const box = document.getElementById('pu-req-list');
   if (!box) return;
-  const admin = puIsAdmin();
+  // 依頼一覧の操作（材料発注登録・ステータス変更・ドラッグ&ドロップでの統合・削除）は
+  // タブの閲覧権限と同じ永冨・山下のみに許可する
+  const admin = puCanSeeRequestsTab();
   const me = puUserName();
   const groups = puGroupRequests().filter(g => !_puSelectedCompany || g.company === _puSelectedCompany);
   if (!groups.length) {
