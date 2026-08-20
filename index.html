@@ -291,6 +291,10 @@
   .pu-btn.primary:hover { background:#1e40af; }
   .pu-btn.ghost { background:#fff; color:#475569; border-color:#cbd5e1; }
   .pu-btn.ghost:hover { background:#f1f5f9; }
+  .pu-urgency-btn { background:#fff; color:#475569; }
+  .pu-urgency-btn.on { background:#1d4ed8; color:#fff; }
+  .pu-item-urgency-btn { background:#fff; color:#475569; }
+  .pu-item-urgency-btn.on { background:#1d4ed8; color:#fff; }
   .pu-btn:disabled { opacity:.5; cursor:default; }
 
   .pu-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px; }
@@ -2379,6 +2383,7 @@
         <span id="pu-count" class="pu-count"></span>
         <span style="flex:1;"></span>
         <span id="pu-admin-tools" style="display:none;gap:6px;">
+          <button id="pu-backfill-btn" class="pu-btn ghost" style="display:none;" onclick="puBackfillCategories()" title="品名からジャンルを自動判定し、未登録の物品に一括登録します">ジャンル一括登録</button>
           <button class="pu-btn ghost" onclick="document.getElementById('pu-csv-file').click()">CSVインポート</button>
           <button class="pu-btn primary" onclick="puOpenItemModal(null)">＋ 物品追加</button>
         </span>
@@ -2435,11 +2440,11 @@
               <th>画像</th>
               <th>仕入先</th>
               <th>品名</th>
-              <th>商品コード</th>
               <th style="text-align:right;">入数</th>
               <th style="text-align:right;">注文数</th>
               <th>荷姿</th>
               <th>宛先</th>
+              <th>区分・希望日</th>
               <th>状態</th>
               <th>操作</th>
             </tr>
@@ -2494,6 +2499,18 @@
           <div style="flex:1;"><label>荷姿</label><input id="pu-f-box" class="pu-input" placeholder="箱/バラ など"></div>
         </div>
         <div class="pu-form-row"><label>仕入先</label><input id="pu-f-company" class="pu-input" list="pu-company-list"><datalist id="pu-company-list"></datalist></div>
+        <div class="pu-form-row" style="display:flex;gap:8px;">
+          <div style="flex:1;">
+            <label>第一ジャンル</label>
+            <input id="pu-f-cat1" class="pu-input" list="pu-cat1-list" placeholder="選択または新規入力" oninput="puModalCat1Changed()">
+            <datalist id="pu-cat1-list"></datalist>
+          </div>
+          <div style="flex:1;">
+            <label>第二ジャンル</label>
+            <input id="pu-f-cat2" class="pu-input" list="pu-cat2-list" placeholder="選択または新規入力">
+            <datalist id="pu-cat2-list"></datalist>
+          </div>
+        </div>
       </div>
       <div class="pu-modal-foot" style="display:flex;justify-content:flex-end;gap:8px;">
         <button class="pu-btn ghost" onclick="puCloseItemModal()">キャンセル</button>
@@ -6714,6 +6731,9 @@ async function puFetchAll(url) {
 async function loadPurchasePage() {
   const tools = document.getElementById('pu-admin-tools');
   if (tools) tools.style.display = puCanManageCatalog() ? 'inline-flex' : 'none';
+  // ジャンル一括登録は永冨のみ使用可能（他の物品管理者には出さない）
+  const backfillBtn = document.getElementById('pu-backfill-btn');
+  if (backfillBtn) backfillBtn.style.display = puIsAdmin() ? '' : 'none';
   const reqTabBtn = document.getElementById('pu-tab-requests');
   const orderHistTabBtn = document.getElementById('pu-tab-orderhistory');
   const canSeeReq = puCanSeeRequestsTab();
@@ -6727,7 +6747,12 @@ async function loadPurchasePage() {
   }
   if (!_puLoaded) {
     _puItems = await puFetchAll(`${SUPABASE_URL}/rest/v1/purchase_items?select=*&order=id.asc`);
-    _puItems.forEach(i => { const g = puClassifyGenre(i.product_name); i._g1 = g.g1; i._g2 = g.g2; });
+    // category1/category2が未登録の物品は、これまでどおり品名からの自動判定で表示上だけ補う
+    _puItems.forEach(i => {
+      const g = puClassifyGenre(i.product_name);
+      i._g1 = i.category1 || g.g1;
+      i._g2 = i.category2 || g.g2;
+    });
     _puItemsById = new Map(_puItems.map(i => [i.id, i]));
     _puLoaded = true;
     puBuildCompanyFilter();
@@ -6952,6 +6977,7 @@ function puNormalizeSearch(s) {
 const PU_GENRE_TREE = {
   'ネジ': ['トラスコネジ', 'サラコネジ', 'ナベコネジ', 'スリムヘッドコネジ', 'ハイブリッドコネジ', 'イモネジ'],
   'ボルト': ['キャップボルト', 'サラキャップボルト', 'フランジボタンキャップボルト', 'ボタンキャップボルト', 'WAボタンボルト', 'ローヘッドボルト', '極低頭キャップボルト', 'スタッドボルト'],
+  'ソケット': [],
   'ナット': ['高ナット', 'ロックナット', 'T型ナット', 'フクロナット', 'インサートナット'],
   'ピン/スプリング': ['平行ピン', 'スプリングピン', 'リンクピン', 'カシメピン'],
   'ベアリング': ['ベアリング', 'TOK'],
@@ -6968,6 +6994,7 @@ const PU_GENRE_TREE = {
   'ケミカル用品': ['ラッカースプレー', 'グリススプレー', 'さび止めスプレー', '潤滑スプレー', '脱脂洗浄スプレー', '黒染めスプレー', 'チッピングスプレー', 'ゆるみ止め接着剤', '錆取り剤', 'シリコン', 'シンナー'],
   '研磨剤': ['ディスク', 'ペーパー', 'スコッチ'],
   '接着剤': ['接着剤'],
+  '鋼材': ['フラットバー', '丸棒', '角パイプ'],
   '副資材': ['テープ', 'ストレッチフィルム', 'PEシート'],
   '樹脂パーツ': ['スライドシュー', 'ストッパー', '角棒'],
   'その他': [],
@@ -6980,6 +7007,7 @@ function puGenreRule(g1, keywords) {
 const PU_GENRE_RULES = [
   puGenreRule('ネジ', ['ﾄﾗｽｺ', 'ｻﾗｺ', 'ﾅﾍﾞｺ', 'ｱﾌﾟｾｯﾄ', 'ｸﾎﾞﾐｻｷ', 'ｽﾘﾑﾍｯﾄﾞ', 'ｻﾑｽｸﾘｭ-', 'Wﾎﾟｲﾝﾄ', 'ﾋﾞｮｳ', 'HB', 'ｱﾝｽｺ', 'ｸﾎﾞﾐ', 'CCP']),
   puGenreRule('ボルト', ['ﾛｰﾍｯﾄﾞ', 'ﾄﾘｰﾏP', 'CAP', 'WAﾎﾞﾀﾝ', 'スタッドボルト']),
+  puGenreRule('ソケット', ['ｿｹｯﾄ']),
   puGenreRule('ナット', ['ﾀｶNT', 'Uﾅｯﾄ', 'ﾛｯｸN', 'ﾌｸﾛNT', 'ｶﾄﾞﾐﾚｽ', 'Tｶﾞﾀﾖｳｾﾂ', 'Tｶﾞﾀ']),
   puGenreRule('ピン/スプリング', ['ﾍｲｺｳP', 'ｽﾌﾟﾘﾝｸﾞﾋﾟﾝ', 'ﾘﾝｸﾋﾟﾝ', 'ｶｼﾒﾋﾟﾝ']),
   puGenreRule('ベアリング', ['ﾍﾞｱﾘﾝｸﾞ', 'ＴＯＫ']),
@@ -6996,6 +7024,7 @@ const PU_GENRE_RULES = [
   puGenreRule('ケミカル用品', ['ｽﾌﾟﾚｰ', 'ﾌﾟﾛ ﾎﾜｲﾄ', 'SR', 'ﾊﾟﾝﾄﾞｰ', 'ｸﾞﾘｽ', 'ﾛｯｸﾀｲﾄ', 'ﾊﾟｰﾂｸﾘｰﾅｰ', 'ﾗﾊﾞｰﾁｯﾋﾟﾝｸﾞ', 'ラッカー', 'ｼﾘｺﾝｼｰﾗﾝﾄ', 'ｽﾘｰﾎﾞﾝﾄﾞ', 'ｻﾋﾞﾄﾞﾒ', '錆取り剤', 'ｸﾞﾘｰｽ', 'ﾓﾘﾌﾞﾃﾞﾝ', 'EP-2', 'ｸﾛｿﾞﾒ', 'ｼﾘｺﾝ', 'シンナー']),
   puGenreRule('研磨剤', ['ﾚﾁﾞﾎﾞﾝ ｽｷﾙﾀｯﾁ', 'ﾒﾀｺﾝﾃﾞｨｽｸ', '砥石', 'ﾃﾞｲｽｸ', 'ﾃﾞｨｽｸ', 'ﾌﾞﾙｰｾﾗ', 'ｽｺｯﾁ', 'ﾘｺﾏｼﾞｯｸ', 'ｽﾊﾟｲﾀﾞｰﾈｯﾄ', 'H.L ﾍﾞﾙﾄ', 'ﾏﾙﾁｿﾌﾄ', 'ﾍﾟｰﾊﾟｰ', 'ﾍﾞﾙﾄ', 'ﾌﾞﾙｰｾﾗｯｸ']),
   puGenreRule('接着剤', ['ｱﾛﾝｱﾙﾌｧ', '接着剤']),
+  puGenreRule('鋼材', ['フラットバー', 'ﾌﾗｯﾄﾊﾞｰ', '丸棒', '角パイプ', '角ﾊﾟｲﾌﾟ']),
   puGenreRule('副資材', ['ｽﾄﾚｯﾁﾌｨﾙﾑ', 'PEﾌｨﾙﾑ', 'ﾃｰﾌﾟ', 'PEｼｰﾄ']),
   puGenreRule('樹脂パーツ', ['ｽﾗｲﾄﾞｼｭｰ', 'ｼﾞｭﾗｺﾝ', 'ｽﾄｯﾊﾟｰ', '角棒']),
 ];
@@ -7093,6 +7122,11 @@ const PU_GENRE_SUBRULES = {
   '接着剤': [
     puGenreRule('接着剤', ['ｱﾛﾝｱﾙﾌｧ', '接着剤']),
   ],
+  '鋼材': [
+    puGenreRule('フラットバー', ['フラットバー', 'ﾌﾗｯﾄﾊﾞｰ']),
+    puGenreRule('丸棒', ['丸棒']),
+    puGenreRule('角パイプ', ['角パイプ', '角ﾊﾟｲﾌﾟ']),
+  ],
   '副資材': [
     puGenreRule('テープ', ['ﾃｰﾌﾟ']),
     puGenreRule('ストレッチフィルム', ['ｽﾄﾚｯﾁﾌｨﾙﾑ']),
@@ -7159,13 +7193,14 @@ function puRenderGenreButtons() {
   const row1 = document.getElementById('pu-genre1-row');
   const row2 = document.getElementById('pu-genre2-row');
   if (!row1) return;
-  const genres1 = Object.keys(PU_GENRE_TREE);
+  const genres1 = puAllGenre1Values();
   row1.innerHTML = '<button class="pu-genre-btn' + (!_puGenre1 ? ' active' : '') + '" onclick="puGenreEffect(this,event);puSelectGenre1(\'\')">すべて</button>'
     + genres1.map(g => '<button class="pu-genre-btn' + (_puGenre1 === g ? ' active' : '') + '" onclick="puGenreEffect(this,event);puSelectGenre1(\'' + g.replace(/'/g, "\\'") + '\')">' + puEsc(g) + '</button>').join('');
-  if (_puGenre1 && PU_GENRE_TREE[_puGenre1] && PU_GENRE_TREE[_puGenre1].length) {
+  const genres2 = _puGenre1 ? puAllGenre2Values(_puGenre1) : [];
+  if (genres2.length) {
     row2.style.display = 'flex';
     row2.innerHTML = '<button class="pu-genre-btn' + (!_puGenre2 ? ' active' : '') + '" onclick="puGenreEffect(this,event);puSelectGenre2(\'\')">すべて</button>'
-      + PU_GENRE_TREE[_puGenre1].map(g2 => '<button class="pu-genre-btn' + (_puGenre2 === g2 ? ' active' : '') + '" onclick="puGenreEffect(this,event);puSelectGenre2(\'' + g2.replace(/'/g, "\\'") + '\')">' + puEsc(g2) + '</button>').join('');
+      + genres2.map(g2 => '<button class="pu-genre-btn' + (_puGenre2 === g2 ? ' active' : '') + '" onclick="puGenreEffect(this,event);puSelectGenre2(\'' + g2.replace(/'/g, "\\'") + '\')">' + puEsc(g2) + '</button>').join('');
   } else {
     row2.style.display = 'none';
     row2.innerHTML = '';
@@ -7284,14 +7319,48 @@ function puAddCart(id) {
   const item = _puItems.find(i => i.id === id);
   if (!item) return;
   const qty = Math.max(1, parseInt(document.getElementById('pu-qty-' + id)?.value, 10) || 1);
-  _puCart.set(id, { item, qty });
+  _puCart.set(id, { item, qty, urgency: 'normal', desiredDate: null });
   const btn = document.getElementById('pu-add-' + id);
   if (btn) { btn.classList.add('added'); btn.textContent = '✓ カート内'; }
   puUpdateCartBadge();
   puToast('カートに追加しました');
 }
 
+function puEscRegExp(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+// 品名を指定して、管理者へのメモから「"品名"は"日付"納期でお願いします。」の行を取り除く
+function puCartRemoveNoteLine(name) {
+  const noteEl = document.getElementById('pu-cart-note');
+  if (!noteEl) return;
+  const re = new RegExp('"' + puEscRegExp(name) + '"は"[^"]*"納期でお願いします。\\n?', 'g');
+  noteEl.value = noteEl.value.replace(re, '').replace(/\n{2,}/g, '\n');
+}
+
+// 物品ごとの希望日入力欄の変更を受けて、管理者へのメモへ自動で1行追加／更新／削除する
+function puCartItemDateChanged(itemId, dateStr) {
+  const entry = _puCart.get(itemId);
+  if (!entry) return;
+  entry.desiredDate = dateStr || null;
+  const name = entry.item.product_name;
+  puCartRemoveNoteLine(name);
+  if (dateStr) {
+    const noteEl = document.getElementById('pu-cart-note');
+    const line = '"' + name + '"は"' + puFmtDate(dateStr) + '"納期でお願いします。';
+    const cur = noteEl.value.replace(/\s+$/, '');
+    noteEl.value = (cur ? cur + '\n' : '') + line;
+  }
+}
+
+function puCartItemSetUrgency(itemId, v) {
+  const entry = _puCart.get(itemId);
+  if (!entry) return;
+  entry.urgency = v;
+  document.querySelectorAll('.pu-item-urgency-btn[data-item="' + itemId + '"]').forEach(b => b.classList.toggle('on', b.dataset.urgency === v));
+}
+
 function puRemoveCart(id) {
+  const entry = _puCart.get(id);
+  if (entry) puCartRemoveNoteLine(entry.item.product_name);
   _puCart.delete(id);
   puUpdateCartBadge();
   puRenderCart();
@@ -7359,7 +7428,7 @@ function puRenderCart() {
   if (!body) return;
   if (!_puCart.size) { body.innerHTML = '<div class="pu-cart-empty">カートは空です。カタログから物品を追加してください。</div>'; }
   else {
-    body.innerHTML = [..._puCart.values()].map(({ item, qty }) =>
+    body.innerHTML = [..._puCart.values()].map(({ item, qty, urgency, desiredDate }) =>
       '<div class="pu-cart-row">'
       + '<div class="pu-cart-thumb">' + (item.image_url
           ? '<img src="' + item.image_url + '" alt="">'
@@ -7367,6 +7436,13 @@ function puRenderCart() {
       + '<div style="flex:1;min-width:0;">'
         + '<div class="nm">' + puEsc(item.product_name) + '</div>'
         + '<div class="co">' + puEsc(item.company || '') + (item.amount != null ? ' ・ 入数' + item.amount + puEsc(item.unit || '') : '') + '</div>'
+      + '</div>'
+      + '<div style="display:flex;flex-direction:column;gap:3px;align-items:center;">'
+        + '<div style="display:flex;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden;">'
+          + '<button type="button" class="pu-item-urgency-btn' + ((urgency || 'normal') === 'normal' ? ' on' : '') + '" data-item="' + item.id + '" data-urgency="normal" onclick="puCartItemSetUrgency(' + item.id + ',\'normal\')" style="padding:3px 8px;font-size:11px;font-weight:700;border:none;cursor:pointer;">通常</button>'
+          + '<button type="button" class="pu-item-urgency-btn' + (urgency === 'fastest' ? ' on' : '') + '" data-item="' + item.id + '" data-urgency="fastest" onclick="puCartItemSetUrgency(' + item.id + ',\'fastest\')" style="padding:3px 8px;font-size:11px;font-weight:700;border:none;cursor:pointer;border-left:1px solid #cbd5e1;">最短</button>'
+        + '</div>'
+        + '<input type="date" class="pu-input" style="width:128px;font-size:11px;padding:3px 4px;" value="' + (desiredDate || '') + '" onchange="puCartItemDateChanged(' + item.id + ',this.value)">'
       + '</div>'
       + '<div class="pu-qty">'
         + '<button onclick="puCartQty(' + item.id + ',-1)">−</button>'
@@ -7408,12 +7484,13 @@ async function puSendRequest() {
     if (!res.ok) throw new Error(await res.text());
     const reqId = (await res.json())[0].id;
     // 明細（PostgRESTの一括INSERTは全行のキー構成を揃える）
-    const rows = [..._puCart.values()].map(({ item, qty }) => ({
+    const rows = [..._puCart.values()].map(({ item, qty, urgency, desiredDate }) => ({
       request_id: reqId, item_id: item.id,
       product_code: item.product_code || '', product_name: item.product_name,
       company: item.company || '', qty: qty,
       amount: item.amount == null ? null : item.amount,
-      unit: item.unit || '', box: item.box || ''
+      unit: item.unit || '', box: item.box || '',
+      urgency: urgency || 'normal', desired_date: desiredDate || null
     }));
     const res2 = await fetch(`${SUPABASE_URL}/rest/v1/purchase_request_items`, {
       method: 'POST', headers: { ...PU_H(), 'Prefer': 'return=minimal' }, body: JSON.stringify(rows)
@@ -7603,16 +7680,21 @@ function puRenderHistory() {
     const cancelBtn = canCancel
       ? '<a style="font-size:11px;color:#dc2626;font-weight:700;cursor:pointer;" onclick="puCancelHistoryItem(' + it.id + ')">取消し</a>'
       : '';
+    const isFastest = it.urgency === 'fastest';
+    const urgencyHtml = '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;'
+        + (isFastest ? 'background:#fef2f2;color:#dc2626;border:1px solid #fecaca;' : 'background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;') + '">'
+        + (isFastest ? '最短' : '通常') + '</span>'
+      + (it.desired_date ? '<div style="font-size:11px;color:#64748b;margin-top:2px;">' + puEsc(puFmtDate(it.desired_date)) + '</div>' : '');
     return '<tr>'
       + '<td class="pu-xl-col-a">' + puEsc(puFmtDate(dt)) + (tm ? ' <span style="color:#94a3b8;">' + tm + '</span>' : '') + '</td>'
       + '<td><div class="pu-xl-thumb">' + thumbHtml + '</div></td>'
       + '<td>' + puEsc(it.company || '') + '</td>'
       + '<td class="pu-xl-name">' + puEsc(it.product_name) + '</td>'
-      + '<td style="font-family:monospace;">' + puEsc(it.product_code || '') + '</td>'
       + '<td class="num">' + (it.amount != null ? it.amount : '') + '</td>'
       + '<td class="num">' + it.qty + '</td>'
       + '<td>' + puEsc(it.box || '') + '</td>'
       + '<td>' + puEsc(destination) + '</td>'
+      + '<td>' + urgencyHtml + '</td>'
       + '<td><span class="pu-xl-status" style="color:' + st.color + ';background:' + st.bg + ';border:1px solid ' + st.bd + ';">' + st.label + '</span></td>'
       + '<td>' + cancelBtn + '</td>'
       + '</tr>';
@@ -8090,6 +8172,33 @@ async function puDeleteRequest(id) {
 }
 
 // ---- 物品マスタ管理（管理者） ----
+// 第一ジャンルの候補：あらかじめ用意したもの＋実際に登録済みの物品が持っている値（新規に自由入力したジャンルも含む）
+function puAllGenre1Values() {
+  const set = new Set(Object.keys(PU_GENRE_TREE));
+  _puItems.forEach(i => { if (i.category1) set.add(i.category1); });
+  return [...set].sort((a, b) => a.localeCompare(b, 'ja'));
+}
+// 第二ジャンルの候補：指定した第一ジャンルに対して、あらかじめ用意したもの＋実際に登録済みの値
+function puAllGenre2Values(g1) {
+  const set = new Set((g1 && PU_GENRE_TREE[g1]) ? PU_GENRE_TREE[g1] : []);
+  _puItems.forEach(i => { if (i.category1 === g1 && i.category2) set.add(i.category2); });
+  return [...set].sort((a, b) => a.localeCompare(b, 'ja'));
+}
+function puFillCat1Options(selected) {
+  const dl = document.getElementById('pu-cat1-list');
+  dl.innerHTML = puAllGenre1Values().map(g => '<option value="' + puEsc(g) + '">').join('');
+  document.getElementById('pu-f-cat1').value = selected || '';
+}
+function puFillCat2Options(g1, selected) {
+  const dl = document.getElementById('pu-cat2-list');
+  dl.innerHTML = puAllGenre2Values(g1).map(g => '<option value="' + puEsc(g) + '">').join('');
+  document.getElementById('pu-f-cat2').value = selected || '';
+}
+function puModalCat1Changed() {
+  const g1 = document.getElementById('pu-f-cat1').value.trim();
+  puFillCat2Options(g1, document.getElementById('pu-f-cat2').value);
+}
+
 function puOpenItemModal(id) {
   _puEditingId = id;
   document.getElementById('pu-item-modal-title').textContent = id ? '物品を編集' : '物品追加';
@@ -8100,14 +8209,40 @@ function puOpenItemModal(id) {
   document.getElementById('pu-f-unit').value = it?.unit || '';
   document.getElementById('pu-f-box').value = it?.box || '';
   document.getElementById('pu-f-company').value = it?.company || '';
+  // ジャンル：既に登録済みならその値、無ければ品名から自動判定した値を初期表示（保存時に確定登録される）
+  let cat1 = it?.category1 || '', cat2 = it?.category2 || '';
+  if (!cat1 && it?.product_name) {
+    const g = puClassifyGenre(it.product_name);
+    cat1 = g.g1 === 'その他' ? '' : g.g1; cat2 = g.g2 || '';
+  }
+  puFillCat1Options(cat1);
+  puFillCat2Options(cat1, cat2);
   document.getElementById('pu-item-modal').style.display = 'flex';
 }
 function puCloseItemModal() { document.getElementById('pu-item-modal').style.display = 'none'; }
+
+// 品名入力欄からフォーカスが外れた時、ジャンルが未選択なら自動判定して補う（新規追加時の手間を減らす）
+document.addEventListener('DOMContentLoaded', () => {
+  const nameEl = document.getElementById('pu-f-name');
+  if (!nameEl) return;
+  nameEl.addEventListener('blur', () => {
+    if (document.getElementById('pu-item-modal').style.display === 'none') return;
+    if (document.getElementById('pu-f-cat1').value) return; // 既に選択済みなら上書きしない
+    const name = nameEl.value.trim();
+    if (!name) return;
+    const g = puClassifyGenre(name);
+    if (g.g1 === 'その他') return;
+    puFillCat1Options(g.g1);
+    puFillCat2Options(g.g1, g.g2 || '');
+  });
+});
 
 async function puSaveItem() {
   const name = document.getElementById('pu-f-name').value.trim();
   if (!name) { alert('品名を入力してください'); return; }
   const amtRaw = document.getElementById('pu-f-amount').value.trim();
+  const cat1 = document.getElementById('pu-f-cat1').value.trim();
+  const cat2 = document.getElementById('pu-f-cat2').value.trim();
   const body = {
     product_name: name,
     product_code: document.getElementById('pu-f-code').value.trim(),
@@ -8115,6 +8250,8 @@ async function puSaveItem() {
     unit: document.getElementById('pu-f-unit').value.trim(),
     box: document.getElementById('pu-f-box').value.trim(),
     company: document.getElementById('pu-f-company').value.trim(),
+    category1: cat1 || null,
+    category2: cat2 || null,
     updated_at: new Date().toISOString()
   };
   try {
@@ -8123,17 +8260,65 @@ async function puSaveItem() {
         { method: 'PATCH', headers: { ...PU_H(), 'Prefer': 'return=representation' }, body: JSON.stringify(body) });
       if (!res.ok) throw new Error(await res.text());
       const updated = (await res.json())[0];
+      updated._g1 = updated.category1 || puClassifyGenre(updated.product_name).g1;
+      updated._g2 = updated.category2 || puClassifyGenre(updated.product_name).g2;
       const idx = _puItems.findIndex(i => i.id === _puEditingId);
       if (idx >= 0) _puItems[idx] = updated;
     } else {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_items`,
         { method: 'POST', headers: { ...PU_H(), 'Prefer': 'return=representation' }, body: JSON.stringify(body) });
       if (!res.ok) throw new Error(await res.text());
-      _puItems.push((await res.json())[0]);
+      const created = (await res.json())[0];
+      created._g1 = created.category1 || puClassifyGenre(created.product_name).g1;
+      created._g2 = created.category2 || puClassifyGenre(created.product_name).g2;
+      _puItems.push(created);
     }
-    puCloseItemModal(); puBuildCompanyFilter(); puOnFilter();
+    puCloseItemModal(); puBuildCompanyFilter(); puRenderGenreButtons(); puOnFilter();
     puToast('✅ 保存しました', '#059669');
   } catch (err) { alert('保存に失敗しました: ' + err.message); }
+}
+
+// 初回のみ：既存の全物品に、品名から自動判定したジャンルをcategory1/category2として一括登録する
+async function puBackfillCategories() {
+  if (!puIsAdmin()) { alert('この操作は永冨のみ実行できます'); return; }
+  const targets = _puItems.filter(i => !i.category1);
+  if (!targets.length) { alert('未登録の物品はありません（すべて登録済みです）。'); return; }
+  if (!confirm(targets.length + '件の物品について、品名から自動判定したジャンルを登録します。よろしいですか？')) return;
+  const rows = targets.map(i => {
+    const g = puClassifyGenre(i.product_name);
+    return { id: i.id, category1: g.g1, category2: g.g2 || null };
+  });
+  const btn = document.getElementById('pu-backfill-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '登録中... 0/' + rows.length; }
+  try {
+    // PATCH（既存行の更新のみ・新規INSERTは発生しない）を少しずつ並行実行する
+    const CONCURRENCY = 8;
+    let done = 0, failed = 0;
+    for (let i = 0; i < rows.length; i += CONCURRENCY) {
+      const chunk = rows.slice(i, i + CONCURRENCY);
+      await Promise.all(chunk.map(async r => {
+        try {
+          const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_items?id=eq.${r.id}`, {
+            method: 'PATCH',
+            headers: { ...PU_H(), 'Prefer': 'return=minimal' },
+            body: JSON.stringify({ category1: r.category1, category2: r.category2 })
+          });
+          if (!res.ok) { failed++; console.warn('ジャンル登録失敗 id=' + r.id, await res.text()); return; }
+          const it = _puItemsById.get(r.id);
+          if (it) { it.category1 = r.category1; it.category2 = r.category2; it._g1 = r.category1; it._g2 = r.category2 || ''; }
+        } catch (e) { failed++; console.warn('ジャンル登録失敗 id=' + r.id, e); }
+        done++;
+      }));
+      if (btn) btn.textContent = '登録中... ' + done + '/' + rows.length;
+    }
+    puRenderGenreButtons(); puOnFilter();
+    if (failed) alert(done - failed + '件登録しました（' + failed + '件は失敗しました。詳細はブラウザのコンソールをご確認ください）');
+    else puToast('✅ ' + done + '件のジャンルを登録しました', '#059669');
+  } catch (err) {
+    alert('登録に失敗しました: ' + err.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'ジャンル一括登録'; }
+  }
 }
 
 async function puDeleteItem(id) {
@@ -8204,11 +8389,13 @@ async function puCsvSelected(e) {
       const code = String(r.productID || r['商品コード'] || '').trim();
       if (exist.has(code + '|' + name)) return;   // 既存と同じコード+品名はスキップ
       const amt = parseInt(String(r.amount || '').trim(), 10);
+      const g = puClassifyGenre(name);
       news.push({
         product_code: code, product_name: name,
         amount: isNaN(amt) ? null : amt,
         unit: String(r.unit || '').trim(), box: String(r.Box || r.box || '').trim(),
-        company: String(r.Company || r.company || '').trim()
+        company: String(r.Company || r.company || '').trim(),
+        category1: g.g1 === 'その他' ? null : g.g1, category2: g.g2 || null
       });
     });
     if (!news.length) { alert('新規の物品はありませんでした（既存と重複）'); return; }
