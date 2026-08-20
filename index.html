@@ -299,6 +299,15 @@
     border-bottom:2px solid #e2e8f0; display:flex; align-items:center; gap:8px; }
   .pu-oh-datehead .cnt { font-size:11px; font-weight:700; color:#64748b; background:#f1f5f9; border-radius:10px; padding:1px 8px; }
   .pu-oh-datesection:first-child .pu-oh-datehead { margin-top:0; }
+  /* 発注履歴のカレンダーポップアップは、レーザーページの小さいカレンダーより大きく表示する */
+  .pu-oh-cal-lg .laser-cal-title { font-size:18px; }
+  .pu-oh-cal-lg .laser-cal-nav button { width:32px; height:32px; font-size:18px; }
+  .pu-oh-cal-lg .laser-cal-grid { gap:6px; }
+  .pu-oh-cal-lg .laser-cal-dow { font-size:13px; padding:4px 0; }
+  .pu-oh-cal-lg .laser-cal-cell { min-height:56px; font-size:16px; border-radius:8px; }
+  .pu-oh-cal-lg .laser-cal-daynum { font-size:16px; }
+  .pu-oh-cal-lg .laser-cal-badge { min-width:22px; height:22px; font-size:12px; }
+  .pu-oh-cal-lg .laser-cal-clear button { font-size:13px; padding:5px 14px; }
   .pu-btn:disabled { opacity:.5; cursor:default; }
 
   .pu-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px; }
@@ -7977,12 +7986,12 @@ function puOpenOrderHistoryCalendar() {
   ov.id = 'pu-oh-cal-overlay';
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:3000;'
     + 'display:flex;align-items:center;justify-content:center;padding:24px;';
-  ov.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:300px;width:100%;padding:18px;">'
-    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">'
-      + '<div style="font-size:14px;font-weight:800;color:#111827;">日付を選択</div>'
-      + '<button onclick="puCloseOrderHistoryCalendar()" style="border:none;background:none;font-size:20px;line-height:1;color:#6b7280;cursor:pointer;">×</button>'
+  ov.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:520px;width:100%;padding:26px;">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">'
+      + '<div style="font-size:18px;font-weight:800;color:#111827;">日付を選択</div>'
+      + '<button onclick="puCloseOrderHistoryCalendar()" style="border:none;background:none;font-size:26px;line-height:1;color:#6b7280;cursor:pointer;">×</button>'
     + '</div>'
-    + '<div id="pu-oh-calendar"></div>'
+    + '<div id="pu-oh-calendar" class="pu-oh-cal-lg"></div>'
     + '</div>';
   ov.addEventListener('click', (e) => { if (e.target === ov) puCloseOrderHistoryCalendar(); });
   document.body.appendChild(ov);
