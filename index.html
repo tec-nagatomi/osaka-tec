@@ -295,6 +295,10 @@
   .pu-urgency-btn.on { background:#1d4ed8; color:#fff; }
   .pu-item-urgency-btn { background:#fff; color:#475569; }
   .pu-item-urgency-btn.on { background:#1d4ed8; color:#fff; }
+  .pu-oh-datehead { font-size:13px; font-weight:800; color:#1e293b; margin:18px 0 8px; padding-bottom:6px;
+    border-bottom:2px solid #e2e8f0; display:flex; align-items:center; gap:8px; }
+  .pu-oh-datehead .cnt { font-size:11px; font-weight:700; color:#64748b; background:#f1f5f9; border-radius:10px; padding:1px 8px; }
+  .pu-oh-datesection:first-child .pu-oh-datehead { margin-top:0; }
   .pu-btn:disabled { opacity:.5; cursor:default; }
 
   .pu-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px; }
@@ -2415,6 +2419,13 @@
 
     <!-- 発注履歴（完了した依頼をデータカードのまま表示。永冨・山下のみ） -->
     <div id="pu-orderhistory-view" style="display:none;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+        <label style="font-size:12px;color:#64748b;font-weight:700;">表示する日付</label>
+        <span id="pu-orderhistory-date-label" style="font-size:13px;font-weight:700;color:#1e293b;"></span>
+        <button class="pu-btn ghost" onclick="puOpenOrderHistoryCalendar()">📅 カレンダーで選択</button>
+        <button class="pu-btn ghost" onclick="puOrderHistoryShowAll()">すべて表示</button>
+        <span id="pu-orderhistory-count" style="font-size:12px;color:#64748b;"></span>
+      </div>
       <div id="pu-orderhistory-list"></div>
     </div>
 
@@ -6873,6 +6884,21 @@ function puLogoFallback(imgEl, company) {
   imgEl.replaceWith(div.firstElementChild);
 }
 
+// 発注履歴のカードヘッダー用：依頼一覧と同じ会社ロゴを、見出し内で使える小さい丸アイコンとして返す
+function puInlineSupplierIconHtml(company) {
+  const esc = puEsc(company);
+  if (PU_SUPPLIER_LOGO[company]) {
+    return '<img src="' + PU_SUPPLIER_LOGO[company] + '" alt="" '
+      + 'style="height:22px;width:22px;border-radius:50%;object-fit:contain;background:#fff;border:1px solid #e2e8f0;vertical-align:middle;" '
+      + 'onerror="puLogoFallback(this,\'' + company.replace(/'/g, "\\'") + '\')">';
+  }
+  const hue = Array.from(company || '').reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
+  const ch = (company || '?').replace(/株式会社|有限会社/g, '').charAt(0) || '?';
+  return '<span style="display:inline-flex;align-items:center;justify-content:center;height:22px;width:22px;'
+    + 'border-radius:50%;background:hsl(' + hue + ',55%,45%);color:#fff;font-weight:800;font-size:11px;vertical-align:middle;">'
+    + puEsc(ch) + '</span>';
+}
+
 function puShowSupplierList() {
   document.getElementById('pu-supplier-view').style.display = '';
   document.getElementById('pu-req-list-view').style.display = 'none';
@@ -7794,8 +7820,17 @@ function puRenderRequests() {
   puRenderOrderHistory();
 }
 
+// 発注履歴カードの折りたたみ用に、グループキー（日本語を含む）から衝突しにくいHTML id を作る
+function puSimpleHash(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
+}
+
 // 依頼一覧・発注履歴で共通のデータカードHTMLを組み立てる
-function puBuildGroupCardHtml(g, admin, me) {
+// orderLabel を渡すと（発注履歴で使用）、ヘッダーの「日付・依頼者／仕入先」表示の代わりに
+// 「日付／"仕入先名"注文書①」のような表示に切り替える
+function puBuildGroupCardHtml(g, admin, me, orderLabel) {
   const st = PU_STATUS[g.status] || PU_STATUS.pending;
   let actions = '';
   if (admin) {
@@ -7812,6 +7847,7 @@ function puBuildGroupCardHtml(g, admin, me) {
     actions += '<button class="pu-btn ghost" style="color:#dc2626;border-color:#fecaca;" onclick="puDeleteGroup(\'' + g.key.replace(/'/g, "\\'") + '\')">削除</button>';
   const notes = [...g.notes];
   const keyEsc = g.key.replace(/'/g, "\\'");
+  const cardId = 'pu-oc-' + puSimpleHash(g.key);
   // ドラッグ&ドロップでのまとめ機能は、まだ動いている依頼（依頼中・発注済み）同士でのみ有効にする
   const dragAttrs = (admin && g.status !== 'done')
     ? ' draggable="true" ondragstart="puDragStartGroup(event,\'' + keyEsc + '\')" '
@@ -7819,35 +7855,198 @@ function puBuildGroupCardHtml(g, admin, me) {
       + 'ondrop="puDropGroup(event,\'' + keyEsc + '\')" ondragend="puDragEndGroup(event)"'
     : '';
   return '<div class="pu-req-card" data-group-key="' + puEsc(g.key) + '"' + dragAttrs + '>'
-    + '<div class="pu-req-head">'
+    + '<div class="pu-req-head"' + (orderLabel ? ' style="cursor:pointer;" onclick="puToggleOrderCard(event,\'' + cardId + '\')"' : '') + '>'
       + (dragAttrs ? '<span class="pu-req-drag" title="ドラッグして他の依頼にまとめる">⠿</span>' : '')
-      + '<span class="pu-req-no">' + puEsc(puFmtDate(g.date)) + ' ・ ' + puEsc(g.requester) + '</span>'
-      + '<span class="pu-status" style="color:' + st.color + ';background:' + st.bg + ';border:1px solid ' + st.bd + ';">' + st.label + '</span>'
-      + '<span class="pu-req-meta">仕入先: ' + puEsc(g.company) + '</span>'
+      + (orderLabel ? '<span id="' + cardId + '-chev" style="color:#94a3b8;font-size:11px;">▶</span>' : '')
+      + (orderLabel
+          ? '<span class="pu-req-no">' + puEsc(puFmtDate(g.date)) + '</span>'
+            + '<span class="pu-status" style="color:' + st.color + ';background:' + st.bg + ';border:1px solid ' + st.bd + ';">' + st.label + '</span>'
+            + '<span class="pu-req-meta" style="font-weight:800;color:#1e293b;">' + puInlineSupplierIconHtml(orderLabel.company) + ' ' + puEsc(orderLabel.company) + '\u3000注文書' + orderLabel.orderNo + '</span>'
+          : '<span class="pu-req-no">' + puEsc(puFmtDate(g.date)) + ' ・ ' + puEsc(g.requester) + '</span>'
+            + '<span class="pu-status" style="color:' + st.color + ';background:' + st.bg + ';border:1px solid ' + st.bd + ';">' + st.label + '</span>'
+            + '<span class="pu-req-meta">仕入先: ' + puEsc(g.company) + '</span>')
       + '<span class="pu-req-actions">' + actions + '</span>'
     + '</div>'
     + notes.map(n => '<div class="pu-req-note">📝 ' + puEsc(n) + '</div>').join('')
-    + '<table class="pu-req-table"><tr><th>品名</th><th style="text-align:right;">入数</th><th style="text-align:right;">注文数</th><th>荷姿</th><th>宛先</th>' + (admin ? '<th colspan="2"></th>' : '') + '</tr>'
+    + '<table id="' + cardId + '-table" class="pu-req-table"' + (orderLabel ? ' style="display:none;"' : '') + '><tr><th>品名</th><th style="text-align:right;">入数</th><th style="text-align:right;">注文数</th><th>荷姿</th><th>宛先</th>' + (admin ? '<th colspan="2"></th>' : '') + '</tr>'
     + g.items.map(it => puReqItemRow(it, admin, g.requester)).join('')
     + '</table></div>';
 }
 
+// ヘッダー行をクリックすると、発注履歴カードの物品データ表（テーブル）の表示・非表示を切り替える
+function puToggleOrderCard(ev, cardId) {
+  if (ev.target.closest('.pu-req-actions')) return; // 操作ボタンのクリックでは開閉しない
+  const table = document.getElementById(cardId + '-table');
+  if (!table) return;
+  const hidden = table.style.display === 'none';
+  table.style.display = hidden ? '' : 'none';
+  const chev = document.getElementById(cardId + '-chev');
+  if (chev) chev.textContent = hidden ? '▼' : '▶';
+}
+
 // 発注履歴：完了（done）した依頼をデータカードのまま一覧表示する（永冨・山下のみ閲覧可）
+const PU_CIRCLED_NUMS = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩','⑪','⑫','⑬','⑭','⑮','⑯','⑰','⑱','⑲','⑳'];
+function puCircledNum(n) { return PU_CIRCLED_NUMS[n - 1] || ('(' + n + ')'); }
+
+let _puOrderHistoryDate = new Date().toISOString().slice(0, 10); // デフォルトは本日のみ表示
+
+function puOrderHistoryShowAll() {
+  _puOrderHistoryDate = null;
+  puRenderOrderHistory();
+}
+
+function puUpdateOrderHistoryDateLabel() {
+  const label = document.getElementById('pu-orderhistory-date-label');
+  if (!label) return;
+  label.textContent = _puOrderHistoryDate ? puFmtDate(_puOrderHistoryDate) : 'すべて';
+}
+
+// 完了した依頼（グループ）のうち、指定した仕入先の中で何番目に発注したか（古い順）を求めるための基準時刻
+function puGroupMinCreatedAt(g) {
+  const reqByIdMap = new Map(_puRequests.map(r => [r.id, r]));
+  let min = null;
+  g.requestIds.forEach(id => {
+    const r = reqByIdMap.get(id);
+    if (r && r.created_at && (!min || r.created_at < min)) min = r.created_at;
+  });
+  return min || '';
+}
+
+// 渡されたグループ配列（同じ日付のもの）を古い順に並べ、仕入先ごとに①②③…の連番付きラベルを振って
+// カードHTMLの配列を返す
+function puBuildDayCards(groups, admin, me) {
+  const sorted = groups.slice().sort((a, b) => puGroupMinCreatedAt(a).localeCompare(puGroupMinCreatedAt(b)));
+  const seen = new Map(); // company -> 直近まで振った連番
+  return sorted.map(g => {
+    const n = (seen.get(g.company) || 0) + 1;
+    seen.set(g.company, n);
+    return puBuildGroupCardHtml(g, admin, me, { company: g.company, orderNo: puCircledNum(n) });
+  });
+}
+
 function puRenderOrderHistory() {
   const box = document.getElementById('pu-orderhistory-list');
   if (!box) return;
+  puUpdateOrderHistoryDateLabel();
   if (!puCanSeeRequestsTab()) {
     box.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:40px 0;">閲覧権限がありません</div>';
     return;
   }
   const admin = puCanSeeRequestsTab();
   const me = puUserName();
-  const groups = puGroupRequests().filter(g => g.status === 'done');
+  let groups = puGroupRequests().filter(g => g.status === 'done');
+  if (_puOrderHistoryDate) groups = groups.filter(g => g.date === _puOrderHistoryDate);
+
+  const countEl = document.getElementById('pu-orderhistory-count');
+  if (countEl) countEl.textContent = groups.length + ' 件';
+
   if (!groups.length) {
-    box.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:40px 0;">完了した発注はまだありません</div>';
+    box.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:40px 0;">'
+      + (_puOrderHistoryDate ? 'この日の完了した発注はありません' : '完了した発注はまだありません') + '</div>';
     return;
   }
-  box.innerHTML = groups.map(g => puBuildGroupCardHtml(g, admin, me)).join('');
+
+  if (_puOrderHistoryDate) {
+    // 特定の日を選んでいる場合はこれまでどおり単一区画で表示
+    box.innerHTML = puBuildDayCards(groups, admin, me).join('');
+    return;
+  }
+
+  // 「すべて表示」：発注日ごとに区画を分け、新しい日付が上に来るように並べる
+  const byDate = new Map();
+  groups.forEach(g => {
+    if (!byDate.has(g.date)) byDate.set(g.date, []);
+    byDate.get(g.date).push(g);
+  });
+  const dates = [...byDate.keys()].sort().reverse(); // 新しい日付順
+  box.innerHTML = dates.map(d => {
+    const dayGroups = byDate.get(d);
+    return '<div class="pu-oh-datesection">'
+      + '<div class="pu-oh-datehead">' + puEsc(puFmtDate(d)) + '<span class="cnt">' + dayGroups.length + '件</span></div>'
+      + puBuildDayCards(dayGroups, admin, me).join('')
+      + '</div>';
+  }).join('');
+}
+
+// ---- 発注履歴：カレンダーで日付を選ぶポップアップ（各日の注文書件数をバッジ表示） ----
+let _puOhCalMonth = null;
+
+function puOpenOrderHistoryCalendar() {
+  _puOhCalMonth = null;
+  const ov = document.createElement('div');
+  ov.id = 'pu-oh-cal-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:3000;'
+    + 'display:flex;align-items:center;justify-content:center;padding:24px;';
+  ov.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:300px;width:100%;padding:18px;">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">'
+      + '<div style="font-size:14px;font-weight:800;color:#111827;">日付を選択</div>'
+      + '<button onclick="puCloseOrderHistoryCalendar()" style="border:none;background:none;font-size:20px;line-height:1;color:#6b7280;cursor:pointer;">×</button>'
+    + '</div>'
+    + '<div id="pu-oh-calendar"></div>'
+    + '</div>';
+  ov.addEventListener('click', (e) => { if (e.target === ov) puCloseOrderHistoryCalendar(); });
+  document.body.appendChild(ov);
+  puRenderOrderHistoryCalendar();
+}
+function puCloseOrderHistoryCalendar() {
+  const ov = document.getElementById('pu-oh-cal-overlay');
+  if (ov) ov.remove();
+}
+
+function puRenderOrderHistoryCalendar() {
+  const wrap = document.getElementById('pu-oh-calendar');
+  if (!wrap) return;
+
+  // 完了（done）した発注（注文書）の件数を日付ごとに集計
+  const counts = new Map(); // 'YYYY-MM-DD' -> 件数
+  puGroupRequests().filter(g => g.status === 'done').forEach(g => counts.set(g.date, (counts.get(g.date) || 0) + 1));
+
+  if (!_puOhCalMonth) {
+    const base = _puOrderHistoryDate || (counts.size ? [...counts.keys()].sort().reverse()[0] : null);
+    const d = base ? new Date(base + 'T00:00:00') : new Date();
+    _puOhCalMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+  }
+
+  const year = _puOhCalMonth.getFullYear();
+  const month = _puOhCalMonth.getMonth();
+  const first = new Date(year, month, 1);
+  const startDow = first.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const dow = ['日', '月', '火', '水', '木', '金', '土'];
+
+  let html = '<div class="laser-cal-head">'
+    + '<div class="laser-cal-nav"><button onclick="puOhCalPrev()" title="前の月">‹</button></div>'
+    + '<div class="laser-cal-title">' + year + '年' + (month + 1) + '月</div>'
+    + '<div class="laser-cal-nav"><button onclick="puOhCalNext()" title="次の月">›</button></div>'
+    + '</div><div class="laser-cal-grid">';
+  dow.forEach((d, i) => { html += '<div class="laser-cal-dow' + (i === 0 ? ' sun' : i === 6 ? ' sat' : '') + '">' + d + '</div>'; });
+  for (let i = 0; i < startDow; i++) html += '<div class="laser-cal-cell empty"></div>';
+  for (let day = 1; day <= daysInMonth; day++) {
+    const ds = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const c = counts.get(ds) || 0;
+    const dowIdx = new Date(year, month, day).getDay();
+    const isSel = (ds === _puOrderHistoryDate);
+    const cls = ['laser-cal-cell'];
+    if (c > 0) cls.push('has');
+    if (isSel) cls.push('selected');
+    if (ds === todayStr) cls.push('today');
+    if (dowIdx === 0) cls.push('sun'); if (dowIdx === 6) cls.push('sat');
+    const onclick = (c > 0 || isSel) ? ' onclick="puOhCalSelectDay(\'' + ds + '\')"' : '';
+    html += '<div class="' + cls.join(' ') + '"' + onclick + '>'
+      + '<span class="laser-cal-daynum">' + day + '</span>'
+      + ((c > 0 || isSel) ? '<span class="laser-cal-badge">' + c + '</span>' : '')
+      + '</div>';
+  }
+  html += '</div>';
+  wrap.innerHTML = html;
+}
+function puOhCalPrev() { _puOhCalMonth = new Date(_puOhCalMonth.getFullYear(), _puOhCalMonth.getMonth() - 1, 1); puRenderOrderHistoryCalendar(); }
+function puOhCalNext() { _puOhCalMonth = new Date(_puOhCalMonth.getFullYear(), _puOhCalMonth.getMonth() + 1, 1); puRenderOrderHistoryCalendar(); }
+function puOhCalSelectDay(ds) {
+  _puOrderHistoryDate = ds;
+  puCloseOrderHistoryCalendar();
+  puRenderOrderHistory();
 }
 
 // ---- 依頼カードのドラッグ＆ドロップ統合 ----
@@ -8104,7 +8303,7 @@ async function puOpenOrderPreview(key) {
   // --- 「材料発注及び入荷状況2023.xlsm」ｻﾝｺｰシート A〜G列 追記用（タブ区切り＝Excelにそのまま貼り付け可） ---
   const executor = puUserName();
   const tsvLines = rows.map(r =>
-    [r.name, r.totalQty, dateStr, '', '', executor, g.requester].join('\t')
+    [r.name, r.totalQty, dateStr, '', '', executor, g.requester + '氏\u3000依頼分'].join('\t')
   ).join('\n');
 
   const modalHtml = '<div class="pu-modal" style="max-width:760px;">'
@@ -8113,7 +8312,7 @@ async function puOpenOrderPreview(key) {
       + orderHtml
       + '<div style="margin-top:20px;padding-top:16px;border-top:1px dashed #cbd5e1;">'
         + '<div style="font-size:13px;font-weight:700;margin-bottom:6px;">材料発注及び入荷状況2023.xlsm「ｻﾝｺｰ」シート貼り付け用（A〜G列）</div>'
-        + '<div style="font-size:11px;color:#64748b;margin-bottom:6px;">A:品名　B:数量×入数　C:発注日　D,E:空欄　F:登録者　G:依頼者　　'
+        + '<div style="font-size:11px;color:#64748b;margin-bottom:6px;">A:品名　B:数量×入数　C:発注日　D,E:空欄　F:登録者　G:依頼者（"名前"氏　依頼分）　　'
           + '下のボックスをクリックして全選択→コピーし、ｻﾝｺｰシートの入力済み最終行の次の行・A列セルに貼り付けてください（既存のセルは上書きされません）。</div>'
         + '<textarea id="pu-order-tsv" class="pu-input" style="width:100%;height:120px;font-family:monospace;font-size:12px;" readonly onclick="this.select()">' + tsvLines.replace(/</g,'&lt;') + '</textarea>'
         + '<div style="margin-top:8px;"><button class="pu-btn ghost" onclick="document.getElementById(\'pu-order-tsv\').select();document.execCommand(\'copy\');puToast(\'✅ コピーしました\',\'#059669\');">貼り付け用データをコピー</button></div>'
