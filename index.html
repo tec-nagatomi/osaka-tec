@@ -341,9 +341,15 @@
     border:1px solid #94a3b8;
   }
   .pu-mat-badge.mb-ndsr { background:linear-gradient(155deg,#fca5a5,#dc2626 55%,#7f1d1d); color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.25); }
-  .pu-mat-badge.mb-ndsgn { background:linear-gradient(155deg,#93c5fd,#2563eb 55%,#1e3a8a); color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.25); }
+  .pu-mat-badge.mb-ndsgn { background:linear-gradient(155deg,#86efac,#16a34a 55%,#14532d); color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.25); }
   .pu-img-edit { position:absolute; right:6px; bottom:6px; font-size:10px; font-weight:700; color:#fff;
     background:rgba(100,116,139,.85); border-radius:6px; padding:2px 7px; pointer-events:none; }
+  .pu-fav-star { position:absolute; left:6px; top:6px; font-size:20px; line-height:1; color:#fbbf24;
+    background:rgba(255,255,255,.85); border-radius:50%; width:28px; height:28px; display:flex;
+    align-items:center; justify-content:center; cursor:pointer; pointer-events:auto; box-shadow:0 1px 3px rgba(0,0,0,.15); }
+  .pu-fav-star:hover { background:#fff; transform:scale(1.08); }
+  .pu-fav-star.on { color:#f59e0b; }
+  .pu-favonly-btn.on { background:#f59e0b; color:#fff; border-color:#f59e0b; }
   .pu-card-body { padding:8px 10px 4px; flex:1; }
   .pu-card-name { font-size:13px; font-weight:700; color:#1e293b; line-height:1.35;
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:35px; }
@@ -2393,6 +2399,7 @@
       <div class="pu-toolbar">
         <input id="pu-search" class="pu-input" type="text" placeholder="品名・商品コードで検索" oninput="puOnFilter()">
         <select id="pu-company" class="pu-input" onchange="puOnFilter()"><option value="">仕入先: すべて</option></select>
+        <button id="pu-favonly-btn" type="button" class="pu-btn ghost pu-favonly-btn" onclick="puToggleFavOnly()">★ お気に入りのみ</button>
         <span id="pu-count" class="pu-count"></span>
         <span style="flex:1;"></span>
         <span id="pu-admin-tools" style="display:none;gap:6px;">
@@ -6668,6 +6675,8 @@ let _puItemsById = new Map(); // id -> item（画像URL参照などに使用）
 let _puLoaded = false;
 let _puFiltered = [];         // フィルター後
 let _puShown = 60;            // カタログの表示件数（「さらに表示」で+60）
+let _puFavoriteIds = new Set(); // ログイン中ユーザーのお気に入り物品ID
+let _puFavOnly = false;         // お気に入りのみ表示中か
 let _puCart = new Map();      // itemId -> { item, qty }
 let _puRequests = [];         // 依頼一覧
 let _puReqItems = new Map();  // request_id -> 明細[]
@@ -6777,6 +6786,7 @@ async function loadPurchasePage() {
     _puLoaded = true;
     puBuildCompanyFilter();
     puRenderGenreButtons();
+    await puLoadFavorites();
   }
   puOnFilter();
   puUpdateCartBadge();
@@ -7256,10 +7266,56 @@ function puSelectGenre2(g2) {
   puOnFilter();
 }
 
+// ---- お気に入り（ユーザーごと・次回の発注をすぐ見つけられるように） ----
+async function puLoadFavorites() {
+  if (!currentUser || !currentUser.userid) return;
+  try {
+    const rows = await puFetchAll(`${SUPABASE_URL}/rest/v1/purchase_favorites?select=item_id&userid=eq.${encodeURIComponent(currentUser.userid)}`);
+    _puFavoriteIds = new Set(rows.map(r => r.item_id));
+  } catch (e) { console.warn('お気に入りの読み込みに失敗しました', e); }
+}
+
+async function puToggleFavorite(itemId, btnEl) {
+  if (!currentUser || !currentUser.userid) { alert('ログインしてください'); return; }
+  const isFav = _puFavoriteIds.has(itemId);
+  // 見た目は先に切り替え、失敗したら元に戻す（体感を軽くするため）
+  if (btnEl) { btnEl.textContent = isFav ? '☆' : '★'; btnEl.classList.toggle('on', !isFav); }
+  try {
+    if (isFav) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_favorites?userid=eq.${encodeURIComponent(currentUser.userid)}&item_id=eq.${itemId}`,
+        { method: 'DELETE', headers: { ...PU_H(), 'Prefer': 'return=minimal' } });
+      if (!res.ok) throw new Error(await res.text());
+      _puFavoriteIds.delete(itemId);
+    } else {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_favorites`, {
+        method: 'POST',
+        headers: { ...PU_H(), 'Prefer': 'return=minimal,resolution=ignore-duplicates' },
+        body: JSON.stringify({ userid: currentUser.userid, item_id: itemId })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      _puFavoriteIds.add(itemId);
+    }
+  } catch (e) {
+    // 失敗時は表示を戻す
+    if (btnEl) { btnEl.textContent = isFav ? '★' : '☆'; btnEl.classList.toggle('on', isFav); }
+    alert('お気に入りの更新に失敗しました: ' + e.message);
+    return;
+  }
+  if (_puFavOnly) puOnFilter();
+}
+
+function puToggleFavOnly() {
+  _puFavOnly = !_puFavOnly;
+  const btn = document.getElementById('pu-favonly-btn');
+  if (btn) btn.classList.toggle('on', _puFavOnly);
+  puOnFilter();
+}
+
 function puOnFilter() {
   const q = puNormalizeSearch(document.getElementById('pu-search')?.value || '').trim();
   const co = document.getElementById('pu-company')?.value || '';
   _puFiltered = _puItems.filter(i => {
+    if (_puFavOnly && !_puFavoriteIds.has(i.id)) return false;
     if (co && i.company !== co) return false;
     if (_puGenre1 && i._g1 !== _puGenre1) return false;
     if (_puGenre2 && i._g2 !== _puGenre2) return false;
@@ -7348,6 +7404,7 @@ function puCardHtml(i, admin) {
   return '<div class="pu-card">'
     + '<div class="pu-card-img"' + imgClickAttr + '>'
       + img
+      + '<span class="pu-fav-star' + (_puFavoriteIds.has(i.id) ? ' on' : '') + '" onclick="event.stopPropagation();puToggleFavorite(' + i.id + ',this)" title="お気に入りに登録/解除">' + (_puFavoriteIds.has(i.id) ? '★' : '☆') + '</span>'
       + (admin && i.image_url ? '<span class="pu-img-edit" style="pointer-events:auto;cursor:pointer;" onclick="event.stopPropagation();puPickImage(' + i.id + ')" title="クリックで画像を変更">📷 変更</span>' : '')
       + (admin && !i.image_url ? '<span class="pu-img-edit">📷 画像</span>' : '')
     + '</div>'
