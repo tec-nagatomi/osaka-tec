@@ -2426,10 +2426,14 @@
           <div id="pu-req-ticker" class="pu-ticker-content"></div>
         </div>
       </div>
+      <div style="margin-bottom:14px;">
+        <input id="pu-req-search" class="pu-input" type="text" style="width:320px;"
+          placeholder="品名・仕入先・宛先で検索" oninput="puReqSearchChanged()">
+      </div>
       <div id="pu-supplier-view"></div>
       <div id="pu-req-list-view" style="display:none;">
         <div style="margin-bottom:10px;">
-          <button class="pu-btn ghost" onclick="puShowSupplierList()">← 仕入先一覧に戻る</button>
+          <button id="pu-req-back-btn" class="pu-btn ghost" onclick="puShowSupplierList()">← 仕入先一覧に戻る</button>
         </div>
         <div id="pu-req-list"></div>
       </div>
@@ -6867,6 +6871,7 @@ function puSwitchTab(tab) {
 
 // ---- 依頼一覧: 仕入先ボタン一覧 ----
 let _puSelectedCompany = null;
+let _puReqSearchQuery = '';
 
 // 取引先ロゴ（見つかっているもののみ）。未登録の会社は頭文字バッジで代用。
 const PU_SUPPLIER_LOGO = {
@@ -6925,7 +6930,25 @@ function puShowSupplierList() {
   document.getElementById('pu-supplier-view').style.display = '';
   document.getElementById('pu-req-list-view').style.display = 'none';
   _puSelectedCompany = null;
+  _puReqSearchQuery = '';
+  const searchEl = document.getElementById('pu-req-search');
+  if (searchEl) searchEl.value = '';
   puRenderSupplierList();
+}
+
+function puReqSearchChanged() {
+  _puReqSearchQuery = puNormalizeSearch(document.getElementById('pu-req-search')?.value || '').trim();
+  if (_puReqSearchQuery) {
+    // 検索中は仕入先を問わず全件から探すため、一覧表示に切り替える
+    _puSelectedCompany = null;
+    document.getElementById('pu-supplier-view').style.display = 'none';
+    document.getElementById('pu-req-list-view').style.display = '';
+    puRenderRequests();
+  } else {
+    document.getElementById('pu-supplier-view').style.display = '';
+    document.getElementById('pu-req-list-view').style.display = 'none';
+    puRenderSupplierList();
+  }
 }
 
 function puSelectSupplier(company) {
@@ -7694,7 +7717,7 @@ async function puLoadRequests(render) {
   }
   if (render || document.getElementById('pu-requests-view').style.display !== 'none') {
     puRenderSupplierList();
-    if (_puSelectedCompany) puRenderRequests();
+    if (_puSelectedCompany || _puReqSearchQuery) puRenderRequests();
   }
   if (render || document.getElementById('pu-orderhistory-view').style.display !== 'none') puRenderOrderHistory();
   if (document.getElementById('pu-history-view').style.display !== 'none') puRenderHistory();
@@ -7924,9 +7947,18 @@ function puRenderRequests() {
   // 完了（done）した依頼は依頼一覧からは除外し、発注履歴タブへ移す
   const groups = puGroupRequests()
     .filter(g => g.status !== 'done')
-    .filter(g => !_puSelectedCompany || g.company === _puSelectedCompany);
+    .filter(g => !_puSelectedCompany || g.company === _puSelectedCompany)
+    .filter(g => {
+      if (!_puReqSearchQuery) return true;
+      // 品名・仕入先・宛先で検索する（依頼者名は検索対象にしない）
+      const hay = puNormalizeSearch(
+        g.items.map(it => [it.product_name, it.company, it.destination || puDefaultDestination(g.requester)].join(' ')).join(' ')
+      );
+      return hay.includes(_puReqSearchQuery);
+    });
   if (!groups.length) {
-    box.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:40px 0;">依頼はまだありません</div>';
+    box.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:40px 0;">'
+      + (_puReqSearchQuery ? '該当する依頼が見つかりません' : '依頼はまだありません') + '</div>';
   } else {
     box.innerHTML = groups.map(g => puBuildGroupCardHtml(g, admin, me)).join('');
   }
