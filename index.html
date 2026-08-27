@@ -2454,7 +2454,7 @@
     <!-- 依頼履歴（Excel風の一覧表） -->
     <div id="pu-history-view" style="display:none;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
-        <input type="text" id="pu-history-search" class="pu-input" placeholder="品名・依頼者・仕入先・宛先で検索..." style="flex:1;min-width:200px;" oninput="puRenderHistory()">
+        <input type="text" id="pu-history-search" class="pu-input" placeholder="品名・仕入先・宛先で検索..." style="flex:1;min-width:200px;" oninput="puRenderHistory()">
         <select id="pu-history-status" class="pu-input" style="width:140px;" onchange="puRenderHistory()">
           <option value="">状態: すべて</option>
           <option value="pending">依頼中</option>
@@ -7812,7 +7812,8 @@ function puRenderHistory() {
   if (_puHistorySelectedCompany) rows = rows.filter(({ it }) => it.company === _puHistorySelectedCompany);
   if (q) {
     rows = rows.filter(({ req, it }) => {
-      const hay = puNormalizeSearch([it.product_name, req.requested_by, it.company, it.destination].filter(Boolean).join(' '));
+      const dest = it.destination || puDefaultDestination(req.requested_by);
+      const hay = puNormalizeSearch([it.product_name, it.company, dest].filter(Boolean).join(' '));
       return hay.includes(q);
     });
   }
