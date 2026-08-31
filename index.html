@@ -8420,6 +8420,7 @@ async function puOpenOrderPreview(key) {
   const g = puFindGroup(key); if (!g) return;
   const today = new Date();
   const dateStr = (today.getMonth() + 1) + '/' + today.getDate() + '/' + today.getFullYear();
+  const pasteDateStr = today.getFullYear() + '/' + (today.getMonth() + 1) + '/' + today.getDate();
   const factory = await puGetUserFactory(g.requester);
   const groupDefaultDest = (factory ? factory + '_' : '') + g.requester;
   const rows = g.items.map(it => {
@@ -8465,7 +8466,9 @@ async function puOpenOrderPreview(key) {
   const pasteRows = rows.map(r => {
     const dest = r.destination || groupDefaultDest || '';
     const destName = dest.includes('_') ? dest.split('_').pop() : (dest || g.requester);
-    return { name: r.name, qty: r.totalQty, date: dateStr, executor, remark: destName + '氏\u3000依頼分' };
+    // 注文数は「入数＋単位(注文数＋荷姿)」の形式で表示（例: 5000本入り(2箱)）
+    const qtyDisplay = (r.amount != null ? r.amount : '') + (r.unit || '') + '(' + r.qty + (r.box || '') + ')';
+    return { name: r.name, qty: qtyDisplay, date: pasteDateStr, executor, remark: destName + '氏\u3000依頼分' };
   });
   // コピー用データ（見出しなし・タブ区切り、D/E列は空欄のまま出力）
   const tsvLines = pasteRows.map(p =>
@@ -8493,7 +8496,7 @@ async function puOpenOrderPreview(key) {
       + orderHtml
       + '<div style="margin-top:20px;padding-top:16px;border-top:1px dashed #cbd5e1;">'
         + '<div style="font-size:13px;font-weight:700;margin-bottom:6px;">材料発注及び入荷状況2023.xlsm「ｻﾝｺｰ」シート貼り付け用（A〜G列）</div>'
-        + '<div style="font-size:11px;color:#64748b;margin-bottom:6px;">A:品名　B:数量×入数　C:発注日　D,E:空欄　F:登録者　G:依頼者（"名前"氏　依頼分）　　'
+        + '<div style="font-size:11px;color:#64748b;margin-bottom:6px;">A:品名　B:入数＋単位(注文数＋荷姿)　C:発注日　D,E:空欄　F:登録者　G:依頼者（"名前"氏　依頼分）　　'
           + '下のボタンでコピーし、ｻﾝｺｰシートの入力済み最終行の次の行・A列セルに貼り付けてください（既存のセルは上書きされません／見出し行はコピーされません）。</div>'
         + pasteTableHtml
         + '<textarea id="pu-order-tsv" style="position:absolute;left:-9999px;top:-9999px;" readonly>' + tsvLines.replace(/</g,'&lt;') + '</textarea>'
