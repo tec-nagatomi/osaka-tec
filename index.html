@@ -8460,10 +8460,32 @@ async function puOpenOrderPreview(key) {
     + '</div>';
 
   // --- 「材料発注及び入荷状況2023.xlsm」ｻﾝｺｰシート A〜G列 追記用（タブ区切り＝Excelにそのまま貼り付け可） ---
+  // G列は各行の「宛先」（例: 第1工場_山本悠）の "_" より後ろの名前を使い、全行「〇〇氏　依頼分」の形式に統一する
   const executor = puUserName();
-  const tsvLines = rows.map(r =>
-    [r.name, r.totalQty, dateStr, '', '', executor, g.requester + '氏\u3000依頼分'].join('\t')
+  const pasteRows = rows.map(r => {
+    const dest = r.destination || groupDefaultDest || '';
+    const destName = dest.includes('_') ? dest.split('_').pop() : (dest || g.requester);
+    return { name: r.name, qty: r.totalQty, date: dateStr, executor, remark: destName + '氏\u3000依頼分' };
+  });
+  // コピー用データ（見出しなし・タブ区切り、D/E列は空欄のまま出力）
+  const tsvLines = pasteRows.map(p =>
+    [p.name, p.qty, p.date, '', '', p.executor, p.remark].join('\t')
   ).join('\n');
+  // 画面表示用（見出し付きの整列テーブル。コピーはされない）
+  const pasteTableHtml = '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+    + '<tr style="background:#f1f5f9;"><th style="border:1px solid #cbd5e1;padding:5px 8px;">商品名</th>'
+      + '<th style="border:1px solid #cbd5e1;padding:5px 8px;">注文数</th>'
+      + '<th style="border:1px solid #cbd5e1;padding:5px 8px;">注文日</th>'
+      + '<th style="border:1px solid #cbd5e1;padding:5px 8px;">注文者</th>'
+      + '<th style="border:1px solid #cbd5e1;padding:5px 8px;">備考</th></tr>'
+    + pasteRows.map(p => '<tr>'
+        + '<td style="border:1px solid #e2e8f0;padding:5px 8px;">' + puEsc(p.name) + '</td>'
+        + '<td style="border:1px solid #e2e8f0;padding:5px 8px;text-align:center;">' + p.qty + '</td>'
+        + '<td style="border:1px solid #e2e8f0;padding:5px 8px;text-align:center;">' + puEsc(p.date) + '</td>'
+        + '<td style="border:1px solid #e2e8f0;padding:5px 8px;text-align:center;">' + puEsc(p.executor) + '</td>'
+        + '<td style="border:1px solid #e2e8f0;padding:5px 8px;">' + puEsc(p.remark) + '</td>'
+      + '</tr>').join('')
+    + '</table>';
 
   const modalHtml = '<div class="pu-modal" style="max-width:760px;">'
     + '<div class="pu-modal-head">注文書プレビュー <button class="pu-x" onclick="puCloseOrderPreview()">×</button></div>'
@@ -8472,8 +8494,9 @@ async function puOpenOrderPreview(key) {
       + '<div style="margin-top:20px;padding-top:16px;border-top:1px dashed #cbd5e1;">'
         + '<div style="font-size:13px;font-weight:700;margin-bottom:6px;">材料発注及び入荷状況2023.xlsm「ｻﾝｺｰ」シート貼り付け用（A〜G列）</div>'
         + '<div style="font-size:11px;color:#64748b;margin-bottom:6px;">A:品名　B:数量×入数　C:発注日　D,E:空欄　F:登録者　G:依頼者（"名前"氏　依頼分）　　'
-          + '下のボックスをクリックして全選択→コピーし、ｻﾝｺｰシートの入力済み最終行の次の行・A列セルに貼り付けてください（既存のセルは上書きされません）。</div>'
-        + '<textarea id="pu-order-tsv" class="pu-input" style="width:100%;height:120px;font-family:monospace;font-size:12px;" readonly onclick="this.select()">' + tsvLines.replace(/</g,'&lt;') + '</textarea>'
+          + '下のボタンでコピーし、ｻﾝｺｰシートの入力済み最終行の次の行・A列セルに貼り付けてください（既存のセルは上書きされません／見出し行はコピーされません）。</div>'
+        + pasteTableHtml
+        + '<textarea id="pu-order-tsv" style="position:absolute;left:-9999px;top:-9999px;" readonly>' + tsvLines.replace(/</g,'&lt;') + '</textarea>'
         + '<div style="margin-top:8px;"><button class="pu-btn ghost" onclick="document.getElementById(\'pu-order-tsv\').select();document.execCommand(\'copy\');puToast(\'✅ コピーしました\',\'#059669\');">貼り付け用データをコピー</button></div>'
       + '</div>'
     + '</div>'
