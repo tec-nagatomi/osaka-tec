@@ -2428,7 +2428,7 @@
       </div>
       <div style="margin-bottom:14px;">
         <input id="pu-req-search" class="pu-input" type="text" style="width:320px;"
-          placeholder="品名・仕入先・宛先で検索" oninput="puReqSearchChanged()">
+          placeholder="仕入先で検索" oninput="puReqSearchChanged()">
       </div>
       <div id="pu-supplier-view"></div>
       <div id="pu-req-list-view" style="display:none;">
@@ -6782,11 +6782,10 @@ async function loadPurchasePage() {
   }
   if (!_puLoaded) {
     _puItems = await puFetchAll(`${SUPABASE_URL}/rest/v1/purchase_items?select=*&order=id.asc`);
-    // category1/category2が未登録の物品は、これまでどおり品名からの自動判定で表示上だけ補う
+    // category1が未登録の物品は、品名からの推測ではなく強制的に「その他」として扱う
     _puItems.forEach(i => {
-      const g = puClassifyGenre(i.product_name);
-      i._g1 = i.category1 || g.g1;
-      i._g2 = i.category2 || g.g2;
+      i._g1 = i.category1 || 'その他';
+      i._g2 = i.category1 ? (i.category2 || '') : '';
     });
     _puItemsById = new Map(_puItems.map(i => [i.id, i]));
     _puLoaded = true;
@@ -6939,17 +6938,11 @@ function puShowSupplierList() {
 
 function puReqSearchChanged() {
   _puReqSearchQuery = puNormalizeSearch(document.getElementById('pu-req-search')?.value || '').trim();
-  if (_puReqSearchQuery) {
-    // 検索中は仕入先を問わず全件から探すため、一覧表示に切り替える
-    _puSelectedCompany = null;
-    document.getElementById('pu-supplier-view').style.display = 'none';
-    document.getElementById('pu-req-list-view').style.display = '';
-    puRenderRequests();
-  } else {
-    document.getElementById('pu-supplier-view').style.display = '';
-    document.getElementById('pu-req-list-view').style.display = 'none';
-    puRenderSupplierList();
-  }
+  // 仕入先名のみで検索する。仕入先ボタン一覧（依頼のない仕入先も含む）を絞り込んで表示する
+  _puSelectedCompany = null;
+  document.getElementById('pu-supplier-view').style.display = '';
+  document.getElementById('pu-req-list-view').style.display = 'none';
+  puRenderSupplierList();
 }
 
 function puSelectSupplier(company) {
@@ -6973,7 +6966,16 @@ function puRenderSupplierList() {
   const groups = puGroupRequests();
   const pendingCount = new Map();
   groups.forEach(g => { if (g.status === 'pending') pendingCount.set(g.company, (pendingCount.get(g.company) || 0) + 1); });
-  const list = [...companies].sort((a, b) => (pendingCount.get(b) || 0) - (pendingCount.get(a) || 0) || a.localeCompare(b, 'ja'));
+  // 仕入先名での検索絞り込み（依頼の有無に関わらず、名前が一致する仕入先はすべて対象にする）
+  const filtered = _puReqSearchQuery
+    ? [...companies].filter(c => puNormalizeSearch(c).includes(_puReqSearchQuery))
+    : [...companies];
+  if (_puReqSearchQuery && !filtered.length) {
+    box.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:40px 0;">該当する仕入先が見つかりません</div>';
+    puRenderTicker(pendingCount);
+    return;
+  }
+  const list = filtered.sort((a, b) => (pendingCount.get(b) || 0) - (pendingCount.get(a) || 0) || a.localeCompare(b, 'ja'));
   box.innerHTML = '<div class="pu-sup-grid">' + list.map(c => {
     const n = pendingCount.get(c) || 0;
     const logo = PU_SUPPLIER_LOGO[c]
@@ -7952,11 +7954,8 @@ function puRenderRequests() {
     .filter(g => !_puSelectedCompany || g.company === _puSelectedCompany)
     .filter(g => {
       if (!_puReqSearchQuery) return true;
-      // 品名・仕入先・宛先で検索する（依頼者名は検索対象にしない）
-      const hay = puNormalizeSearch(
-        g.items.map(it => [it.product_name, it.company, it.destination || puDefaultDestination(g.requester)].join(' ')).join(' ')
-      );
-      return hay.includes(_puReqSearchQuery);
+      // 仕入先名のみで検索する
+      return puNormalizeSearch(g.company || '').includes(_puReqSearchQuery);
     });
   if (!groups.length) {
     box.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:40px 0;">'
@@ -8561,13 +8560,21 @@ async function puDeleteRequest(id) {
 function puAllGenre1Values() {
   const set = new Set(Object.keys(PU_GENRE_TREE));
   _puItems.forEach(i => { if (i.category1) set.add(i.category1); });
-  return [...set].sort((a, b) => a.localeCompare(b, 'ja'));
+  const arr = [...set].sort((a, b) => a.localeCompare(b, 'ja'));
+  // 「その他」は新しいジャンルが増えても常にジャンル内の一番最後に表示する
+  const otherIdx = arr.indexOf('その他');
+  if (otherIdx !== -1) arr.push(arr.splice(otherIdx, 1)[0]);
+  return arr;
 }
 // 第二ジャンルの候補：指定した第一ジャンルに対して、あらかじめ用意したもの＋実際に登録済みの値
 function puAllGenre2Values(g1) {
   const set = new Set((g1 && PU_GENRE_TREE[g1]) ? PU_GENRE_TREE[g1] : []);
   _puItems.forEach(i => { if (i.category1 === g1 && i.category2) set.add(i.category2); });
-  return [...set].sort((a, b) => a.localeCompare(b, 'ja'));
+  const arr = [...set].sort((a, b) => a.localeCompare(b, 'ja'));
+  // 「その他」は新しいジャンルが増えても常にジャンル内の一番最後に表示する
+  const otherIdx = arr.indexOf('その他');
+  if (otherIdx !== -1) arr.push(arr.splice(otherIdx, 1)[0]);
+  return arr;
 }
 function puFillCat1Options(selected) {
   const dl = document.getElementById('pu-cat1-list');
@@ -8645,8 +8652,8 @@ async function puSaveItem() {
         { method: 'PATCH', headers: { ...PU_H(), 'Prefer': 'return=representation' }, body: JSON.stringify(body) });
       if (!res.ok) throw new Error(await res.text());
       const updated = (await res.json())[0];
-      updated._g1 = updated.category1 || puClassifyGenre(updated.product_name).g1;
-      updated._g2 = updated.category2 || puClassifyGenre(updated.product_name).g2;
+      updated._g1 = updated.category1 || 'その他';
+      updated._g2 = updated.category1 ? (updated.category2 || '') : '';
       const idx = _puItems.findIndex(i => i.id === _puEditingId);
       if (idx >= 0) _puItems[idx] = updated;
     } else {
@@ -8654,8 +8661,8 @@ async function puSaveItem() {
         { method: 'POST', headers: { ...PU_H(), 'Prefer': 'return=representation' }, body: JSON.stringify(body) });
       if (!res.ok) throw new Error(await res.text());
       const created = (await res.json())[0];
-      created._g1 = created.category1 || puClassifyGenre(created.product_name).g1;
-      created._g2 = created.category2 || puClassifyGenre(created.product_name).g2;
+      created._g1 = created.category1 || 'その他';
+      created._g2 = created.category1 ? (created.category2 || '') : '';
       _puItems.push(created);
     }
     puCloseItemModal(); puBuildCompanyFilter(); puRenderGenreButtons(); puOnFilter();
