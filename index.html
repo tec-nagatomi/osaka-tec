@@ -317,9 +317,6 @@
   .pu-card.pu-card-reorder { position:relative; }
   .pu-card.pu-card-reorder:hover { cursor:grab; }
   .pu-card.pu-card-reorder.pu-dragging { opacity:.4; cursor:grabbing; }
-  .pu-drag-handle { position:absolute; top:6px; left:6px; z-index:2; width:22px; height:22px; border-radius:6px;
-    background:rgba(15,23,42,.55); color:#fff; font-size:14px; line-height:22px; text-align:center;
-    cursor:grab; user-select:none; }
   /* ドラッグ中に、カードのどちら側に挿入されるかを示す目印ライン
      （.pu-cardはoverflow:hiddenのため、カード外側(負のoffset)に置くと見えなくなる点に注意し、内側に表示する） */
   .pu-card.pu-drop-before::before { content:''; position:absolute; left:0; top:0; bottom:0; width:5px;
@@ -7545,7 +7542,6 @@ function puCardHtml(i, admin) {
     ? ' draggable="true" ondragstart="puCardDragStart(event,' + i.id + ')" ondragover="puCardDragOver(event,' + i.id + ')" ondragleave="puCardDragLeave(event)" ondrop="puCardDrop(event,' + i.id + ')" ondragend="puCardDragEnd(event)"'
     : '';
   return '<div class="pu-card' + (_puReorderMode ? ' pu-card-reorder' : '') + '"' + reorderAttrs + '>'
-    + (_puReorderMode ? '<div class="pu-drag-handle" title="ドラッグして表示順を変更">⠿</div>' : '')
     + '<div class="pu-card-img"' + imgClickAttr + '>'
       + img
       + '<span class="pu-fav-star' + (_puFavoriteIds.has(i.id) ? ' on' : '') + '" onclick="event.stopPropagation();puToggleFavorite(' + i.id + ',this)" title="お気に入りに登録/解除">' + (_puFavoriteIds.has(i.id) ? '★' : '☆') + '</span>'
