@@ -314,6 +314,18 @@
   .pu-card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden;
     display:flex; flex-direction:column; box-shadow:0 1px 2px rgba(0,0,0,.05); transition:box-shadow .15s, transform .15s; }
   .pu-card:hover { box-shadow:0 4px 14px rgba(0,0,0,.10); transform:translateY(-2px); }
+  .pu-card.pu-card-reorder { position:relative; }
+  .pu-card.pu-card-reorder:hover { cursor:grab; }
+  .pu-card.pu-card-reorder.pu-dragging { opacity:.4; cursor:grabbing; }
+  .pu-drag-handle { position:absolute; top:6px; left:6px; z-index:2; width:22px; height:22px; border-radius:6px;
+    background:rgba(15,23,42,.55); color:#fff; font-size:14px; line-height:22px; text-align:center;
+    cursor:grab; user-select:none; }
+  /* ドラッグ中に、カードのどちら側に挿入されるかを示す目印ライン
+     （.pu-cardはoverflow:hiddenのため、カード外側(負のoffset)に置くと見えなくなる点に注意し、内側に表示する） */
+  .pu-card.pu-drop-before::before { content:''; position:absolute; left:0; top:0; bottom:0; width:5px;
+    background:#2563eb; z-index:5; }
+  .pu-card.pu-drop-after::after { content:''; position:absolute; right:0; top:0; bottom:0; width:5px;
+    background:#2563eb; z-index:5; }
   .pu-card-img { position:relative; height:120px; background:#f8fafc; display:flex; align-items:center; justify-content:center; border-bottom:1px solid #eef2f7; }
   .pu-card-img img { max-width:100%; max-height:100%; object-fit:contain; }
   .pu-card-img .pu-noimg { color:#cbd5e1; }
@@ -624,6 +636,7 @@
   .func-btn.inventory::before { background: #7c3aed; }
   .func-btn.purchase::before { background: #d97706; }
   .func-btn.productdate::before { background: #0891b2; }
+  .func-btn.outsourcing::before { background: #be123c; }
   .func-btn:hover { border-color: #9ca3af; background: #fff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 
   /* 進捗管理：現場カード */
@@ -672,6 +685,7 @@
   .func-btn.inventory svg { color: #7c3aed; }
   .func-btn.purchase svg { color: #d97706; }
   .func-btn.productdate svg { color: #0891b2; }
+  .func-btn.outsourcing svg { color: #be123c; }
   /* productdate page */
   .pd-toolbar { display:flex; align-items:center; gap:8px; padding:12px 16px; border-bottom:1px solid #e5e7eb; flex-wrap:wrap; }
   .pd-search { flex:1; min-width:180px; padding:6px 10px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; }
@@ -1769,6 +1783,10 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v5"/><circle cx="18" cy="18" r="3"/><circle cx="9" cy="18" r="3"/><path d="M15 5v6H9V5"/></svg>
     発注管理
   </div>
+  <div class="nav-item" data-page="outsourcing" onclick="showPage('outsourcing',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 5l4 4"/></svg>
+    外注管理
+  </div>
   <div class="nav-item" data-page="productdate" onclick="showPage('productdate',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5"/><path stroke-linecap="round" stroke-linejoin="round" d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
     製品登録/変更
@@ -1813,6 +1831,11 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v5"/><circle cx="18" cy="18" r="3"/><circle cx="9" cy="18" r="3"/><path d="M15 5v6H9V5"/></svg>
             <div class="func-btn-label">発注管理</div>
             <div class="func-btn-sub">仕入れ・外注管理</div>
+          </div>
+          <div class="func-btn outsourcing" onclick="showPage('outsourcing', document.querySelector('[data-page=outsourcing]'))">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 5l4 4"/></svg>
+            <div class="func-btn-label">外注管理</div>
+            <div class="func-btn-sub">外注加工の依頼・進捗管理</div>
           </div>
           <div class="func-btn productdate" onclick="showPage('productdate', document.querySelector('[data-page=productdate]'))">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5"/><path stroke-linecap="round" stroke-linejoin="round" d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -2378,6 +2401,13 @@
   <div class="coming-soon">
     <svg viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path stroke-linecap="round" stroke-linejoin="round" d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
     <h3>在庫管理</h3>
+    <p>この機能は現在開発中です</p>
+  </div>
+</div>
+<div id="page-outsourcing" class="page">
+  <div class="coming-soon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 5l4 4"/></svg>
+    <h3>外注管理</h3>
     <p>この機能は現在開発中です</p>
   </div>
 </div>
@@ -6688,6 +6718,8 @@ let _puRequests = [];         // 依頼一覧
 let _puReqItems = new Map();  // request_id -> 明細[]
 let _puEditingId = null;      // 物品編集中のid
 let _puImgTargetId = null;    // 画像アップロード対象のid
+let _puReorderMode = false;   // カードの並び替え（ドラッグ&ドロップ）が可能な状態か
+let _puDragId = null;         // ドラッグ中の物品id
 
 const PU_H = () => ({ 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' });
 const puEsc = (s) => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -6705,6 +6737,12 @@ function puCanManageCatalog() {
   const allowed = ['永冨', 'nagatomi', '山下', 'yamashita', '三宅', 'miyake',
     '岡本', 'okamoto', '下岡', 'shimooka', '冨田', 'tomita', '瀧本', 'takimoto',
     '井戸', 'ido', '足立', 'adachi', '宮本'];
+  return allowed.some(a => name.includes(a));
+}
+// 物品カタログのカード表示順（ドラッグ&ドロップでの並び替え）ができるユーザー
+function puCanReorderCatalog() {
+  const name = (currentUser?.loginname || '') + '|' + (currentUser?.userid || '');
+  const allowed = ['永冨', 'nagatomi', '山下', 'yamashita', '井戸', 'ido', '足立', 'adachi'];
   return allowed.some(a => name.includes(a));
 }
 // テロップ・依頼一覧タブの閲覧権限（永冨・山下のみ）
@@ -6781,7 +6819,7 @@ async function loadPurchasePage() {
     puSwitchTab('catalog');
   }
   if (!_puLoaded) {
-    _puItems = await puFetchAll(`${SUPABASE_URL}/rest/v1/purchase_items?select=*&order=id.asc`);
+    _puItems = await puFetchAll(`${SUPABASE_URL}/rest/v1/purchase_items?select=*&order=sort_order.asc.nullslast,id.asc`);
     // category1が未登録の物品は、品名からの推測ではなく強制的に「その他」として扱う
     _puItems.forEach(i => {
       i._g1 = i.category1 || 'その他';
@@ -7350,6 +7388,9 @@ function puOnFilter() {
     if (!q) return true;
     return puNormalizeSearch(i.product_name).includes(q) || puNormalizeSearch(i.product_code).includes(q);
   });
+  // カードの並び替えは、絞り込みが一切かかっていない「すべて」表示中のみ許可する
+  // （絞り込み中に並び替えると、表に出ていない物品との相対順が不明確になるため）
+  _puReorderMode = puCanReorderCatalog() && !_puFavOnly && !co && !_puGenre1 && !_puGenre2 && !q;
   _puShown = 60;
   puRenderGrid();
 }
@@ -7391,6 +7432,76 @@ function puRenderGrid() {
   if (more) more.style.display = (_puFiltered.length > _puShown) ? '' : 'none';
 }
 
+// ---- 物品カタログのカード表示順（ドラッグ&ドロップでの並び替え） ----
+function puCardDragStart(ev, id) {
+  _puDragId = id;
+  ev.dataTransfer.effectAllowed = 'move';
+  ev.currentTarget.classList.add('pu-dragging');
+}
+function puCardDragEnd(ev) {
+  ev.currentTarget.classList.remove('pu-dragging');
+  puClearDropLines();
+}
+// ドラッグ中のカードが他のカード上を通過した際、カーソルが左半分/右半分どちらにあるかで
+// 挿入位置の目印ライン（左端/右端）を表示する
+function puCardDragOver(ev, id) {
+  ev.preventDefault();
+  if (_puDragId == null || _puDragId === id) return;
+  const card = ev.currentTarget;
+  const rect = card.getBoundingClientRect();
+  const before = (ev.clientX - rect.left) < rect.width / 2;
+  if (before) { card.classList.add('pu-drop-before'); card.classList.remove('pu-drop-after'); }
+  else { card.classList.add('pu-drop-after'); card.classList.remove('pu-drop-before'); }
+}
+function puCardDragLeave(ev) {
+  ev.currentTarget.classList.remove('pu-drop-before', 'pu-drop-after');
+}
+function puClearDropLines() {
+  document.querySelectorAll('.pu-drop-before, .pu-drop-after').forEach(el => el.classList.remove('pu-drop-before', 'pu-drop-after'));
+}
+function puCardDrop(ev, targetId) {
+  ev.preventDefault();
+  ev.stopPropagation();
+  const insertAfter = ev.currentTarget.classList.contains('pu-drop-after');
+  puClearDropLines();
+  const draggedId = _puDragId;
+  _puDragId = null;
+  if (draggedId == null || draggedId === targetId) return;
+  const fromIdx = _puFiltered.findIndex(x => x.id === draggedId);
+  if (fromIdx === -1) return;
+  const [moved] = _puFiltered.splice(fromIdx, 1);
+  let toIdx = _puFiltered.findIndex(x => x.id === targetId);
+  if (toIdx === -1) return;
+  if (insertAfter) toIdx += 1;
+  _puFiltered.splice(toIdx, 0, moved);
+  // 並び替えは絞り込みなし（すべて）表示中のみ有効なので、_puFiltered＝全物品の新しい順序になる
+  _puItems = _puFiltered.slice();
+  puRenderGrid();
+  puPersistCatalogOrder();
+}
+// 新しい表示順をsort_order列としてまとめて保存する（10刻みで採番）
+// purchase_items.product_nameはNOT NULL制約があるため、upsert時にはid・sort_orderに加えて必ず含める
+async function puPersistCatalogOrder() {
+  const rows = _puItems.map((it, idx) => {
+    it.sort_order = (idx + 1) * 10;
+    return { id: it.id, product_name: it.product_name, sort_order: it.sort_order };
+  });
+  try {
+    for (let i = 0; i < rows.length; i += 300) {
+      const chunk = rows.slice(i, i + 300);
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_items`, {
+        method: 'POST',
+        headers: { ...PU_H(), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify(chunk)
+      });
+      if (!res.ok) throw new Error(await res.text());
+    }
+    puToast('✅ 表示順を保存しました', '#059669');
+  } catch (err) {
+    alert('表示順の保存に失敗しました: ' + err.message);
+  }
+}
+
 // 素材/処理バッジ判定（品名に含まれるパターンから判定。複数該当は複数表示）
 function puMaterialBadges(name) {
   const s = String(name || '').normalize('NFKC');
@@ -7429,7 +7540,12 @@ function puCardHtml(i, admin) {
   const imgClickAttr = i.image_url
     ? ' onclick="puOpenImageLightbox(\'' + String(i.image_url).replace(/'/g, "\\'") + '\',\'' + String(i.product_name).replace(/'/g, "\\'") + '\')" style="cursor:zoom-in;"'
     : (admin ? ' onclick="puPickImage(' + i.id + ')" style="cursor:pointer;"' : '');
-  return '<div class="pu-card">'
+  // 表示位置の並び替え（ドラッグ&ドロップ）：許可ユーザーが「すべて」表示中のみ有効
+  const reorderAttrs = _puReorderMode
+    ? ' draggable="true" ondragstart="puCardDragStart(event,' + i.id + ')" ondragover="puCardDragOver(event,' + i.id + ')" ondragleave="puCardDragLeave(event)" ondrop="puCardDrop(event,' + i.id + ')" ondragend="puCardDragEnd(event)"'
+    : '';
+  return '<div class="pu-card' + (_puReorderMode ? ' pu-card-reorder' : '') + '"' + reorderAttrs + '>'
+    + (_puReorderMode ? '<div class="pu-drag-handle" title="ドラッグして表示順を変更">⠿</div>' : '')
     + '<div class="pu-card-img"' + imgClickAttr + '>'
       + img
       + '<span class="pu-fav-star' + (_puFavoriteIds.has(i.id) ? ' on' : '') + '" onclick="event.stopPropagation();puToggleFavorite(' + i.id + ',this)" title="お気に入りに登録/解除">' + (_puFavoriteIds.has(i.id) ? '★' : '☆') + '</span>'
@@ -7837,7 +7953,7 @@ function puRenderHistory() {
     const tm = puToJstParts(req.created_at).time; // HH:MM（日本時間）
     const catalogItem = it.item_id != null ? _puItemsById.get(it.item_id) : null;
     const thumbHtml = catalogItem && catalogItem.image_url
-      ? '<img src="' + catalogItem.image_url + '" alt="" style="width:100%;height:100%;object-fit:contain;">'
+      ? '<img src="' + catalogItem.image_url + '" alt="" style="width:100%;height:100%;object-fit:contain;cursor:zoom-in;" onclick="puOpenImageLightbox(\'' + String(catalogItem.image_url).replace(/'/g, "\\'") + '\',\'' + String(catalogItem.product_name || it.product_name).replace(/'/g, "\\'") + '\')">'
       : '<span style="font-size:8px;color:#cbd5e1;">No Image</span>';
     const canCancel = canCancelAll || req.requested_by === me;
     const cancelBtn = canCancel
@@ -8295,7 +8411,9 @@ function puReqItemRow(it, admin, requester) {
   const editing = admin && _puEditingItemIds.has(it.id);
   const destination = it.destination || puDefaultDestination(requester);
   const catalogItem = it.item_id != null ? _puItemsById.get(it.item_id) : null;
-  const thumbHtml = '<div class="pu-ri-thumb">' + (catalogItem && catalogItem.image_url
+  const thumbHtml = '<div class="pu-ri-thumb"' + (catalogItem && catalogItem.image_url
+    ? ' onclick="puOpenImageLightbox(\'' + String(catalogItem.image_url).replace(/'/g, "\\'") + '\',\'' + String(catalogItem.product_name || it.product_name).replace(/'/g, "\\'") + '\')" style="cursor:zoom-in;"'
+    : '') + '>' + (catalogItem && catalogItem.image_url
     ? '<img src="' + catalogItem.image_url + '" alt="">'
     : '<span class="pu-noimg">No Image</span>') + '</div>';
   if (editing) {
