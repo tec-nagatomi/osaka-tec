@@ -7666,6 +7666,8 @@ function puCartFactoryChanged() {
   const factory = factorySel.value;
   const me = puUserName();
   const names = _puAllUsers.filter(u => u.factory === factory).map(u => u.loginname);
+  // 「その他」には、ログインアカウントを持たない「工場長」も依頼者として選べるようにする
+  if (factory === 'その他' && !names.includes('工場長')) names.push('工場長');
   sel.innerHTML = names.map(n => '<option value="' + puEsc(n) + '"' + (n === me ? ' selected' : '') + '>' + puEsc(n) + '</option>').join('');
   if (!names.includes(me) && names.length) sel.value = names[0];
 }
