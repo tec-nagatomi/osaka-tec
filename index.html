@@ -364,6 +364,20 @@
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:35px; }
   .pu-card-code { font-size:10px; color:#94a3b8; font-family:monospace; margin-top:2px; }
   .pu-card-spec { font-size:11px; color:#475569; margin-top:3px; }
+  /* 注意喚起（品名・入数・単位・荷姿）の点滅バッジ */
+  .pu-card-alert { font-size:11px; font-weight:700; color:#fff; background:#dc2626;
+    display:inline-block; padding:1px 8px; border-radius:4px; margin-top:5px;
+    animation: pu-alert-blink 1s steps(1,end) infinite; }
+  @keyframes pu-alert-blink { 0%,49% { opacity:1; } 50%,100% { opacity:.25; } }
+  /* 物品編集モーダルのトグルスイッチ（注意喚起） */
+  .pu-switch-row { display:flex; align-items:center; gap:6px; font-size:12.5px; color:#334155; cursor:pointer; }
+  .pu-switch { position:relative; display:inline-block; width:34px; height:19px; flex:none; }
+  .pu-switch input { opacity:0; width:0; height:0; }
+  .pu-switch-slider { position:absolute; inset:0; background:#cbd5e1; border-radius:19px; transition:.15s; }
+  .pu-switch-slider::before { content:''; position:absolute; width:14px; height:14px; left:3px; top:2.5px;
+    background:#fff; border-radius:50%; transition:.15s; box-shadow:0 1px 2px rgba(0,0,0,.25); }
+  .pu-switch input:checked + .pu-switch-slider { background:#dc2626; }
+  .pu-switch input:checked + .pu-switch-slider::before { transform:translateX(15px); }
   .pu-card-company { font-size:10px; color:#0369a1; background:#f0f9ff; border:1px solid #e0f2fe;
     border-radius:5px; padding:1px 6px; display:inline-flex; align-items:center; gap:4px; margin-top:5px; max-width:100%;
     overflow:hidden; }
@@ -2569,6 +2583,17 @@
             <label>第二ジャンル</label>
             <input id="pu-f-cat2" class="pu-input" list="pu-cat2-list" placeholder="選択または新規入力">
             <datalist id="pu-cat2-list"></datalist>
+          </div>
+        </div>
+        <div class="pu-form-row" style="border-top:1px solid #e2e8f0;padding-top:12px;margin-top:4px;">
+          <label style="display:flex;align-items:center;gap:6px;">⚠️ 注意喚起
+            <span style="font-weight:400;color:#94a3b8;font-size:11px;">（オンにした項目をカードに点滅表示します）</span>
+          </label>
+          <div style="display:flex;flex-wrap:wrap;gap:14px 20px;margin-top:6px;">
+            <label class="pu-switch-row"><span class="pu-switch"><input type="checkbox" id="pu-f-alert-name"><span class="pu-switch-slider"></span></span>品名</label>
+            <label class="pu-switch-row"><span class="pu-switch"><input type="checkbox" id="pu-f-alert-amount"><span class="pu-switch-slider"></span></span>入数</label>
+            <label class="pu-switch-row"><span class="pu-switch"><input type="checkbox" id="pu-f-alert-unit"><span class="pu-switch-slider"></span></span>単位</label>
+            <label class="pu-switch-row"><span class="pu-switch"><input type="checkbox" id="pu-f-alert-box"><span class="pu-switch-slider"></span></span>荷姿</label>
           </div>
         </div>
       </div>
@@ -7385,9 +7410,9 @@ function puOnFilter() {
     if (!q) return true;
     return puNormalizeSearch(i.product_name).includes(q) || puNormalizeSearch(i.product_code).includes(q);
   });
-  // カードの並び替えは、絞り込みが一切かかっていない「すべて」表示中のみ許可する
-  // （絞り込み中に並び替えると、表に出ていない物品との相対順が不明確になるため）
-  _puReorderMode = puCanReorderCatalog() && !_puFavOnly && !co && !_puGenre1 && !_puGenre2 && !q;
+  // カードの並び替えは、絞り込み中でも許可する（ドロップ先アイテムの全体順序内での位置を基準に
+  // 挿入するため、表示されていない物品との相対順も破綻しない）
+  _puReorderMode = puCanReorderCatalog();
   _puShown = 60;
   puRenderGrid();
 }
@@ -7464,15 +7489,18 @@ function puCardDrop(ev, targetId) {
   const draggedId = _puDragId;
   _puDragId = null;
   if (draggedId == null || draggedId === targetId) return;
-  const fromIdx = _puFiltered.findIndex(x => x.id === draggedId);
-  if (fromIdx === -1) return;
-  const [moved] = _puFiltered.splice(fromIdx, 1);
-  let toIdx = _puFiltered.findIndex(x => x.id === targetId);
-  if (toIdx === -1) return;
-  if (insertAfter) toIdx += 1;
-  _puFiltered.splice(toIdx, 0, moved);
-  // 並び替えは絞り込みなし（すべて）表示中のみ有効なので、_puFiltered＝全物品の新しい順序になる
-  _puItems = _puFiltered.slice();
+  // 絞り込み中でも正しく並び替えられるよう、_puFiltered（表示中の一覧）ではなく
+  // _puItems（全物品の並び順）そのものを、ドロップ先アイテムの位置を基準に組み替える
+  const fromIdxAll = _puItems.findIndex(x => x.id === draggedId);
+  if (fromIdxAll === -1) return;
+  const [moved] = _puItems.splice(fromIdxAll, 1);
+  let toIdxAll = _puItems.findIndex(x => x.id === targetId);
+  if (toIdxAll === -1) { _puItems.splice(fromIdxAll, 0, moved); return; }
+  if (insertAfter) toIdxAll += 1;
+  _puItems.splice(toIdxAll, 0, moved);
+  const keepShown = _puShown;
+  puOnFilter(); // 現在の絞り込み条件のまま_puFilteredを再構築して再描画
+  _puShown = keepShown;
   puRenderGrid();
   puPersistCatalogOrder();
 }
@@ -7530,6 +7558,12 @@ function puCardHtml(i, admin) {
   if (i.amount != null) spec.push('入数 ' + i.amount + (i.unit || ''));
   else if (i.unit) spec.push(i.unit);
   if (i.box) spec.push('荷姿: ' + i.box);
+  // 注意喚起（品名・入数・単位・荷姿）：オンになっている項目名を「〇〇注意」として点滅表示
+  const alerts = [];
+  if (i.alert_name) alerts.push('品名注意');
+  if (i.alert_amount) alerts.push('入数注意');
+  if (i.alert_unit) alerts.push('単位注意');
+  if (i.alert_box) alerts.push('荷姿注意');
   const img = i.image_url
     ? '<img src="' + puEsc(i.image_url) + '" loading="lazy" alt="">'
     : '<svg class="pu-noimg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" style="width:44px;height:44px;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
@@ -7537,7 +7571,7 @@ function puCardHtml(i, admin) {
   const imgClickAttr = i.image_url
     ? ' onclick="puOpenImageLightbox(\'' + String(i.image_url).replace(/'/g, "\\'") + '\',\'' + String(i.product_name).replace(/'/g, "\\'") + '\')" style="cursor:zoom-in;"'
     : (admin ? ' onclick="puPickImage(' + i.id + ')" style="cursor:pointer;"' : '');
-  // 表示位置の並び替え（ドラッグ&ドロップ）：許可ユーザーが「すべて」表示中のみ有効
+  // 表示位置の並び替え（ドラッグ&ドロップ）：許可ユーザーであれば絞り込み中でも有効
   const reorderAttrs = _puReorderMode
     ? ' draggable="true" ondragstart="puCardDragStart(event,' + i.id + ')" ondragover="puCardDragOver(event,' + i.id + ')" ondragleave="puCardDragLeave(event)" ondrop="puCardDrop(event,' + i.id + ')" ondragend="puCardDragEnd(event)"'
     : '';
@@ -7551,6 +7585,7 @@ function puCardHtml(i, admin) {
     + '<div class="pu-card-body">'
       + '<div class="pu-card-name" title="' + puEsc(i.product_name) + '">' + puEsc(i.product_name) + '</div>'
       + puMaterialBadgesHtml(i.product_name)
+      + (alerts.length ? '<div>' + alerts.map(a => '<span class="pu-card-alert">' + a + '</span>').join(' ') + '</div>' : '')
       + (spec.length ? '<div class="pu-card-spec">' + puEsc(spec.join(' ・ ')) + '</div>' : '')
       + (i.company ? '<div class="pu-card-company" title="' + puEsc(i.company) + '">'
           + (PU_SUPPLIER_LOGO[i.company] ? '<img class="pu-card-company-logo" src="' + PU_SUPPLIER_LOGO[i.company] + '" alt="" onerror="this.remove()">' : '')
@@ -8717,6 +8752,10 @@ function puOpenItemModal(id) {
   document.getElementById('pu-f-unit').value = it?.unit || '';
   document.getElementById('pu-f-box').value = it?.box || '';
   document.getElementById('pu-f-company').value = it?.company || '';
+  document.getElementById('pu-f-alert-name').checked = !!it?.alert_name;
+  document.getElementById('pu-f-alert-amount').checked = !!it?.alert_amount;
+  document.getElementById('pu-f-alert-unit').checked = !!it?.alert_unit;
+  document.getElementById('pu-f-alert-box').checked = !!it?.alert_box;
   // ジャンル：既に登録済みならその値、無ければ品名から自動判定した値を初期表示（保存時に確定登録される）
   let cat1 = it?.category1 || '', cat2 = it?.category2 || '';
   if (!cat1 && it?.product_name) {
@@ -8758,6 +8797,10 @@ async function puSaveItem() {
     unit: document.getElementById('pu-f-unit').value.trim(),
     box: document.getElementById('pu-f-box').value.trim(),
     company: document.getElementById('pu-f-company').value.trim(),
+    alert_name: document.getElementById('pu-f-alert-name').checked,
+    alert_amount: document.getElementById('pu-f-alert-amount').checked,
+    alert_unit: document.getElementById('pu-f-alert-unit').checked,
+    alert_box: document.getElementById('pu-f-alert-box').checked,
     category1: cat1 || null,
     category2: cat2 || null,
     updated_at: new Date().toISOString()
