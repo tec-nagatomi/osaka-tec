@@ -1843,9 +1843,10 @@
   @media print{
     html,body{background:#fff !important;}
     body *{visibility:hidden !important;}
-    #os-previewArea,#os-previewArea *{visibility:visible !important;}
+    #os-previewArea,#os-previewArea *,#os-reprint-sheet-wrap,#os-reprint-sheet-wrap *{visibility:visible !important;}
     #os-previewArea{position:absolute !important;left:0;top:0;margin:0 !important;
       padding:0 !important;zoom:1 !important;}
+    #os-reprint-sheet-wrap{position:absolute !important;left:0;top:0;margin:0 !important;padding:0 !important;}
     .sheet{margin:0 !important;border:none !important;box-shadow:none !important;
       width:auto !important;padding:0 !important;
       display:flex;flex-direction:column;
@@ -17709,7 +17710,7 @@ async function loadOrdersHistory(){
 }
 // 発注履歴の削除は永冨のみ許可
 function osCanDeleteHistory(){
-  const name = (window.currentUser?.loginname || '') + '|' + (window.currentUser?.userid || '');
+  const name = (currentUser?.loginname || '') + '|' + (currentUser?.userid || '');
   return name.includes('永冨') || name.toLowerCase().includes('nagatomi');
 }
 // 発注履歴の備考表示：L/T/B/D/W/K（レーザー/タレパン/ブレーキ/段取り/溶接/組立）の組み合わせのみ紫色で表示
@@ -17786,15 +17787,43 @@ $("os-hBody").addEventListener("click", async e=>{
   }
   const btn = e.target.closest("[data-reprint]");
   if(!btn) return;
-  const rec = ORDERS_HISTORY.find(r=>String(r.order_no)===String(btn.dataset.reprint));
-  if(!rec) return;
-  showOrderView();
-  renderDocuments(rec);
-  $("os-previewPanel").style.display="block";
-  $("os-orderView").classList.add("os-has-preview");
-  $("os-orderNoTag").textContent = "オーダーNo "+rec.order_no;
-  requestAnimationFrame(()=>requestAnimationFrame(fitZoom));
+  osOpenReprintModal(btn.dataset.reprint);
 });
+
+/* ===== 発注履歴の「再表示」ポップアップ ===== */
+function osOpenReprintModal(orderNo){
+  const rec = ORDERS_HISTORY.find(r=>String(r.order_no)===String(orderNo));
+  if(!rec) return;
+  osCloseReprintModal();
+  const ov = document.createElement("div");
+  ov.id = "os-reprint-modal";
+  ov.style.cssText = "position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:4000;"
+    + "display:flex;align-items:center;justify-content:center;padding:24px;";
+  ov.innerHTML =
+    '<div style="background:#fff;border-radius:12px;box-shadow:0 24px 80px rgba(0,0,0,.3);'
+    + 'max-width:95vw;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;" onclick="event.stopPropagation();">'
+    + '<div style="background:linear-gradient(135deg,#1d4ed8,#1e40af);padding:14px 20px;'
+    + 'display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">'
+    + '<h3 style="margin:0;color:#fff;font-size:15px;font-weight:700;">オーダーNo '+esc(rec.order_no)+' のプレビュー</h3>'
+    + '<div style="display:flex;gap:8px;align-items:center;">'
+    + '<button onclick="window.print()" style="border:none;background:rgba(255,255,255,.2);color:#fff;'
+    + 'font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;cursor:pointer;">🖨 印刷/PDF</button>'
+    + '<button onclick="osCloseReprintModal()" style="border:none;background:rgba(255,255,255,.2);'
+    + 'border-radius:6px;width:28px;height:28px;color:#fff;font-size:18px;cursor:pointer;line-height:1;">&times;</button>'
+    + '</div></div>'
+    + '<div style="padding:18px;overflow:auto;background:#f3f4f6;"><div id="os-reprint-sheet-wrap"></div></div>'
+    + '</div>';
+  ov.addEventListener("click", osCloseReprintModal);
+  document.addEventListener("keydown", osReprintEscHandler);
+  document.body.appendChild(ov);
+  document.getElementById("os-reprint-sheet-wrap").innerHTML = buildOrderSheetHtml(rec);
+}
+function osCloseReprintModal(){
+  const ov = document.getElementById("os-reprint-modal");
+  if(ov) ov.remove();
+  document.removeEventListener("keydown", osReprintEscHandler);
+}
+function osReprintEscHandler(e){ if(e.key==="Escape") osCloseReprintModal(); }
 
 $("os-mAddBtn").addEventListener("click", ()=>openModal(null));
 $("os-mCloseBtn").addEventListener("click", closeModal);
@@ -18035,7 +18064,7 @@ function bikoCircled(text, supplier){
 }
 
 /* ===== 帳票描画 ===== */
-function renderDocuments(r){
+function buildOrderSheetHtml(r){
   const dJP = todayJP();
   const amount = r.amount;
   const priceStr = "¥"+Number(r.unit_price).toLocaleString("ja-JP");
@@ -18230,8 +18259,10 @@ function renderDocuments(r){
   // 切り取り線
   const cut = '<div class="cut-line"><span class="scissors">✂</span></div>';
 
-  $("os-previewArea").innerHTML =
-    `<div class="sheet">${発注書}${cut}${現品票}${cut}${納品書}${cut}${受領書}${cut}${請求書}</div>`;
+  return `<div class="sheet">${発注書}${cut}${現品票}${cut}${納品書}${cut}${受領書}${cut}${請求書}</div>`;
+}
+function renderDocuments(r){
+  $("os-previewArea").innerHTML = buildOrderSheetHtml(r);
 }
 
 /* 初期化（軽量な部分のみ即時実行。マスタ読込は初回表示時に行う） */
@@ -18242,7 +18273,7 @@ function osInitPage(){
   // ログイン中ユーザー名を発注担当者の初期値にする（初回表示時のみ。以降は入力内容を尊重）
   if(!_osLoaded){
     try{
-      const nm = (window.currentUser && (window.currentUser.loginname || window.currentUser.userid)) || "";
+      const nm = (typeof currentUser!=="undefined" && currentUser && (currentUser.loginname || currentUser.userid)) || "";
       if(nm){
         $("os-staffInput").value = nm;
         OWN.staff = nm;
@@ -18254,6 +18285,8 @@ function osInitPage(){
   _osLoaded = true;
 }
 window.osInitPage = osInitPage;
+// ポップアップ内のonclick=""から呼ばれるため、IIFE外（window）へ公開しておく
+window.osCloseReprintModal = osCloseReprintModal;
 
 })();
 </script>
