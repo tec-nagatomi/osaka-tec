@@ -1930,10 +1930,10 @@
           <thead>
             <tr>
               <th>ログインID</th><th>氏名</th><th>所属</th><th>所属工場</th>
-              <th>フルアクセス</th><th>物品管理</th><th>並び替え</th><th>依頼履歴</th><th></th>
+              <th>フルアクセス</th><th>物品管理（並び替え含む）</th><th>依頼履歴</th><th></th>
             </tr>
           </thead>
-          <tbody id="ua-tbody"><tr><td colspan="9" style="text-align:center;color:#9ca3af;">読込中…</td></tr></tbody>
+          <tbody id="ua-tbody"><tr><td colspan="8" style="text-align:center;color:#9ca3af;">読込中…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -7180,11 +7180,9 @@ function puCanManageCatalog() {
   return allowed.some(a => name.includes(a));
 }
 // 物品カタログのカード表示順（ドラッグ&ドロップでの並び替え）ができるユーザー
+// ※物品管理権限（puCanManageCatalog）と統合済み。同じ権限で並び替えも可能
 function puCanReorderCatalog() {
-  if (currentUser && currentUser.perm_catalog_reorder != null) return !!currentUser.perm_catalog_reorder;
-  const name = (currentUser?.loginname || '') + '|' + (currentUser?.userid || '');
-  const allowed = ['永冨', 'nagatomi', '山下', 'yamashita', '井戸', 'ido', '足立', 'adachi', '馬場', 'baba'];
-  return allowed.some(a => name.includes(a));
+  return puCanManageCatalog();
 }
 // テロップ・依頼一覧タブの閲覧権限（永冨・山下のみ）
 function puCanSeeRequestsTab() {
@@ -9490,20 +9488,20 @@ function closeUserAdmin() {
 }
 async function uaLoadUsers() {
   const tbody = document.getElementById('ua-tbody');
-  tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#9ca3af;">読込中…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#9ca3af;">読込中…</td></tr>';
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/loginuser?select=id,userid,loginname,department,factory,perm_full_access,perm_catalog_manage,perm_catalog_reorder,perm_requests_view&order=loginname.asc`, { headers: sbHeaders() });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/loginuser?select=id,userid,loginname,department,factory,perm_full_access,perm_catalog_manage,perm_requests_view&order=loginname.asc`, { headers: sbHeaders() });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     _uaUsers = await res.json();
     uaRenderUsers();
   } catch (e) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#dc2626;">読込エラー: ' + e.message + '</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#dc2626;">読込エラー: ' + e.message + '</td></tr>';
   }
 }
 function uaEsc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function uaRenderUsers() {
   const tbody = document.getElementById('ua-tbody');
-  if (!_uaUsers.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#9ca3af;">ユーザーがいません</td></tr>'; return; }
+  if (!_uaUsers.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#9ca3af;">ユーザーがいません</td></tr>'; return; }
   tbody.innerHTML = _uaUsers.map(u => `
     <tr data-id="${u.id}">
       <td style="font-family:monospace;font-size:12px;">${uaEsc(u.userid)}</td>
@@ -9512,7 +9510,6 @@ function uaRenderUsers() {
       <td><input type="text" value="${uaEsc(u.factory)}" data-field="factory" style="width:80px;border:1px solid #d1d5db;border-radius:4px;padding:3px 5px;font-size:12px;"></td>
       <td style="text-align:center;"><input type="checkbox" data-field="perm_full_access" ${u.perm_full_access?'checked':''} onchange="uaTogglePerm(${u.id},'perm_full_access',this.checked)"></td>
       <td style="text-align:center;"><input type="checkbox" data-field="perm_catalog_manage" ${u.perm_catalog_manage?'checked':''} onchange="uaTogglePerm(${u.id},'perm_catalog_manage',this.checked)"></td>
-      <td style="text-align:center;"><input type="checkbox" data-field="perm_catalog_reorder" ${u.perm_catalog_reorder?'checked':''} onchange="uaTogglePerm(${u.id},'perm_catalog_reorder',this.checked)"></td>
       <td style="text-align:center;"><input type="checkbox" data-field="perm_requests_view" ${u.perm_requests_view?'checked':''} onchange="uaTogglePerm(${u.id},'perm_requests_view',this.checked)"></td>
       <td style="white-space:nowrap;">
         <button class="btn-sm" onclick="uaSaveRow(${u.id})">保存</button>
@@ -12885,7 +12882,7 @@ async function doLogin() {
 
   try {
     const url = SUPABASE_URL_LOGIN
-      + '/rest/v1/loginuser?select=id,userid,loginname,department,authority,password,factory,perm_full_access,perm_catalog_manage,perm_catalog_reorder,perm_requests_view&userid=eq.'
+      + '/rest/v1/loginuser?select=id,userid,loginname,department,authority,password,factory,perm_full_access,perm_catalog_manage,perm_requests_view&userid=eq.'
       + encodeURIComponent(userid);
     const res = await fetch(url, {
       headers: {
