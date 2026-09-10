@@ -1911,7 +1911,32 @@
       <div class="avatar">OT</div>
       <span>管理者</span>
     </div>
+    <button class="btn-logout" id="userAdminBtn" style="display:none;margin-right:6px;" onclick="openUserAdmin()">👥 ユーザー</button>
     <button class="btn-logout" onclick="doLogout()">ログアウト</button>
+  </div>
+</div>
+
+<!-- ユーザー管理モーダル（永冨のみ） -->
+<div id="ua-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:14px;width:100%;max-width:980px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.25);">
+    <div style="background:linear-gradient(135deg,#1d4ed8,#1e40af);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1;">
+      <h3 style="margin:0;color:#fff;font-size:15px;font-weight:700;">👥 ユーザー管理</h3>
+      <button onclick="closeUserAdmin()" style="border:none;background:rgba(255,255,255,.2);border-radius:6px;width:28px;height:28px;color:#fff;font-size:18px;cursor:pointer;line-height:1;">&times;</button>
+    </div>
+    <div style="padding:16px 20px;">
+      <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">権限を変更すると即座に保存されます。氏名・所属・所属工場は変更後「保存」を押してください。</div>
+      <div style="overflow-x:auto;">
+        <table class="orders-table" style="width:100%;">
+          <thead>
+            <tr>
+              <th>ログインID</th><th>氏名</th><th>所属</th><th>所属工場</th>
+              <th>フルアクセス</th><th>物品管理</th><th>並び替え</th><th>依頼履歴</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="ua-tbody"><tr><td colspan="9" style="text-align:center;color:#9ca3af;">読込中…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -7147,6 +7172,7 @@ function puIsAdmin() {
 }
 // 物品カタログの物品追加・画像登録・編集/削除ができるユーザー
 function puCanManageCatalog() {
+  if (currentUser && currentUser.perm_catalog_manage != null) return !!currentUser.perm_catalog_manage;
   const name = (currentUser?.loginname || '') + '|' + (currentUser?.userid || '');
   const allowed = ['永冨', 'nagatomi', '山下', 'yamashita', '三宅', 'miyake',
     '岡本', 'okamoto', '下岡', 'shimooka', '冨田', 'tomita', '瀧本', 'takimoto',
@@ -7155,12 +7181,14 @@ function puCanManageCatalog() {
 }
 // 物品カタログのカード表示順（ドラッグ&ドロップでの並び替え）ができるユーザー
 function puCanReorderCatalog() {
+  if (currentUser && currentUser.perm_catalog_reorder != null) return !!currentUser.perm_catalog_reorder;
   const name = (currentUser?.loginname || '') + '|' + (currentUser?.userid || '');
   const allowed = ['永冨', 'nagatomi', '山下', 'yamashita', '井戸', 'ido', '足立', 'adachi', '馬場', 'baba'];
   return allowed.some(a => name.includes(a));
 }
 // テロップ・依頼一覧タブの閲覧権限（永冨・山下のみ）
 function puCanSeeRequestsTab() {
+  if (currentUser && currentUser.perm_requests_view != null) return !!currentUser.perm_requests_view;
   const name = (currentUser?.loginname || '') + '|' + (currentUser?.userid || '');
   return name.includes('永冨') || name.includes('山下')
     || name.toLowerCase().includes('nagatomi') || name.toLowerCase().includes('yamashita');
@@ -9418,6 +9446,7 @@ function showPage(name, navEl) {
 
 // フルアクセス許可ユーザー（それ以外は発注管理のみ利用可）
 function canAccessFullSystem() {
+  if (currentUser && currentUser.perm_full_access != null) return !!currentUser.perm_full_access;
   const name = (currentUser?.loginname || '') + '|' + (currentUser?.userid || '');
   const allowed = ['永冨', 'nagatomi', '山下', 'yamashita', '三宅', 'miyake',
     '岡本', 'okamoto', '下岡', 'shimooka', '冨田', 'tomita', '瀧本', 'takimoto'];
@@ -9438,6 +9467,93 @@ function applyAccessRestriction() {
     });
   }
   if (!full) showPage('top', document.querySelector('[data-page=top]'));
+  const uaBtn = document.getElementById('userAdminBtn');
+  if (uaBtn) {
+    const name = (currentUser?.loginname || '') + '|' + (currentUser?.userid || '');
+    uaBtn.style.display = (name.includes('永冨') || name.toLowerCase().includes('nagatomi')) ? '' : 'none';
+  }
+}
+
+// ==================== ユーザー管理（永冨のみ） ====================
+function uaIsNagatomi() {
+  const name = (currentUser?.loginname || '') + '|' + (currentUser?.userid || '');
+  return name.includes('永冨') || name.toLowerCase().includes('nagatomi');
+}
+let _uaUsers = [];
+async function openUserAdmin() {
+  if (!uaIsNagatomi()) return;
+  document.getElementById('ua-modal').style.display = 'flex';
+  await uaLoadUsers();
+}
+function closeUserAdmin() {
+  document.getElementById('ua-modal').style.display = 'none';
+}
+async function uaLoadUsers() {
+  const tbody = document.getElementById('ua-tbody');
+  tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#9ca3af;">読込中…</td></tr>';
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/loginuser?select=id,userid,loginname,department,factory,perm_full_access,perm_catalog_manage,perm_catalog_reorder,perm_requests_view&order=loginname.asc`, { headers: sbHeaders() });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    _uaUsers = await res.json();
+    uaRenderUsers();
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#dc2626;">読込エラー: ' + e.message + '</td></tr>';
+  }
+}
+function uaEsc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function uaRenderUsers() {
+  const tbody = document.getElementById('ua-tbody');
+  if (!_uaUsers.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#9ca3af;">ユーザーがいません</td></tr>'; return; }
+  tbody.innerHTML = _uaUsers.map(u => `
+    <tr data-id="${u.id}">
+      <td style="font-family:monospace;font-size:12px;">${uaEsc(u.userid)}</td>
+      <td><input type="text" value="${uaEsc(u.loginname)}" data-field="loginname" style="width:70px;border:1px solid #d1d5db;border-radius:4px;padding:3px 5px;font-size:12px;"></td>
+      <td><input type="text" value="${uaEsc(u.department)}" data-field="department" style="width:90px;border:1px solid #d1d5db;border-radius:4px;padding:3px 5px;font-size:12px;"></td>
+      <td><input type="text" value="${uaEsc(u.factory)}" data-field="factory" style="width:80px;border:1px solid #d1d5db;border-radius:4px;padding:3px 5px;font-size:12px;"></td>
+      <td style="text-align:center;"><input type="checkbox" data-field="perm_full_access" ${u.perm_full_access?'checked':''} onchange="uaTogglePerm(${u.id},'perm_full_access',this.checked)"></td>
+      <td style="text-align:center;"><input type="checkbox" data-field="perm_catalog_manage" ${u.perm_catalog_manage?'checked':''} onchange="uaTogglePerm(${u.id},'perm_catalog_manage',this.checked)"></td>
+      <td style="text-align:center;"><input type="checkbox" data-field="perm_catalog_reorder" ${u.perm_catalog_reorder?'checked':''} onchange="uaTogglePerm(${u.id},'perm_catalog_reorder',this.checked)"></td>
+      <td style="text-align:center;"><input type="checkbox" data-field="perm_requests_view" ${u.perm_requests_view?'checked':''} onchange="uaTogglePerm(${u.id},'perm_requests_view',this.checked)"></td>
+      <td style="white-space:nowrap;">
+        <button class="btn-sm" onclick="uaSaveRow(${u.id})">保存</button>
+        <button class="btn-danger-sm" onclick="uaDeleteUser(${u.id},'${uaEsc(u.loginname)}')">削除</button>
+      </td>
+    </tr>`).join('');
+}
+async function uaTogglePerm(id, field, value) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/loginuser?id=eq.${id}`, {
+      method: 'PATCH', headers: { ...sbHeaders(), 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ [field]: value })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const u = _uaUsers.find(x => x.id === id); if (u) u[field] = value;
+  } catch (e) { alert('権限の更新に失敗しました: ' + e.message); uaLoadUsers(); }
+}
+async function uaSaveRow(id) {
+  const tr = document.querySelector(`#ua-tbody tr[data-id="${id}"]`);
+  if (!tr) return;
+  const body = {};
+  tr.querySelectorAll('input[type=text]').forEach(inp => { body[inp.dataset.field] = inp.value.trim() || null; });
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/loginuser?id=eq.${id}`, {
+      method: 'PATCH', headers: { ...sbHeaders(), 'Prefer': 'return=minimal' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    puToast ? puToast('✅ 保存しました', '#059669') : null;
+  } catch (e) { alert('保存に失敗しました: ' + e.message); }
+}
+async function uaDeleteUser(id, name) {
+  if (!confirm('ユーザー「' + name + '」を削除します。よろしいですか？')) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/loginuser?id=eq.${id}`, {
+      method: 'DELETE', headers: { ...sbHeaders(), 'Prefer': 'return=minimal' }
+    });
+    if (!res.ok) throw new Error(await res.text());
+    _uaUsers = _uaUsers.filter(u => u.id !== id);
+    uaRenderUsers();
+  } catch (e) { alert('削除に失敗しました: ' + e.message); }
 }
 
 // ---- Drop zone ----
@@ -12769,7 +12885,7 @@ async function doLogin() {
 
   try {
     const url = SUPABASE_URL_LOGIN
-      + '/rest/v1/loginuser?select=userid,loginname,department,authority,password&userid=eq.'
+      + '/rest/v1/loginuser?select=id,userid,loginname,department,authority,password,factory,perm_full_access,perm_catalog_manage,perm_catalog_reorder,perm_requests_view&userid=eq.'
       + encodeURIComponent(userid);
     const res = await fetch(url, {
       headers: {
