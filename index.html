@@ -7118,13 +7118,13 @@ function puCanManageCatalog() {
   const name = (currentUser?.loginname || '') + '|' + (currentUser?.userid || '');
   const allowed = ['永冨', 'nagatomi', '山下', 'yamashita', '三宅', 'miyake',
     '岡本', 'okamoto', '下岡', 'shimooka', '冨田', 'tomita', '瀧本', 'takimoto',
-    '井戸', 'ido', '足立', 'adachi', '宮本'];
+    '井戸', 'ido', '足立', 'adachi', '宮本', '馬場', 'baba'];
   return allowed.some(a => name.includes(a));
 }
 // 物品カタログのカード表示順（ドラッグ&ドロップでの並び替え）ができるユーザー
 function puCanReorderCatalog() {
   const name = (currentUser?.loginname || '') + '|' + (currentUser?.userid || '');
-  const allowed = ['永冨', 'nagatomi', '山下', 'yamashita', '井戸', 'ido', '足立', 'adachi'];
+  const allowed = ['永冨', 'nagatomi', '山下', 'yamashita', '井戸', 'ido', '足立', 'adachi', '馬場', 'baba'];
   return allowed.some(a => name.includes(a));
 }
 // テロップ・依頼一覧タブの閲覧権限（永冨・山下のみ）
