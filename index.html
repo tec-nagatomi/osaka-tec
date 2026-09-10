@@ -1710,6 +1710,151 @@
   .save-feedback.ng { background: #fee2e2; color: #991b1b; }
   .save-feedback svg { width: 14px; height: 14px; }
 
+
+  /* ==================== 外注管理（発注書） ==================== */
+  .os-toolbar-field{display:flex;flex-direction:column;gap:2px;}
+  .os-toolbar-field label{font-size:10px;font-weight:600;color:#9ca3af;letter-spacing:.04em;}
+  .os-toolbar-field input{width:130px;padding:6px 9px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;}
+  .os-toolbar-field input:focus{outline:none;border-color:#1d4ed8;box-shadow:0 0 0 3px rgba(29,78,216,.1);}
+
+  .os-order-grid{display:grid;grid-template-columns:1fr;gap:20px;align-items:start;}
+  .os-order-grid.os-has-preview{grid-template-columns:minmax(0,1fr) minmax(400px,560px);}
+  .os-order-left{min-width:0;display:flex;flex-direction:column;gap:16px;}
+  .os-order-right{min-width:0;}
+  .os-order-grid.os-has-preview .os-order-right{position:sticky;top:16px;
+    max-height:calc(100vh - 130px);overflow-y:auto;}
+  @media (max-width:980px){
+    .os-order-grid.os-has-preview{grid-template-columns:1fr;}
+    .os-order-grid.os-has-preview .os-order-right{position:static;max-height:none;overflow:visible;}
+  }
+
+  .os-card-title{font-size:14px;font-weight:600;color:#374151;margin-bottom:14px;
+    padding-bottom:8px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:8px;}
+  .os-card-title svg{width:16px;height:16px;color:#1d4ed8;flex-shrink:0;}
+
+  .os-form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;}
+  .os-field{display:flex;flex-direction:column;gap:4px;min-width:0;}
+  .os-field label{font-size:11px;font-weight:600;color:#6b7280;}
+  .os-field label.os-req::after{content:" *";color:#dc2626;}
+  .os-field input,.os-field select{padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;
+    font-size:13px;width:100%;box-sizing:border-box;background:#fff;}
+  .os-field input:focus,.os-field select:focus{outline:none;border-color:#1d4ed8;
+    box-shadow:0 0 0 3px rgba(29,78,216,.1);}
+  .os-field input.os-readonly{background:#f3f4f6;color:#374151;font-weight:600;}
+  .os-field .os-hint{font-size:10.5px;color:#9ca3af;margin-top:1px;}
+
+  .os-amount-box{background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;
+    padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:2px;}
+  .os-amount-box .lbl{font-size:12px;color:#065f46;font-weight:700;}
+  .os-amount-box .val{font-size:22px;font-weight:800;color:#047857;}
+
+  .os-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .os-status{font-size:12px;margin-left:auto;color:#6b7280;}
+  .os-status.ok{color:#059669;font-weight:700;}
+  .os-status.err{color:#dc2626;font-weight:700;}
+
+  .os-zoom-ctrl{display:flex;align-items:center;gap:6px;font-size:12px;color:#6b7280;
+    background:#f3f4f6;border-radius:8px;padding:3px 6px;}
+  .os-zoom-ctrl #os-zoomDisp{min-width:38px;text-align:center;font-weight:700;color:#111827;}
+
+  .os-master-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+    padding:12px 20px;border-bottom:1px solid #e5e7eb;}
+  .os-master-toolbar select,.os-master-toolbar input{padding:7px 10px;border:1px solid #d1d5db;
+    border-radius:6px;font-size:12.5px;}
+  .os-master-toolbar select:focus,.os-master-toolbar input:focus{outline:none;border-color:#1d4ed8;}
+  .os-mtbl td.num{text-align:right;font-variant-numeric:tabular-nums;}
+  .os-mtbl td.ops{text-align:right;white-space:nowrap;}
+  .os-mtbl .empty{text-align:center;color:#9ca3af;padding:22px;}
+
+  /* マスタ登録／編集モーダル */
+  #os-mModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);
+    z-index:1000;align-items:center;justify-content:center;padding:20px;}
+  #os-mModal.show{display:flex;}
+  #os-mModal .modal{background:#fff;border-radius:14px;width:100%;max-width:640px;
+    max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.25);}
+  #os-mModal .modal-head{background:linear-gradient(135deg,#1d4ed8,#1e40af);
+    padding:16px 20px;display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:1;}
+  #os-mModal .modal-head h3{margin:0;color:#fff;font-size:15px;font-weight:700;}
+  #os-mModal .modal-close{background:rgba(255,255,255,.2);border:none;border-radius:6px;
+    width:28px;height:28px;color:#fff;font-size:18px;cursor:pointer;line-height:1;}
+  #os-mModal .modal-close:hover{background:rgba(255,255,255,.32);}
+  #os-mModal .modal-body{padding:20px;}
+  #os-mModal .modal-foot{padding:14px 20px;border-top:1px solid #e5e7eb;
+    display:flex;align-items:center;gap:8px;position:sticky;bottom:0;background:#fff;}
+  #os-mModal .msg{margin-right:auto;font-size:12px;font-weight:700;}
+  #os-mModal .msg.err{color:#dc2626;}
+
+  /* ===== 印刷帳票レイアウト（発注書テンプレート再現・A4全5書1枚） ===== */
+  .sheet{background:#fff;width:194mm;margin:0 auto 16px;padding:0;
+    border:1px solid #ccc;box-shadow:0 1px 8px rgba(0,0,0,.12);color:#000;
+    font-family:"Meiryo","Hiragino Kaku Gothic ProN",sans-serif;}
+  .form-block{padding:0;margin-bottom:0;}
+  .thead{padding:0 2mm 1mm;}
+  .th-titlebar{display:flex;justify-content:space-between;align-items:flex-start;
+    position:relative;padding-top:1px;}
+  .th-titlebar.three{align-items:flex-start;}
+  .th-title{font-size:17px;font-weight:800;letter-spacing:6px;text-align:center;
+    position:absolute;left:0;right:0;top:1px;pointer-events:none;
+    border-bottom:1.5px solid #000;padding-bottom:1px;width:34%;margin:0 auto;}
+  .th-onbox{font-size:10px;line-height:1.3;text-align:right;margin-left:auto;z-index:1;}
+  .th-onleft{font-size:10px;line-height:1.3;z-index:1;}
+  .th-onbox .onbox,.th-onleft .onbox{border:1.4px solid #000;padding:1px 9px;
+    display:inline-block;font-size:14px;font-weight:700;margin-bottom:1px;}
+  .th-onbox .onbox b,.th-onleft .onbox b{font-size:16px;}
+  .th-onleft .onbox,.th-onbox .onbox{background:#e8f4fb;border:1.4px solid #1a9fd6;border-left:4px solid #1a9fd6;
+    border-radius:3px;color:#0b3c52;}
+  .th-onleft .onbox b,.th-onbox .onbox b{color:#0a5a7a;}
+  .th-addr{display:flex;justify-content:space-between;font-size:10px;line-height:1.3;
+    margin-top:1mm;}
+  .th-left,.th-right{}
+  .th-right{text-align:right;}
+  .thead .big{font-size:13px;font-weight:700;}
+  .thead .onchu{font-size:13px;font-weight:700;}
+  .ownlogo{display:inline-block;height:auto;width:auto;max-width:34mm;max-height:7mm;
+    object-fit:contain;margin:1px 0;}
+  .th-onno-row{display:flex;align-items:center;justify-content:flex-end;gap:2.5mm;
+    margin-bottom:1px;}
+  .th-name-row{display:flex;align-items:center;justify-content:flex-end;gap:2.5mm;}
+  .th-spacer{height:1.3em;}
+  .ownlogo-side{margin:0;flex:0 0 auto;}
+  table.ttbl{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed;
+    border:1.4px solid #000;}
+  table.ttbl td{border:1px solid #000;padding:0 4px;text-align:center;
+    vertical-align:middle;height:15px;overflow:hidden;}
+  table.ttbl td.lbl{background:#d5d9de;font-weight:700;white-space:nowrap;}
+  table.ttbl td.val{font-weight:600;}
+  table.ttbl td.left{text-align:left;}
+  table.ttbl td.sig{height:20px;}
+  table.ttbl td.pname{text-align:left;white-space:nowrap;overflow:hidden;
+    padding:0 8px;font-size:12px;vertical-align:middle;}
+  table.ttbl td.biko{text-align:left;white-space:nowrap;padding:0 8px;vertical-align:middle;}
+  table.ttbl tr.gh td{height:15px;}
+  .biko-circ{letter-spacing:0;}
+  .biko-circ span{display:inline-block;border:1.4px solid #000;border-radius:50%;
+    width:18px;height:18px;line-height:15px;text-align:center;margin:0 6px;font-size:11px;font-weight:700;}
+  .cut-line{display:flex;align-items:center;gap:10px;color:#333;font-size:10px;
+    padding:0 0;margin:0.3mm 0;border:none;background:none;}
+  .cut-line::before,.cut-line::after{content:"";flex:1;height:0;
+    border-top:1.2px dashed #555;}
+  .cut-line .scissors{font-size:14px;line-height:1;}
+  body.os-paper-a4 .sheet{width:194mm;}
+  @media print{
+    html,body{background:#fff !important;}
+    body *{visibility:hidden !important;}
+    #os-previewArea,#os-previewArea *{visibility:visible !important;}
+    #os-previewArea{position:absolute !important;left:0;top:0;margin:0 !important;
+      padding:0 !important;zoom:1 !important;}
+    .sheet{margin:0 !important;border:none !important;box-shadow:none !important;
+      width:auto !important;padding:0 !important;
+      display:flex;flex-direction:column;
+      page-break-after:auto;break-after:auto;overflow:hidden;}
+    .form-block{break-inside:avoid;page-break-inside:avoid;flex:0 0 auto;}
+    .cut-line{break-inside:avoid;page-break-inside:avoid;flex:1 1 auto;
+      min-height:2mm;}
+    table.ttbl td.lbl{background:#d5d9de !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .th-onleft .onbox,.th-onbox .onbox{background:#e8f4fb !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  }
 </style>
 </head>
 <body>
@@ -2416,12 +2561,226 @@
   </div>
 </div>
 <div id="page-outsourcing" class="page">
-  <div class="coming-soon">
-    <svg viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 5l4 4"/></svg>
-    <h3>外注管理</h3>
-    <p>この機能は現在開発中です</p>
+  <div class="orders-page">
+    <div class="page-header">
+      <div class="page-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 5l4 4"/></svg>
+        外注管理
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <span id="os-todayDisp" style="font-size:12px;color:#9ca3af;"></span>
+        <div class="os-toolbar-field">
+          <label for="os-staffInput">発注担当者</label>
+          <input id="os-staffInput" list="os-staffList" placeholder="担当者名" autocomplete="off">
+          <datalist id="os-staffList"></datalist>
+        </div>
+        <button class="btn-ghost" id="os-hdrMasterBtn">🗂 マスタ管理</button>
+        <button class="btn-primary" id="os-hdrOrderBtn" style="display:none;">📝 発注書作成</button>
+      </div>
+    </div>
+
+    <div id="os-orderView" class="os-order-grid">
+      <div class="os-order-left">
+
+        <div class="import-card">
+          <div class="os-card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+            発注内容の入力
+          </div>
+
+          <div class="os-form-grid">
+            <div class="os-field">
+              <label>外注先</label>
+              <select id="os-supplier"><option value="">— 選択 —</option></select>
+            </div>
+            <div class="os-field">
+              <label>製品（管理No / 製品名）</label>
+              <select id="os-product" disabled><option value="">— 外注先を選択 —</option></select>
+            </div>
+          </div>
+
+          <div class="os-form-grid" style="margin-top:14px;">
+            <div class="os-field"><label>製番（管理No）</label><input id="os-kanri" class="os-readonly" readonly></div>
+            <div class="os-field"><label>図番（OT番号）</label><input id="os-otno" class="os-readonly" readonly></div>
+            <div class="os-field"><label>品名（製品名）</label><input id="os-pname" class="os-readonly" readonly></div>
+          </div>
+
+          <div class="os-form-grid" style="margin-top:14px;">
+            <div class="os-field"><label>備考（作業区分）</label><input id="os-biko" placeholder="製品選択で自動入力・編集可"></div>
+            <div class="os-field">
+              <label>発注単価（加工単価）</label>
+              <input id="os-price" class="os-readonly" readonly>
+              <div class="os-hint" id="os-priceTypeInfo"></div>
+            </div>
+          </div>
+
+          <div class="os-form-grid" style="margin-top:14px;">
+            <div class="os-field"><label>納期（任意入力）</label><input id="os-delivery" type="text" placeholder="例）8/20 または 2026-08-20"></div>
+            <div class="os-field"><label>発注数</label><input id="os-qty" type="number" min="1" step="1" placeholder="数量"></div>
+            <div class="os-field">
+              <label>単位</label>
+              <input id="os-unit" list="os-unitList2" placeholder="本" autocomplete="off">
+              <datalist id="os-unitList2"></datalist>
+            </div>
+          </div>
+
+          <div class="os-amount-box" style="margin-top:16px;">
+            <span class="lbl">発注金額（発注数 × 発注単価）</span>
+            <span class="val" id="os-amountDisp">¥0</span>
+          </div>
+        </div>
+
+        <div class="import-card">
+          <div class="os-card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5"/><path stroke-linecap="round" stroke-linejoin="round" d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            発注書の作成
+          </div>
+          <div class="os-actions">
+            <div class="os-toolbar-field">
+              <label for="os-orderNoInput">オーダーNo</label>
+              <input id="os-orderNoInput" style="width:120px;" placeholder="自動採番">
+            </div>
+            <button class="btn-primary" id="os-createBtn" disabled>発注書を作成する</button>
+            <span style="font-size:11px;color:#9ca3af;" id="os-lastOrderNoDisp"></span>
+            <span class="os-status" id="os-statusMsg"></span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="os-order-right">
+        <div class="orders-list-card" id="os-previewPanel" style="display:none;">
+          <div class="orders-list-header" style="flex-wrap:wrap;gap:8px;">
+            <div class="orders-list-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span id="os-orderNoTag">オーダーNo —</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="font-size:11px;color:#9ca3af;font-weight:600;">用紙: A4</span>
+              <div class="os-zoom-ctrl">
+                <button class="btn-sm" id="os-zoomOutBtn" title="縮小">－</button>
+                <span id="os-zoomDisp">100%</span>
+                <button class="btn-sm" id="os-zoomInBtn" title="拡大">＋</button>
+                <button class="btn-sm" id="os-zoomFitBtn" title="1ページ全体を表示">画面に合わせる</button>
+              </div>
+              <button class="btn-primary-sm" onclick="window.print()">🖨 印刷/PDF</button>
+              <button class="btn-sm" id="os-newBtn">別の発注書を作成</button>
+            </div>
+          </div>
+          <div style="padding:16px 20px;">
+            <div id="os-previewArea"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="orders-list-card" id="os-masterView" style="display:none;">
+      <div class="orders-list-header">
+        <div class="orders-list-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 5l4 4"/></svg>
+          マスタ管理（外注先・製品・単価）
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-sm" id="os-mReloadBtn">🔄 再読込</button>
+          <button class="btn-primary-sm" id="os-mAddBtn">＋ 新規登録</button>
+        </div>
+      </div>
+      <div class="os-master-toolbar">
+        <select id="os-mFilterSup"><option value="">— 全外注先 —</option></select>
+        <input id="os-mFilterKw" type="text" placeholder="管理No・図番・製品名で絞込" style="flex:1;min-width:200px;">
+        <span class="orders-count" id="os-mCount"></span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="orders-table os-mtbl">
+          <thead>
+            <tr>
+              <th>外注先</th><th>製番(管理No)</th><th>図番(OT番号)</th><th>品名(製品名)</th>
+              <th>備考(作業区分)</th><th>単位</th><th>単価</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="os-mBody"><tr><td colspan="8" style="text-align:center;color:#9ca3af;">読込中…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 </div>
+
+<!-- マスタ登録／編集モーダル（外注管理） -->
+<div id="os-mModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="os-mModalTitle">マスタ新規登録</h3>
+      <button class="modal-close" id="os-mCloseBtn">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="os-form-grid">
+        <div class="os-field">
+          <label class="os-req">外注先</label>
+          <input id="os-fSupplier" list="os-supplierList" placeholder="例）田中鉄工">
+          <datalist id="os-supplierList"></datalist>
+          <div class="os-hint">既存を選ぶか、新しい外注先名を直接入力できます。</div>
+        </div>
+        <div class="os-field">
+          <label class="os-req">製番（管理No）</label>
+          <input id="os-fKanri" placeholder="例）MB-8000H">
+        </div>
+      </div>
+      <div class="os-form-grid" style="margin-top:14px;">
+        <div class="os-field"><label>図番（OT番号）</label><input id="os-fOtno" placeholder="例）OT-12345"></div>
+        <div class="os-field"><label class="os-req">品名（製品名）</label><input id="os-fPname" placeholder="例）ベースプレート"></div>
+      </div>
+      <div class="os-form-grid" style="margin-top:14px;">
+        <div class="os-field">
+          <label>備考（作業区分）</label>
+          <input id="os-fBiko" placeholder="例）BDW">
+          <div class="os-hint">帳票では1文字ずつ〇で囲まれて印字されます。</div>
+        </div>
+        <div class="os-field">
+          <label class="os-req">単品単価（1本あたり・加工単価）</label>
+          <input id="os-fPrice" type="number" min="0" step="1" placeholder="例）12000">
+        </div>
+      </div>
+      <div class="os-form-grid" style="margin-top:14px;">
+        <div class="os-field">
+          <label>ロット単価（ロット発注時・1本あたり）</label>
+          <input id="os-fLotPrice" type="number" min="0" step="1" placeholder="例）9000（未設定なら単品単価のみ適用）">
+        </div>
+        <div class="os-field">
+          <label>1ロットの数量</label>
+          <input id="os-fLotQty" type="number" min="1" step="1" placeholder="例）10（この本数以上でロット単価を適用）">
+        </div>
+      </div>
+      <div class="os-form-grid" style="margin-top:14px;">
+        <div class="os-field">
+          <label class="os-req">単位</label>
+          <input id="os-fUnit" list="os-unitList" placeholder="例）本" autocomplete="off">
+          <datalist id="os-unitList"></datalist>
+          <div class="os-hint">一覧から選ぶか、新しい単位を直接入力できます。</div>
+        </div>
+        <div></div>
+      </div>
+      <div class="os-form-grid" style="margin-top:14px;">
+        <div class="os-field">
+          <label>外注先 郵便番号</label>
+          <input id="os-fZip" placeholder="例）561-0845">
+        </div>
+        <div class="os-field">
+          <label>外注先 住所</label>
+          <input id="os-fAddr" placeholder="例）大阪府豊中市利倉2-5-2">
+          <div class="os-hint">発注書の宛先に印字されます（外注先単位で保持）。</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span class="msg" id="os-mMsg"></span>
+      <button class="btn-sm" id="os-mCancelBtn">キャンセル</button>
+      <button class="btn-primary-sm" id="os-mSaveBtn">保存する</button>
+    </div>
+  </div>
+</div>
+
+<style id="os-pageStyle">@page{size:A4 portrait;margin:6mm;}</style>
 <div id="page-purchase" class="page">
   <div class="orders-list-card">
     <div class="orders-list-header">
@@ -7677,7 +8036,7 @@ function puUpdateCartBadge() {
 }
 
 let _puAllUsers = null; // 依頼者選択用（loginuserの全ユーザー { loginname, factory } キャッシュ）
-const PU_FACTORY_OPTIONS = ['第1工場', '第2工場', '第3工場', 'その他'];
+const PU_FACTORY_OPTIONS = ['第1工場', '第2工場', '第3工場', 'レーザー工場', '事務所'];
 
 async function puEnsureUserList() {
   if (_puAllUsers) return _puAllUsers;
@@ -7688,7 +8047,7 @@ async function puEnsureUserList() {
     rows.forEach(r => {
       if (!r.loginname || seen.has(r.loginname)) return;
       seen.add(r.loginname);
-      _puAllUsers.push({ loginname: r.loginname, factory: r.factory && PU_FACTORY_OPTIONS.includes(r.factory) ? r.factory : 'その他' });
+      _puAllUsers.push({ loginname: r.loginname, factory: r.factory && PU_FACTORY_OPTIONS.includes(r.factory) ? r.factory : '事務所' });
     });
   } catch (e) { _puAllUsers = []; }
   return _puAllUsers;
@@ -7701,8 +8060,10 @@ function puCartFactoryChanged() {
   const factory = factorySel.value;
   const me = puUserName();
   const names = _puAllUsers.filter(u => u.factory === factory).map(u => u.loginname);
-  // 「その他」には、ログインアカウントを持たない「工場長」も依頼者として選べるようにする
-  if (factory === 'その他' && !names.includes('工場長')) names.push('工場長');
+  // 「事務所」には、ログインアカウントを持たないメンバーも依頼者として選べるようにする
+  if (factory === '事務所') {
+    ['工場長', '社長', '納絵理', '油家'].forEach(n => { if (!names.includes(n)) names.push(n); });
+  }
   sel.innerHTML = names.map(n => '<option value="' + puEsc(n) + '"' + (n === me ? ' selected' : '') + '>' + puEsc(n) + '</option>').join('');
   if (!names.includes(me) && names.length) sel.value = names[0];
 }
@@ -8978,6 +9339,7 @@ function showPage(name, navEl) {
   if (name === 'progress') renderFloors();
   if (name === 'schedule') loadShippingPage();
   if (name === 'purchase') loadPurchasePage();
+  if (name === 'outsourcing' && typeof window.osInitPage === 'function') window.osInitPage();
 }
 
 // フルアクセス許可ユーザー（それ以外は発注管理のみ利用可）
@@ -16950,5 +17312,762 @@ async function saveRoute() {
   </div>
 </div>
 
+<script>
+/* ==================== 外注管理（発注書アプリ）==================== */
+(function(){
+"use strict";
+/* ===== Supabase 設定 ===== */
+const SB_URL = "https://vgsolgbyakniabaouqfc.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZnc29sZ2J5YWtuaWFiYW91cWZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNjkwODMsImV4cCI6MjA5NTk0NTA4M30.nW5q5YsS2C8D_qTgAx9L67_x8k72V4N8MG_O34OItFY";
+const HDR = { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" };
+
+/* 自社情報 */
+const OWN = { zip:"561-0805", addr:"大阪府豊中市原田南2-7-2", name:"大阪テック株式会社", staff:"永冨" };
+
+/* ===== 単位（プルダウン＋直接入力・localStorageに履歴保持） ===== */
+const UNIT_DEFAULT = ["本","台","個","枚","式","セット","kg","m"];
+let UNIT_LIST = (function(){
+  try{
+    const s = JSON.parse(localStorage.getItem("hatchu_unit_list")||"null");
+    return Array.isArray(s) && s.length ? s : [...UNIT_DEFAULT];
+  }catch(e){ return [...UNIT_DEFAULT]; }
+})();
+function saveUnitList(){
+  try{ localStorage.setItem("hatchu_unit_list", JSON.stringify(UNIT_LIST)); }catch(e){}
+}
+/* マスタに登録済みの単位も候補に取り込む */
+function rebuildUnitList(){
+  const fromMaster = (typeof MASTER!=="undefined" && Array.isArray(MASTER))
+    ? MASTER.map(m=>m.unit).filter(Boolean) : [];
+  const all = [...new Set([...UNIT_LIST, ...fromMaster])];
+  const html = all.map(u=>`<option value="${String(u).replace(/"/g,"&quot;")}">`).join("");
+  const a = document.getElementById("os-unitList"), b = document.getElementById("os-unitList2");
+  if(a) a.innerHTML = html;
+  if(b) b.innerHTML = html;
+}
+/* 新しい単位を候補に追加 */
+function addUnit(v){
+  v = String(v||"").trim();
+  if(!v || UNIT_LIST.includes(v)) return;
+  UNIT_LIST.push(v); saveUnitList(); rebuildUnitList();
+}
+
+/* ===== 発注担当者（プルダウン＋直接入力・localStorageに履歴保持） ===== */
+const STAFF_DEFAULT = ["永冨","三宅","瀧本","岡本","下岡","冨田","藤田","藤川"];
+let STAFF_LIST = (function(){
+  try{
+    const s = JSON.parse(localStorage.getItem("hatchu_staff_list")||"null");
+    // 保存済みリストがあっても、既定の候補は常にマージする（順序は既定を優先）
+    return Array.isArray(s) && s.length
+      ? [...new Set([...STAFF_DEFAULT, ...s])]
+      : [...STAFF_DEFAULT];
+  }catch(e){ return [...STAFF_DEFAULT]; }
+})();
+function saveStaffList(){
+  try{ localStorage.setItem("hatchu_staff_list", JSON.stringify(STAFF_LIST)); }catch(e){}
+}
+function rebuildStaffList(){
+  document.getElementById("os-staffList").innerHTML =
+    STAFF_LIST.map(s=>`<option value="${String(s).replace(/"/g,"&quot;")}">`).join("");
+}
+/* 直近に使った担当者を初期表示 */
+(function initStaff(){
+  const last = (()=>{ try{ return localStorage.getItem("hatchu_staff_last"); }catch(e){ return null; } })();
+  OWN.staff = last || OWN.staff;
+  const inp = document.getElementById("os-staffInput");
+  inp.value = OWN.staff;
+  rebuildStaffList();
+  inp.addEventListener("input", ()=>{ OWN.staff = inp.value.trim(); });
+  inp.addEventListener("change", ()=>{
+    const v = inp.value.trim();
+    OWN.staff = v;
+    if(!v) return;
+    // 新しい担当者名は候補に追加して次回以降も選べるようにする
+    if(!STAFF_LIST.includes(v)){ STAFF_LIST.push(v); saveStaffList(); rebuildStaffList(); }
+    try{ localStorage.setItem("hatchu_staff_last", v); }catch(e){}
+  });
+})();
+const LOGO = "data:image/png;base64,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";
+/* 外注先住所（テンプレート既定値。マスタ管理から追加・変更可） */
+const SUP_ADDR_DEFAULT = {
+  "田中鉄工": { zip:"561-0845", addr:"大阪府豊中市利倉2-5-2" },
+  "テイク":   { zip:"", addr:"" },
+  "盛鉄工":   { zip:"", addr:"" },
+};
+let SUP_ADDR = (function(){
+  try{
+    const s = localStorage.getItem("hatchu_sup_addr");
+    return s ? {...SUP_ADDR_DEFAULT, ...JSON.parse(s)} : {...SUP_ADDR_DEFAULT};
+  }catch(e){ return {...SUP_ADDR_DEFAULT}; }
+})();
+function saveSupAddr(){
+  try{ localStorage.setItem("hatchu_sup_addr", JSON.stringify(SUP_ADDR)); }catch(e){}
+}
+
+let MASTER = [];         // 全マスタ
+let CURRENT = null;      // 選択中の製品行
+
+const $ = id => document.getElementById(id);
+const yen = n => "¥" + (Number(n)||0).toLocaleString("ja-JP");
+
+function todayISO(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function todayJP(){ const d=new Date(); return d.getFullYear()+"年"+(d.getMonth()+1)+"月"+d.getDate()+"日"; }
+$("os-todayDisp").textContent = todayJP();
+
+/* ===== マスタ読込 ===== */
+async function loadMaster(){
+  try{
+    const res = await fetch(`${SB_URL}/rest/v1/hatchu_master?select=*&order=supplier,kanri_no`, { headers: HDR });
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    MASTER = await res.json();
+    rebuildSupplierSelect();
+    rebuildUnitList();
+    renderMasterTable();
+    setStatus(`マスタ ${MASTER.length}件 読込完了`, "ok");
+  }catch(e){
+    setStatus("マスタ読込エラー: "+e.message, "err");
+    $("os-mBody").innerHTML = '<tr><td colspan="8" class="empty">読込エラー: '+esc(e.message)+'</td></tr>';
+  }
+}
+
+/* 外注先セレクト（発注入力／絞込／datalist）を再構築 */
+function rebuildSupplierSelect(){
+  const sups = [...new Set(MASTER.map(m=>m.supplier))].sort();
+  const keep = $("os-supplier").value;
+  $("os-supplier").innerHTML = '<option value="">— 選択 —</option>';
+  sups.forEach(s=>{ const o=document.createElement("option"); o.value=s; o.textContent=s; $("os-supplier").appendChild(o); });
+  if(sups.includes(keep)) $("os-supplier").value = keep;
+
+  const keepF = $("os-mFilterSup").value;
+  $("os-mFilterSup").innerHTML = '<option value="">— 全外注先 —</option>';
+  sups.forEach(s=>{ const o=document.createElement("option"); o.value=s; o.textContent=s; $("os-mFilterSup").appendChild(o); });
+  if(sups.includes(keepF)) $("os-mFilterSup").value = keepF;
+
+  $("os-supplierList").innerHTML = sups.map(s=>`<option value="${esc(s)}">`).join("");
+}
+function setStatus(msg,cls){ const s=$("os-statusMsg"); s.textContent=msg; s.className="os-status "+(cls||""); }
+
+/* 外注先選択 → 製品リスト */
+$("os-supplier").addEventListener("change", e=>{
+  const sup = e.target.value;
+  const psel = $("os-product");
+  psel.innerHTML = '<option value="">— 製品を選択 —</option>';
+  clearProduct();
+  if(!sup){ psel.disabled=true; return; }
+  MASTER.filter(m=>m.supplier===sup).forEach(m=>{
+    const o=document.createElement("option");
+    o.value=m.id; o.textContent=`${m.kanri_no}　${m.product_name}`;
+    psel.appendChild(o);
+  });
+  psel.disabled=false;
+});
+
+/* 製品選択 → 各フィールド反映 */
+$("os-product").addEventListener("change", e=>{
+  const id = e.target.value;
+  CURRENT = MASTER.find(m=>String(m.id)===String(id)) || null;
+  if(!CURRENT){ clearProduct(); return; }
+  $("os-kanri").value = CURRENT.kanri_no || "";
+  $("os-otno").value  = CURRENT.ot_number || "";
+  $("os-pname").value = CURRENT.product_name || "";
+  $("os-biko").value  = CURRENT.work_type || "";
+  $("os-unit").value  = CURRENT.unit || "本";
+  recalc();
+  // オーダーNoを自動採番して表示（空欄のときのみ・編集可）
+  if(!$("os-orderNoInput").value.trim()){
+    nextOrderNo().then(no=>{ if(!$("os-orderNoInput").value.trim()) $("os-orderNoInput").value = no; }).catch(()=>{});
+  }
+});
+function clearProduct(){
+  CURRENT=null;
+  ["os-kanri","os-otno","os-pname","os-biko","os-price"].forEach(k=>$(k).value="");
+  $("os-unit").value="";
+  $("os-orderNoInput").value="";
+  $("os-priceTypeInfo").textContent="";
+  recalc();
+}
+$("os-unit").addEventListener("change", e=>addUnit(e.target.value));
+
+/* 発注数に応じて単品単価／ロット単価のどちらを適用するか判定
+   （発注数がロット数量以上ならロット単価、未満なら単品単価。端数は考慮しない） */
+function effectivePrice(qty){
+  if(!CURRENT) return { price:0, type:"" };
+  const hasLot = CURRENT.lot_qty!=null && CURRENT.lot_price!=null && Number(CURRENT.lot_qty)>0;
+  if(hasLot && qty>=Number(CURRENT.lot_qty)){
+    return { price:Number(CURRENT.lot_price), type:"ロット単価", threshold:Number(CURRENT.lot_qty) };
+  }
+  return { price: CURRENT.unit_price!=null?Number(CURRENT.unit_price):0, type:"単品単価", threshold:hasLot?Number(CURRENT.lot_qty):null };
+}
+
+$("os-qty").addEventListener("input", recalc);
+function recalc(){
+  const q = Number($("os-qty").value)||0;
+  const ep = effectivePrice(q);
+  const amt = q*ep.price;
+  $("os-price").value = CURRENT ? Number(ep.price).toLocaleString("ja-JP") : "";
+  if(CURRENT && ep.type){
+    $("os-priceTypeInfo").textContent = ep.threshold
+      ? `${ep.type}を適用中（1ロット=${ep.threshold}本）`
+      : `${ep.type}を適用中`;
+  }else{
+    $("os-priceTypeInfo").textContent = "";
+  }
+  $("os-amountDisp").textContent = yen(amt);
+  $("os-createBtn").disabled = !(CURRENT && q>0);
+}
+
+/* ===================================================================
+   マスタ管理（登録・編集・削除）
+   =================================================================== */
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+let EDIT_ID = null;   // null=新規、値あり=編集
+
+/* 一覧描画（絞込反映） */
+function renderMasterTable(){
+  const fs = $("os-mFilterSup").value;
+  const kw = $("os-mFilterKw").value.trim().toLowerCase();
+  const rows = MASTER.filter(m=>{
+    if(fs && m.supplier!==fs) return false;
+    if(kw){
+      const hay = [m.kanri_no,m.ot_number,m.product_name,m.work_type].map(v=>String(v||"").toLowerCase()).join(" ");
+      if(!hay.includes(kw)) return false;
+    }
+    return true;
+  });
+  $("os-mCount").textContent = `${rows.length} / ${MASTER.length} 件`;
+  if(!rows.length){
+    $("os-mBody").innerHTML = '<tr><td colspan="8" class="empty">該当するマスタがありません</td></tr>';
+    return;
+  }
+  $("os-mBody").innerHTML = rows.map(m=>`
+    <tr>
+      <td>${esc(m.supplier)}</td>
+      <td>${esc(m.kanri_no)}</td>
+      <td>${esc(m.ot_number)}</td>
+      <td>${esc(m.product_name)}</td>
+      <td>${esc(m.work_type)}</td>
+      <td>${esc(m.unit||"本")}</td>
+      <td class="num">
+        ${m.unit_price!=null?"単品 ¥"+Number(m.unit_price).toLocaleString("ja-JP"):""}
+        ${m.lot_price!=null?`<br>ロット ¥${Number(m.lot_price).toLocaleString("ja-JP")}${m.lot_qty?`（${m.lot_qty}本〜）`:""}`:""}
+      </td>
+      <td class="ops">
+        <button class="btn-ghost btn-sm" data-edit="${esc(m.id)}">編集</button>
+        <button class="btn-danger-sm" data-del="${esc(m.id)}">削除</button>
+      </td>
+    </tr>`).join("");
+}
+
+$("os-mFilterSup").addEventListener("change", renderMasterTable);
+$("os-mFilterKw").addEventListener("input", renderMasterTable);
+$("os-mReloadBtn").addEventListener("click", loadMaster);
+
+/* モーダル開閉 */
+function openModal(rec){
+  EDIT_ID = rec ? rec.id : null;
+  $("os-mModalTitle").textContent = rec ? "マスタ編集" : "マスタ新規登録";
+  $("os-fSupplier").value = rec ? (rec.supplier||"")     : ($("os-mFilterSup").value || "");
+  $("os-fKanri").value    = rec ? (rec.kanri_no||"")     : "";
+  $("os-fOtno").value     = rec ? (rec.ot_number||"")    : "";
+  $("os-fPname").value    = rec ? (rec.product_name||"") : "";
+  $("os-fBiko").value     = rec ? (rec.work_type||"")    : "";
+  $("os-fPrice").value    = rec && rec.unit_price!=null ? rec.unit_price : "";
+  $("os-fLotPrice").value = rec && rec.lot_price!=null ? rec.lot_price : "";
+  $("os-fLotQty").value   = rec && rec.lot_qty!=null ? rec.lot_qty : "";
+  $("os-fUnit").value     = rec ? (rec.unit||"本") : "本";
+  fillAddrFields($("os-fSupplier").value.trim());
+  setMMsg("","");
+  $("os-mSaveBtn").disabled = false;
+  $("os-mModal").classList.add("show");
+  $("os-fSupplier").focus();
+}
+function closeModal(){ $("os-mModal").classList.remove("show"); EDIT_ID=null; }
+function setMMsg(msg,cls){ const e=$("os-mMsg"); e.textContent=msg; e.className="msg "+(cls||""); }
+
+/* 外注先名 → 住所欄を自動反映 */
+function fillAddrFields(sup){
+  const a = SUP_ADDR[sup] || {zip:"",addr:""};
+  $("os-fZip").value  = a.zip  || "";
+  $("os-fAddr").value = a.addr || "";
+}
+$("os-fSupplier").addEventListener("change", e=>fillAddrFields(e.target.value.trim()));
+
+/* ヘッダーからの画面切替（発注書作成 ⇔ マスタ管理） */
+function showMasterView(){
+  $("os-orderView").style.display = "none";
+  $("os-masterView").style.display = "";
+  $("os-hdrMasterBtn").style.display = "none";
+  $("os-hdrOrderBtn").style.display = "";
+}
+function showOrderView(){
+  $("os-masterView").style.display = "none";
+  $("os-orderView").style.display = "";
+  $("os-hdrOrderBtn").style.display = "none";
+  $("os-hdrMasterBtn").style.display = "";
+  if($("os-previewPanel").style.display!=="none"){
+    requestAnimationFrame(()=>requestAnimationFrame(fitZoom));
+  }
+}
+$("os-hdrMasterBtn").addEventListener("click", showMasterView);
+$("os-hdrOrderBtn").addEventListener("click", showOrderView);
+
+$("os-mAddBtn").addEventListener("click", ()=>openModal(null));
+$("os-mCloseBtn").addEventListener("click", closeModal);
+$("os-mCancelBtn").addEventListener("click", closeModal);
+$("os-mModal").addEventListener("click", e=>{ if(e.target===$("os-mModal")) closeModal(); });
+document.addEventListener("keydown", e=>{ if(e.key==="Escape" && $("os-mModal").classList.contains("show")) closeModal(); });
+
+/* 一覧の編集／削除ボタン */
+$("os-mBody").addEventListener("click", async e=>{
+  const eb = e.target.closest("[data-edit]");
+  const db = e.target.closest("[data-del]");
+  if(eb){
+    const rec = MASTER.find(m=>String(m.id)===String(eb.dataset.edit));
+    if(rec) openModal(rec);
+    return;
+  }
+  if(db){
+    const rec = MASTER.find(m=>String(m.id)===String(db.dataset.del));
+    if(!rec) return;
+    if(!confirm(`次のマスタを削除します。よろしいですか？\n\n外注先：${rec.supplier}\n製番：${rec.kanri_no}\n品名：${rec.product_name}`)) return;
+    try{
+      const res = await fetch(`${SB_URL}/rest/v1/hatchu_master?id=eq.${encodeURIComponent(rec.id)}`,
+        { method:"DELETE", headers:{...HDR, Prefer:"return=minimal"} });
+      if(!res.ok) throw new Error(await res.text());
+      setStatus("マスタを削除しました","ok");
+      const wasCur = CURRENT && String(CURRENT.id)===String(rec.id);
+      await loadMaster();
+      if(wasCur){ $("os-product").selectedIndex=0; clearProduct(); }
+      refreshProductList();
+    }catch(err){
+      setStatus("削除失敗: "+err.message,"err");
+      alert("削除に失敗しました：\n"+err.message);
+    }
+  }
+});
+
+/* 保存（新規=POST / 編集=PATCH） */
+$("os-mSaveBtn").addEventListener("click", async ()=>{
+  const rec = {
+    supplier:     $("os-fSupplier").value.trim(),
+    kanri_no:     $("os-fKanri").value.trim(),
+    ot_number:    $("os-fOtno").value.trim(),
+    product_name: $("os-fPname").value.trim(),
+    work_type:    $("os-fBiko").value.trim(),
+    unit:         $("os-fUnit").value.trim(),
+    unit_price:   $("os-fPrice").value===""? null : Number($("os-fPrice").value),
+    lot_price:    $("os-fLotPrice").value===""? null : Number($("os-fLotPrice").value),
+    lot_qty:      $("os-fLotQty").value===""? null : Number($("os-fLotQty").value)
+  };
+  // 入力チェック
+  if(!rec.supplier){ setMMsg("外注先を入力してください","err"); $("os-fSupplier").focus(); return; }
+  if(!rec.kanri_no){ setMMsg("製番（管理No）を入力してください","err"); $("os-fKanri").focus(); return; }
+  if(!rec.product_name){ setMMsg("品名（製品名）を入力してください","err"); $("os-fPname").focus(); return; }
+  if(!rec.unit){ setMMsg("単位を入力してください","err"); $("os-fUnit").focus(); return; }
+  if(rec.unit_price===null || isNaN(rec.unit_price) || rec.unit_price<0){
+    setMMsg("単品単価を正しく入力してください","err"); $("os-fPrice").focus(); return;
+  }
+  if(rec.lot_price!==null && (isNaN(rec.lot_price) || rec.lot_price<0)){
+    setMMsg("ロット単価を正しく入力してください","err"); $("os-fLotPrice").focus(); return;
+  }
+  if(rec.lot_qty!==null && (isNaN(rec.lot_qty) || rec.lot_qty<1)){
+    setMMsg("1ロットの数量を正しく入力してください","err"); $("os-fLotQty").focus(); return;
+  }
+  if((rec.lot_price!==null && rec.lot_qty===null) || (rec.lot_price===null && rec.lot_qty!==null)){
+    setMMsg("ロット単価と1ロットの数量は両方セットで入力してください","err"); return;
+  }
+  // 重複チェック（外注先＋製番＋品名＋作業区分）
+  const dup = MASTER.find(m=>
+    String(m.id)!==String(EDIT_ID) &&
+    m.supplier===rec.supplier && m.kanri_no===rec.kanri_no &&
+    (m.product_name||"")===rec.product_name && (m.work_type||"")===rec.work_type);
+  if(dup){ setMMsg("同じ外注先・製番・品名・作業区分のマスタが既に存在します","err"); return; }
+
+  $("os-mSaveBtn").disabled = true;
+  setMMsg("保存中…","");
+  try{
+    let res;
+    if(EDIT_ID===null){
+      res = await fetch(`${SB_URL}/rest/v1/hatchu_master`,
+        { method:"POST", headers:{...HDR, Prefer:"return=minimal"}, body: JSON.stringify(rec) });
+    }else{
+      res = await fetch(`${SB_URL}/rest/v1/hatchu_master?id=eq.${encodeURIComponent(EDIT_ID)}`,
+        { method:"PATCH", headers:{...HDR, Prefer:"return=minimal"}, body: JSON.stringify(rec) });
+    }
+    if(!res.ok) throw new Error(await res.text());
+    addUnit(rec.unit);
+    // 外注先住所を保存（外注先単位）
+    SUP_ADDR[rec.supplier] = { zip: $("os-fZip").value.trim(), addr: $("os-fAddr").value.trim() };
+    saveSupAddr();
+    const wasNew = EDIT_ID===null;
+    const editedId = EDIT_ID;
+    closeModal();
+    await loadMaster();
+    refreshProductList();
+    // 編集中の製品を選択していた場合は表示を更新
+    if(!wasNew && CURRENT && String(CURRENT.id)===String(editedId)){
+      const fresh = MASTER.find(m=>String(m.id)===String(editedId));
+      if(fresh){ $("os-product").value = fresh.id; $("os-product").dispatchEvent(new Event("change")); }
+    }
+    setStatus(wasNew ? "マスタを登録しました" : "マスタを更新しました", "ok");
+  }catch(e){
+    setMMsg("保存失敗: "+e.message, "err");
+    $("os-mSaveBtn").disabled = false;
+  }
+});
+
+/* 発注入力側の製品リストを現在の外注先で再構築（選択は維持） */
+function refreshProductList(){
+  const sup = $("os-supplier").value;
+  const psel = $("os-product");
+  const keep = psel.value;
+  psel.innerHTML = '<option value="">— 製品を選択 —</option>';
+  if(!sup){ psel.disabled=true; return; }
+  MASTER.filter(m=>m.supplier===sup).forEach(m=>{
+    const o=document.createElement("option");
+    o.value=m.id; o.textContent=`${m.kanri_no}　${m.product_name}`;
+    psel.appendChild(o);
+  });
+  psel.disabled=false;
+  if(keep && MASTER.some(m=>String(m.id)===String(keep))) psel.value = keep;
+}
+
+/* ===== オーダーNo採番 ===== */
+async function nextOrderNo(){
+  const res = await fetch(`${SB_URL}/rest/v1/rpc/next_hatchu_order_no`, { method:"POST", headers:HDR, body:"{}" });
+  if(!res.ok) throw new Error("採番失敗 HTTP "+res.status);
+  return await res.json();
+}
+
+/* 最終使用オーダーNoを表示 */
+async function refreshLastOrderNo(){
+  try{
+    const res = await fetch(`${SB_URL}/rest/v1/hatchu_orders?select=order_no&order=order_no.desc&limit=1`, { headers: HDR });
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    const rows = await res.json();
+    const disp = $("os-lastOrderNoDisp");
+    disp.textContent = rows.length ? `最終使用オーダーNo: ${rows[0].order_no}` : "";
+  }catch(e){
+    $("os-lastOrderNoDisp").textContent = "";
+  }
+}
+
+/* ===== 作成ボタン ===== */
+$("os-createBtn").addEventListener("click", async ()=>{
+  if(!CURRENT) return;
+  const qty = Number($("os-qty").value)||0;
+  if(qty<=0){ setStatus("発注数を入力してください","err"); return; }
+  OWN.staff = $("os-staffInput").value.trim();
+  if(!OWN.staff){ setStatus("発注担当者を入力してください","err"); $("os-staffInput").focus(); return; }
+  addUnit($("os-unit").value);
+  $("os-createBtn").disabled=true; setStatus("作成中…","");
+  try{
+    let orderNo = $("os-orderNoInput").value.trim();
+    if(!orderNo){ orderNo = await nextOrderNo(); $("os-orderNoInput").value = orderNo; }
+    const price = effectivePrice(qty).price;
+    const amount = qty*price;
+    const delivery = $("os-delivery").value.trim();
+    const rec = {
+      order_no: orderNo, supplier: CURRENT.supplier, kanri_no: CURRENT.kanri_no,
+      ot_number: CURRENT.ot_number, product_name: CURRENT.product_name,
+      work_type: ($("os-biko").value.trim() || CURRENT.work_type || ""), unit: ($("os-unit").value.trim() || CURRENT.unit || "本"), delivery_date: delivery,
+      order_qty: qty, unit_price: price, amount: amount, order_date: todayISO()
+    };
+    const ins = await fetch(`${SB_URL}/rest/v1/hatchu_orders`, { method:"POST", headers:{...HDR, Prefer:"return=minimal"}, body: JSON.stringify(rec) });
+    if(!ins.ok){ const t=await ins.text(); throw new Error("保存失敗: "+t); }
+    renderDocuments(rec);
+    setStatus(`作成完了（オーダーNo ${orderNo}）`, "ok");
+    $("os-previewPanel").style.display="block";
+    $("os-orderView").classList.add("os-has-preview");
+    $("os-orderNoTag").textContent = "オーダーNo "+orderNo;
+    refreshLastOrderNo();
+    requestAnimationFrame(()=>requestAnimationFrame(fitZoom));
+  }catch(e){
+    setStatus(e.message,"err"); $("os-createBtn").disabled=false;
+  }
+});
+
+$("os-newBtn").addEventListener("click", ()=>{
+  $("os-previewPanel").style.display="none";
+  $("os-orderView").classList.remove("os-has-preview");
+  $("os-previewArea").innerHTML="";
+  $("os-qty").value=""; $("os-delivery").value="";
+  $("os-product").selectedIndex=0; clearProduct();
+  window.scrollTo({top:0,behavior:"smooth"});
+});
+
+/* A4固定：@page と .sheet 高さを設定 */
+function applyPaper(){
+  document.body.classList.add("os-paper-a4");
+  $("os-pageStyle").textContent =
+    `@page{size:210mm 297mm;margin:6mm;} @media print{.sheet{height:285mm !important;}}`;
+}
+applyPaper();
+
+/* ===== プレビューの拡大縮小 ===== */
+let PREVIEW_ZOOM = 1;
+function applyZoom(){
+  $("os-previewArea").style.zoom = PREVIEW_ZOOM;
+  $("os-zoomDisp").textContent = Math.round(PREVIEW_ZOOM*100)+"%";
+}
+function fitZoom(){
+  const sheet = $("os-previewArea").querySelector(".sheet");
+  if(!sheet) return;
+  $("os-previewArea").style.zoom = 1;
+  const naturalH = sheet.scrollHeight;
+  const naturalW = sheet.scrollWidth;
+  const toolbar = document.querySelector("#os-previewPanel .orders-list-header");
+  const availH = (window.innerHeight - 32) - (toolbar?toolbar.offsetHeight:0) - 60;
+  const availW = $("os-previewPanel").clientWidth - 44; // パネルの左右パディング分を差し引く
+  let z = 1;
+  if(naturalH>0) z = Math.min(z, availH/naturalH);
+  if(naturalW>0) z = Math.min(z, availW/naturalW);
+  z = Math.max(0.25, Math.min(1, z));
+  PREVIEW_ZOOM = Math.floor(z*100)/100;
+  applyZoom();
+}
+$("os-zoomInBtn").addEventListener("click", ()=>{
+  PREVIEW_ZOOM = Math.min(2, Math.round((PREVIEW_ZOOM+0.05)*100)/100);
+  applyZoom();
+});
+$("os-zoomOutBtn").addEventListener("click", ()=>{
+  PREVIEW_ZOOM = Math.max(0.2, Math.round((PREVIEW_ZOOM-0.05)*100)/100);
+  applyZoom();
+});
+$("os-zoomFitBtn").addEventListener("click", fitZoom);
+window.addEventListener("resize", ()=>{ if($("os-previewPanel").style.display!=="none") fitZoom(); });
+
+/* ===== 備考を1文字ずつ〇で囲む ===== */
+function bikoCircled(text){
+  if(!text) return "";
+  // 「機械加工」と完全一致のときは〇囲み・文字間隔なしのプレーン表示
+  if(text.trim()==="機械加工") return esc(text.trim());
+  // 全角/半角スペースを除去して1文字ずつ
+  const chars = text.replace(/[\s　]+/g,"").split("");
+  return '<span class="biko-circ">'+chars.map(c=>`<span>${c}</span>`).join("")+'</span>';
+}
+
+/* ===== 帳票描画 ===== */
+function renderDocuments(r){
+  const dJP = todayJP();
+  const amount = r.amount;
+  const priceStr = "¥"+Number(r.unit_price).toLocaleString("ja-JP");
+  const amtStr = "¥"+Number(amount).toLocaleString("ja-JP");
+  const taxStr = "¥"+Math.floor(amount*0.1).toLocaleString("ja-JP");
+  const sup = SUP_ADDR[r.supplier] || {zip:"",addr:""};
+  const biko = bikoCircled(r.work_type);
+  const del = r.delivery_date||"";
+  const qty = r.order_qty;
+  const unit = r.unit || "本";
+
+  // 16列モデル（各ラベル・値が潰れない幅・合計100%）
+  const COLS = `
+    <colgroup>
+      <col style="width:6%"><col style="width:6%"><col style="width:8%"><col style="width:8%">
+      <col style="width:4%"><col style="width:4%"><col style="width:7%"><col style="width:7%">
+      <col style="width:5.5%"><col style="width:5.5%"><col style="width:6%"><col style="width:6%">
+      <col style="width:5%"><col style="width:5%"><col style="width:5.5%"><col style="width:5.5%">
+    </colgroup>`;
+
+  // 明細グリッド共通部
+  //  行1: 製番 | 製番値 | 図番 | 図番値
+  //  行2: 品名 | 品名値(1行・全幅)
+  //  行3: 材質 | 材質値 | 納期 | 納期値
+  //  行4: 備考 | 備考値(1行・全幅・BDW広間隔)
+  const detailTop = `
+    <tr class="gh">
+      <td colspan="2" class="lbl">製番</td>
+      <td colspan="6" class="val">${r.kanri_no}</td>
+      <td colspan="2" class="lbl">図番</td>
+      <td colspan="6" class="val">${r.ot_number||""}</td>
+    </tr>
+    <tr class="gh">
+      <td colspan="2" class="lbl">品名</td>
+      <td colspan="14" class="val left pname">${r.product_name}</td>
+    </tr>
+    <tr class="gh">
+      <td colspan="2" class="lbl">材質</td>
+      <td colspan="6" class="val"></td>
+      <td colspan="2" class="lbl">納期</td>
+      <td colspan="6" class="val">${del}</td>
+    </tr>
+    <tr class="gh">
+      <td colspan="2" class="lbl">備考</td>
+      <td colspan="14" class="val left biko">${biko}</td>
+    </tr>`;
+
+  // 発注数・単位・発注単価・発注金額・消費税の行
+  const orderRow = `
+    <tr class="gh">
+      <td colspan="4" class="lbl">発注数</td>
+      <td colspan="2" class="lbl">単位</td>
+      <td colspan="4" class="lbl">発注単価</td>
+      <td colspan="4" class="lbl">発注金額</td>
+      <td colspan="2" class="lbl">消費税</td>
+    </tr>
+    <tr class="gv">
+      <td colspan="4" class="val">${qty}</td>
+      <td colspan="2" class="val">${unit}</td>
+      <td colspan="4" class="val">${priceStr}</td>
+      <td colspan="4" class="val">${amtStr}</td>
+      <td colspan="2" class="val">${taxStr}</td>
+    </tr>`;
+
+  // 発注書：発注情報
+  const gridFull = `
+    <table class="ttbl">${COLS}
+      ${detailTop}
+      ${orderRow}
+    </table>`;
+
+  // 現品票：発注数＋出荷予定日
+  const gridGenpin = `
+    <table class="ttbl">${COLS}
+      ${detailTop}
+      <tr class="gh">
+        <td colspan="4" class="lbl">発注数</td>
+        <td colspan="2" class="lbl">単位</td>
+        <td colspan="10" class="lbl">出荷予定日</td>
+      </tr>
+      <tr class="gv">
+        <td colspan="4" class="val">${qty}</td>
+        <td colspan="2" class="val">${unit}</td>
+        <td colspan="10" class="val"></td>
+      </tr>
+    </table>`;
+
+  // 納品書：発注数＋単価＋受領印
+  const gridNouhin = `
+    <table class="ttbl">${COLS}
+      ${detailTop}
+      <tr class="gh">
+        <td colspan="4" class="lbl">発注数</td>
+        <td colspan="2" class="lbl">単位</td>
+        <td colspan="6" class="lbl">単価</td>
+        <td colspan="4" class="lbl">受領印</td>
+      </tr>
+      <tr class="gv">
+        <td colspan="4" class="val">${qty}</td>
+        <td colspan="2" class="val">${unit}</td>
+        <td colspan="6" class="val">${priceStr}</td>
+        <td colspan="4" class="val sig"></td>
+      </tr>
+    </table>`;
+
+  // 受領書：発注数＋出荷予定日＋受領印
+  const gridJuryo = `
+    <table class="ttbl">${COLS}
+      ${detailTop}
+      <tr class="gh">
+        <td colspan="4" class="lbl">発注数</td>
+        <td colspan="2" class="lbl">単位</td>
+        <td colspan="6" class="lbl">出荷予定日</td>
+        <td colspan="4" class="lbl">受領印</td>
+      </tr>
+      <tr class="gv">
+        <td colspan="4" class="val">${qty}</td>
+        <td colspan="2" class="val">${unit}</td>
+        <td colspan="6" class="val"></td>
+        <td colspan="4" class="val sig"></td>
+      </tr>
+    </table>`;
+
+  // 請求書：発注情報＋確認印/検印
+  const gridSeikyu = `
+    <table class="ttbl">${COLS}
+      ${detailTop}
+      ${orderRow}
+      <tr class="gh">
+        <td colspan="8" class="lbl">確認印</td>
+        <td colspan="8" class="lbl">検 印</td>
+      </tr>
+      <tr class="gv">
+        <td colspan="8" class="val sig"></td>
+        <td colspan="8" class="val sig"></td>
+      </tr>
+    </table>`;
+
+  // ヘッダA：発注書用（タイトル中央、右上に発注日/オーダーNo枠、下に住所）
+  const headHatchu = `
+    <div class="thead">
+      <div class="th-titlebar">
+        <div class="th-title">発注書</div>
+        <div class="th-onbox">
+          <div>発注日：${dJP}</div>
+          <div><span class="onbox">オーダーNo <b>${r.order_no}</b></span></div>
+        </div>
+      </div>
+      <div class="th-addr">
+        <div class="th-left">
+          <div>〒${sup.zip}　${sup.addr||""}</div>
+          <div class="onchu"><span class="big">${r.supplier}</span>　御中</div>
+        </div>
+        <div class="th-right">
+          <div>〒${OWN.zip}　${OWN.addr}</div>
+          <div class="th-name-row"><img class="ownlogo ownlogo-side" src="${LOGO}" alt="OSAKA TEC"><span class="big">${OWN.name}</span></div>
+          <div>${OWN.staff}</div>
+        </div>
+      </div>
+    </div>`;
+
+  // ヘッダB：現品票/納品書/受領書/請求書用
+  //  variant: 'genpin' → 右にオーダーNo＋左隣ロゴ（現品票）
+  //           'other'  → 発注日の左にロゴ、発注日・担当者を一行下げる（納品書/受領書/請求書）
+  const headOther = (title, showStaff=true, variant='other') => `
+    <div class="thead">
+      <div class="th-titlebar three">
+        <div class="th-onleft">
+          <div class="onbox">オーダーNo <b>${r.order_no}</b></div>
+          <div class="onchu"><span class="big">${r.supplier}</span>　御中</div>
+        </div>
+        <div class="th-title">${title}</div>
+        <div class="th-onbox">
+          ${variant==='genpin'
+            ? `<div class="th-onno-row"><img class="ownlogo ownlogo-side" src="${LOGO}" alt="OSAKA TEC"><span>オーダーNo ${r.order_no}</span></div>
+               <div>発注日：${dJP}</div>
+               ${showStaff?`<div>発注担当者：${OWN.name}　${OWN.staff}</div>`:`<div class="big">${OWN.name}</div>`}`
+            : `<div class="th-spacer">&nbsp;</div>
+               <div class="th-onno-row"><img class="ownlogo ownlogo-side" src="${LOGO}" alt="OSAKA TEC"><span>発注日：${dJP}</span></div>
+               ${showStaff?`<div>発注担当者：${OWN.name}　${OWN.staff}</div>`:`<div class="big">${OWN.name}</div>`}`
+          }
+        </div>
+      </div>
+    </div>`;
+
+  const 発注書 = `<div class="form-block">${headHatchu}${gridFull}</div>`;
+  const 現品票 = `<div class="form-block">${headOther("現品票",true,'genpin')}${gridGenpin}</div>`;
+  const 納品書 = `<div class="form-block">${headOther("納品書",true,'other')}${gridNouhin}</div>`;
+  const 受領書 = `<div class="form-block">${headOther("受領書",true,'other')}${gridJuryo}</div>`;
+  const 請求書 = `<div class="form-block">${headOther("請求書",false,'other')}${gridSeikyu}</div>`;
+
+  // 切り取り線
+  const cut = '<div class="cut-line"><span class="scissors">✂</span></div>';
+
+  $("os-previewArea").innerHTML =
+    `<div class="sheet">${発注書}${cut}${現品票}${cut}${納品書}${cut}${受領書}${cut}${請求書}</div>`;
+}
+
+/* 初期化（軽量な部分のみ即時実行。マスタ読込は初回表示時に行う） */
+rebuildUnitList();
+
+let _osLoaded = false;
+function osInitPage(){
+  // ログイン中ユーザー名を発注担当者の初期値に（未入力の場合のみ）
+  try{
+    const nm = (window.currentUser && (window.currentUser.loginname || window.currentUser.userid)) || "";
+    if(nm && !$("os-staffInput").value.trim()){
+      $("os-staffInput").value = nm;
+      OWN.staff = nm;
+    }
+  }catch(e){}
+  loadMaster();
+  refreshLastOrderNo();
+  _osLoaded = true;
+}
+window.osInitPage = osInitPage;
+
+})();
+</script>
 </body>
 </html>
