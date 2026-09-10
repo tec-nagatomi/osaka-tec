@@ -328,7 +328,7 @@
   .pu-card-img .pu-noimg { color:#cbd5e1; }
   .pu-card-img.admin { cursor:pointer; }
 
-  /* ---- 素材/処理バッジ（三価・SUS・NDS-R・NDS-GN） ---- */
+  /* ---- 素材/処理バッジ（三価・SUS・NDS-R・NDS-GN・NBR） ---- */
   .pu-mat-badges { display:flex; flex-wrap:wrap; gap:4px; margin:4px 0 2px; min-height:22px; }
   .pu-mat-badge { position:relative; overflow:hidden; min-width:42px; height:18px; box-sizing:border-box;
     display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; padding:0 7px;
@@ -351,6 +351,7 @@
   }
   .pu-mat-badge.mb-ndsr { background:linear-gradient(155deg,#fca5a5,#dc2626 55%,#7f1d1d); color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.25); }
   .pu-mat-badge.mb-ndsgn { background:linear-gradient(155deg,#86efac,#16a34a 55%,#14532d); color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.25); }
+  .pu-mat-badge.mb-nbr { background:linear-gradient(155deg,#d8b4fe,#9333ea 55%,#581c87); color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.25); }
   .pu-img-edit { position:absolute; right:6px; bottom:6px; font-size:10px; font-weight:700; color:#fff;
     background:rgba(100,116,139,.85); border-radius:6px; padding:2px 7px; pointer-events:none; }
   .pu-fav-star { position:absolute; left:6px; top:6px; font-size:20px; line-height:1; color:#fbbf24;
@@ -7900,6 +7901,7 @@ function puMaterialBadges(name) {
   }
   if (/NDS-R\b/i.test(s)) badges.push({ cls: 'mb-ndsr', label: 'NDS-R' });
   if (/NDS-GN/i.test(s)) badges.push({ cls: 'mb-ndsgn', label: 'NDS-GN' });
+  if (/NBR/i.test(s)) badges.push({ cls: 'mb-nbr', label: 'NBR' });
   return badges;
 }
 function puMaterialBadgesHtml(name) {
