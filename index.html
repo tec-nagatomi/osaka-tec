@@ -648,7 +648,7 @@
   .func-btn.inventory::before { background: #7c3aed; }
   .func-btn.purchase::before { background: #d97706; }
   .func-btn.productdate::before { background: #0891b2; }
-  .func-btn.outsourcing::before { background: #be123c; }
+  .func-btn.outsourcing::before { background: #d97706; }
   .func-btn:hover { border-color: #9ca3af; background: #fff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 
   /* 進捗管理：現場カード */
@@ -697,7 +697,7 @@
   .func-btn.inventory svg { color: #7c3aed; }
   .func-btn.purchase svg { color: #d97706; }
   .func-btn.productdate svg { color: #0891b2; }
-  .func-btn.outsourcing svg { color: #be123c; }
+  .func-btn.outsourcing svg { color: #d97706; }
   /* productdate page */
   .pd-toolbar { display:flex; align-items:center; gap:8px; padding:12px 16px; border-bottom:1px solid #e5e7eb; flex-wrap:wrap; }
   .pd-search { flex:1; min-width:180px; padding:6px 10px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; }
@@ -2575,8 +2575,39 @@
           <input id="os-staffInput" list="os-staffList" placeholder="担当者名" autocomplete="off">
           <datalist id="os-staffList"></datalist>
         </div>
-        <button class="btn-ghost" id="os-hdrMasterBtn">🗂 マスタ管理</button>
-        <button class="btn-primary" id="os-hdrOrderBtn" style="display:none;">📝 発注書作成</button>
+        <div class="pu-tabs">
+          <button class="pu-tab active" id="os-tab-order">📝 発注書作成</button>
+          <button class="pu-tab" id="os-tab-master">🗂 マスタ管理</button>
+          <button class="pu-tab" id="os-tab-history">🕘 発注履歴</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="orders-list-card" id="os-historyView" style="display:none;">
+      <div class="orders-list-header">
+        <div class="orders-list-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          発注履歴
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-sm" id="os-hReloadBtn">🔄 再読込</button>
+        </div>
+      </div>
+      <div class="os-master-toolbar">
+        <select id="os-hFilterSup"><option value="">— 全外注先 —</option></select>
+        <input id="os-hFilterKw" type="text" placeholder="オーダーNo・管理No・図番・品名で絞込" style="flex:1;min-width:200px;">
+        <span class="orders-count" id="os-hCount"></span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="orders-table os-mtbl">
+          <thead>
+            <tr>
+              <th>発注日</th><th>オーダーNo</th><th>外注先</th><th>製番(管理No)</th><th>図番(OT番号)</th>
+              <th>品名(製品名)</th><th>備考</th><th>数量</th><th>単価</th><th>金額</th><th>納期</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="os-hBody"><tr><td colspan="12" style="text-align:center;color:#9ca3af;">読込中…</td></tr></tbody>
+        </table>
       </div>
     </div>
 
@@ -7780,16 +7811,20 @@ function puOnFilter() {
 function puShowMore() { _puShown += 60; puRenderGrid(); }
 
 // 物品カタログの画像クリックで拡大表示するポップアップ（ライトボックス）
-function puOpenImageLightbox(url, name) {
+function puOpenImageLightbox(url, name, id) {
   puCloseImageLightbox();
   const ov = document.createElement('div');
   ov.id = 'pu-img-lightbox';
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.85);z-index:4000;'
     + 'display:flex;align-items:center;justify-content:center;padding:32px;cursor:zoom-out;';
+  const canDelete = id != null && puCanManageCatalog();
   ov.innerHTML = '<div style="max-width:90vw;max-height:90vh;display:flex;flex-direction:column;align-items:center;gap:12px;" onclick="event.stopPropagation();">'
     + '<img src="' + puEsc(url) + '" alt="" style="max-width:90vw;max-height:80vh;object-fit:contain;border-radius:10px;background:#fff;box-shadow:0 12px 40px rgba(0,0,0,.45);">'
     + (name ? '<div style="color:#fff;font-size:14px;font-weight:700;text-align:center;">' + puEsc(name) + '</div>' : '')
+    + '<div style="display:flex;gap:8px;">'
     + '<button onclick="puCloseImageLightbox()" style="border:none;background:rgba(255,255,255,.15);color:#fff;font-size:13px;font-weight:700;padding:6px 16px;border-radius:20px;cursor:pointer;">閉じる</button>'
+    + (canDelete ? '<button onclick="puDeleteImage(' + id + ')" style="border:none;background:#dc2626;color:#fff;font-size:13px;font-weight:700;padding:6px 16px;border-radius:20px;cursor:pointer;">🗑 画像を削除</button>' : '')
+    + '</div>'
     + '</div>';
   ov.addEventListener('click', puCloseImageLightbox);
   document.addEventListener('keydown', puImageLightboxEscHandler);
@@ -7801,6 +7836,42 @@ function puCloseImageLightbox() {
   document.removeEventListener('keydown', puImageLightboxEscHandler);
 }
 function puImageLightboxEscHandler(e) { if (e.key === 'Escape') puCloseImageLightbox(); }
+
+// 物品カタログの画像削除（ライトボックスの削除ボタンから）
+async function puDeleteImage(id) {
+  if (!puCanManageCatalog()) return;
+  const it = _puItems.find(i => i.id === id);
+  const url = it ? it.image_url : null;
+  if (!url) { puCloseImageLightbox(); return; }
+  if (!confirm('この画像を削除します。よろしいですか？')) return;
+  try {
+    // 保存パスは item_{id}.{拡張子} 形式。URLから拡張子を取り出して削除する
+    const m = String(url).match(/item_\d+\.(png|jpg|jpeg|webp)/i);
+    if (m) {
+      const path = m[0];
+      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${PU_IMG_BUCKET}/${path}`, {
+        method: 'DELETE',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+      });
+      if (!res.ok) {
+        const bodyText = await res.text();
+        // Supabase Storageは「既に存在しない」場合もHTTP 400でstatusCode:"404"/error:"not_found"を返すことがある。
+        // ファイルが既に無いだけなら実害はないので、DB側のクリア処理は続行する
+        let isNotFound = res.status === 404;
+        try { const j = JSON.parse(bodyText); if (j.statusCode === '404' || j.error === 'not_found') isNotFound = true; } catch (e) {}
+        if (!isNotFound) throw new Error('削除失敗 (' + res.status + '): ' + bodyText);
+      }
+    }
+    const res2 = await fetch(`${SUPABASE_URL}/rest/v1/purchase_items?id=eq.${id}`,
+      { method: 'PATCH', headers: { ...PU_H(), 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ image_url: null, updated_at: new Date().toISOString() }) });
+    if (!res2.ok) throw new Error(await res2.text());
+    if (it) it.image_url = null;
+    puCloseImageLightbox();
+    puRenderGrid();
+    puToast('🗑 画像を削除しました', '#059669');
+  } catch (err) { alert('画像の削除に失敗しました: ' + err.message); }
+}
 
 function puRenderGrid() {
   const grid = document.getElementById('pu-grid');
@@ -7930,7 +8001,7 @@ function puCardHtml(i, admin) {
     : '<svg class="pu-noimg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" style="width:44px;height:44px;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
   // 画像があればクリックで拡大ポップアップ、無ければ（管理者のみ）クリックで画像登録
   const imgClickAttr = i.image_url
-    ? ' onclick="puOpenImageLightbox(\'' + String(i.image_url).replace(/'/g, "\\'") + '\',\'' + String(i.product_name).replace(/'/g, "\\'") + '\')" style="cursor:zoom-in;"'
+    ? ' onclick="puOpenImageLightbox(\'' + String(i.image_url).replace(/'/g, "\\'") + '\',\'' + String(i.product_name).replace(/'/g, "\\'") + '\',' + i.id + ')" style="cursor:zoom-in;"'
     : (admin ? ' onclick="puPickImage(' + i.id + ')" style="cursor:pointer;"' : '');
   // 表示位置の並び替え（ドラッグ&ドロップ）：許可ユーザーであれば絞り込み中でも有効
   const reorderAttrs = _puReorderMode
@@ -8349,7 +8420,7 @@ function puRenderHistory() {
     const tm = puToJstParts(req.created_at).time; // HH:MM（日本時間）
     const catalogItem = it.item_id != null ? _puItemsById.get(it.item_id) : null;
     const thumbHtml = catalogItem && catalogItem.image_url
-      ? '<img src="' + catalogItem.image_url + '" alt="" style="width:100%;height:100%;object-fit:contain;cursor:zoom-in;" onclick="puOpenImageLightbox(\'' + String(catalogItem.image_url).replace(/'/g, "\\'") + '\',\'' + String(catalogItem.product_name || it.product_name).replace(/'/g, "\\'") + '\')">'
+      ? '<img src="' + catalogItem.image_url + '" alt="" style="width:100%;height:100%;object-fit:contain;cursor:zoom-in;" onclick="puOpenImageLightbox(\'' + String(catalogItem.image_url).replace(/'/g, "\\'") + '\',\'' + String(catalogItem.product_name || it.product_name).replace(/'/g, "\\'") + '\',' + catalogItem.id + ')">'
       : '<span style="font-size:8px;color:#cbd5e1;">No Image</span>';
     const canCancel = canCancelAll || req.requested_by === me;
     const cancelBtn = canCancel
@@ -8808,7 +8879,7 @@ function puReqItemRow(it, admin, requester) {
   const destination = it.destination || puDefaultDestination(requester);
   const catalogItem = it.item_id != null ? _puItemsById.get(it.item_id) : null;
   const thumbHtml = '<div class="pu-ri-thumb"' + (catalogItem && catalogItem.image_url
-    ? ' onclick="puOpenImageLightbox(\'' + String(catalogItem.image_url).replace(/'/g, "\\'") + '\',\'' + String(catalogItem.product_name || it.product_name).replace(/'/g, "\\'") + '\')" style="cursor:zoom-in;"'
+    ? ' onclick="puOpenImageLightbox(\'' + String(catalogItem.image_url).replace(/'/g, "\\'") + '\',\'' + String(catalogItem.product_name || it.product_name).replace(/'/g, "\\'") + '\',' + catalogItem.id + ')" style="cursor:zoom-in;"'
     : '') + '>' + (catalogItem && catalogItem.image_url
     ? '<img src="' + catalogItem.image_url + '" alt="">'
     : '<span class="pu-noimg">No Image</span>') + '</div>';
@@ -9327,8 +9398,8 @@ async function puCsvSelected(e) {
 }
 
 function showPage(name, navEl) {
-  // 許可されたユーザー以外はTOP・発注管理以外のページに入れない
-  if (!canAccessFullSystem() && name !== 'purchase' && name !== 'top') {
+  // 許可されたユーザー以外はTOP・発注管理・外注管理以外のページに入れない
+  if (!canAccessFullSystem() && name !== 'purchase' && name !== 'top' && name !== 'outsourcing') {
     name = 'purchase';
     navEl = document.querySelector('[data-page=purchase]');
   }
@@ -9356,13 +9427,13 @@ function canAccessFullSystem() {
 function applyAccessRestriction() {
   const full = canAccessFullSystem();
   document.querySelectorAll('.nav-item').forEach(el => {
-    if (el.dataset.page !== 'purchase' && el.dataset.page !== 'top') el.style.display = full ? '' : 'none';
+    if (el.dataset.page !== 'purchase' && el.dataset.page !== 'top' && el.dataset.page !== 'outsourcing') el.style.display = full ? '' : 'none';
   });
   const funcGrid = document.querySelector('.func-grid');
   if (funcGrid) {
     funcGrid.querySelectorAll('[onclick*="showPage("]').forEach(el => {
-      const isPurchaseBtn = el.getAttribute('onclick').includes("showPage('purchase'");
-      el.style.display = (full || isPurchaseBtn) ? '' : 'none';
+      const isAlwaysVisibleBtn = el.getAttribute('onclick').includes("showPage('purchase'") || el.getAttribute('onclick').includes("showPage('outsourcing'");
+      el.style.display = (full || isAlwaysVisibleBtn) ? '' : 'none';
     });
   }
   if (!full) showPage('top', document.querySelector('[data-page=top]'));
@@ -17595,24 +17666,135 @@ function fillAddrFields(sup){
 }
 $("os-fSupplier").addEventListener("change", e=>fillAddrFields(e.target.value.trim()));
 
-/* ヘッダーからの画面切替（発注書作成 ⇔ マスタ管理） */
-function showMasterView(){
-  $("os-orderView").style.display = "none";
-  $("os-masterView").style.display = "";
-  $("os-hdrMasterBtn").style.display = "none";
-  $("os-hdrOrderBtn").style.display = "";
+/* ヘッダーの3タブ切替（発注書作成 / マスタ管理 / 発注履歴） */
+function osSetTab(which){
+  $("os-tab-order").classList.toggle("active", which==="order");
+  $("os-tab-master").classList.toggle("active", which==="master");
+  $("os-tab-history").classList.toggle("active", which==="history");
+  $("os-orderView").style.display  = which==="order"   ? "" : "none";
+  $("os-masterView").style.display = which==="master"  ? "" : "none";
+  $("os-historyView").style.display= which==="history" ? "" : "none";
 }
 function showOrderView(){
-  $("os-masterView").style.display = "none";
-  $("os-orderView").style.display = "";
-  $("os-hdrOrderBtn").style.display = "none";
-  $("os-hdrMasterBtn").style.display = "";
+  osSetTab("order");
   if($("os-previewPanel").style.display!=="none"){
     requestAnimationFrame(()=>requestAnimationFrame(fitZoom));
   }
 }
-$("os-hdrMasterBtn").addEventListener("click", showMasterView);
-$("os-hdrOrderBtn").addEventListener("click", showOrderView);
+function showMasterView(){ osSetTab("master"); }
+function showHistoryView(){
+  osSetTab("history");
+  if(!ORDERS_HISTORY.length) loadOrdersHistory();
+}
+$("os-tab-order").addEventListener("click", showOrderView);
+$("os-tab-master").addEventListener("click", showMasterView);
+$("os-tab-history").addEventListener("click", showHistoryView);
+
+/* ===== 発注履歴 ===== */
+let ORDERS_HISTORY = [];
+async function loadOrdersHistory(){
+  $("os-hBody").innerHTML = '<tr><td colspan="12" style="text-align:center;color:#9ca3af;">読込中…</td></tr>';
+  try{
+    const res = await fetch(`${SB_URL}/rest/v1/hatchu_orders?select=*&order=created_at.desc&limit=500`, { headers: HDR });
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    ORDERS_HISTORY = await res.json();
+    const sups = [...new Set(ORDERS_HISTORY.map(r=>r.supplier))].sort();
+    const keep = $("os-hFilterSup").value;
+    $("os-hFilterSup").innerHTML = '<option value="">— 全外注先 —</option>' + sups.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join("");
+    if(sups.includes(keep)) $("os-hFilterSup").value = keep;
+    renderHistoryTable();
+  }catch(e){
+    $("os-hBody").innerHTML = '<tr><td colspan="12" class="empty">読込エラー: '+esc(e.message)+'</td></tr>';
+  }
+}
+// 発注履歴の削除は永冨のみ許可
+function osCanDeleteHistory(){
+  const name = (window.currentUser?.loginname || '') + '|' + (window.currentUser?.userid || '');
+  return name.includes('永冨') || name.toLowerCase().includes('nagatomi');
+}
+// 発注履歴の備考表示：L/T/B/D/W/K（レーザー/タレパン/ブレーキ/段取り/溶接/組立）の組み合わせのみ紫色で表示
+const OS_WORK_TYPE_MAP = { L:"レーザー", T:"タレパン", B:"ブレーキ", D:"段取り", W:"溶接", K:"組立" };
+function osWorkTypeHtml(text){
+  const s = String(text||"").trim();
+  if(!s) return "";
+  const chars = s.replace(/[\s　]+/g,"").split("");
+  const allKnown = chars.length>0 && chars.every(c=>OS_WORK_TYPE_MAP[c]);
+  if(allKnown){
+    const title = chars.map(c=>OS_WORK_TYPE_MAP[c]).join("・");
+    return `<span style="color:#7e22ce;font-weight:700;" title="${esc(title)}">${esc(s)}</span>`;
+  }
+  return esc(s);
+}
+function renderHistoryTable(){
+  const fs = $("os-hFilterSup").value;
+  const kw = $("os-hFilterKw").value.trim().toLowerCase();
+  const canDel = osCanDeleteHistory();
+  const rows = ORDERS_HISTORY.filter(r=>{
+    if(fs && r.supplier!==fs) return false;
+    if(kw){
+      const hay = [r.order_no,r.kanri_no,r.ot_number,r.product_name].map(v=>String(v||"").toLowerCase()).join(" ");
+      if(!hay.includes(kw)) return false;
+    }
+    return true;
+  });
+  $("os-hCount").textContent = `${rows.length} / ${ORDERS_HISTORY.length} 件`;
+  if(!rows.length){
+    $("os-hBody").innerHTML = '<tr><td colspan="12" class="empty">該当する発注履歴がありません</td></tr>';
+    return;
+  }
+  $("os-hBody").innerHTML = rows.map(r=>`
+    <tr>
+      <td>${esc(r.order_date)}</td>
+      <td>${esc(r.order_no)}</td>
+      <td>${esc(r.supplier)}</td>
+      <td>${esc(r.kanri_no)}</td>
+      <td>${esc(r.ot_number)}</td>
+      <td>${esc(r.product_name)}</td>
+      <td>${osWorkTypeHtml(r.work_type)}</td>
+      <td class="num">${esc(r.order_qty)}${esc(r.unit||"")}</td>
+      <td class="num">¥${Number(r.unit_price||0).toLocaleString("ja-JP")}</td>
+      <td class="num">¥${Number(r.amount||0).toLocaleString("ja-JP")}</td>
+      <td>${esc(r.delivery_date)}</td>
+      <td class="ops">
+        <button class="btn-ghost btn-sm" data-reprint="${esc(r.order_no)}">再表示</button>
+        ${canDel ? `<button class="btn-danger-sm" data-hdel="${esc(r.order_no)}">削除</button>` : ""}
+      </td>
+    </tr>`).join("");
+}
+$("os-hFilterSup").addEventListener("change", renderHistoryTable);
+$("os-hFilterKw").addEventListener("input", renderHistoryTable);
+$("os-hReloadBtn").addEventListener("click", loadOrdersHistory);
+$("os-hBody").addEventListener("click", async e=>{
+  const delBtn = e.target.closest("[data-hdel]");
+  if(delBtn){
+    if(!osCanDeleteHistory()) return;
+    const rec = ORDERS_HISTORY.find(r=>String(r.order_no)===String(delBtn.dataset.hdel));
+    if(!rec) return;
+    if(!confirm(`次の発注履歴を削除します。よろしいですか？\n\nオーダーNo：${rec.order_no}\n外注先：${rec.supplier}\n品名：${rec.product_name}`)) return;
+    delBtn.disabled = true;
+    try{
+      const res = await fetch(`${SB_URL}/rest/v1/hatchu_orders?order_no=eq.${encodeURIComponent(rec.order_no)}`,
+        { method:"DELETE", headers:{...HDR, Prefer:"return=minimal"} });
+      if(!res.ok) throw new Error(await res.text());
+      ORDERS_HISTORY = ORDERS_HISTORY.filter(r=>String(r.order_no)!==String(rec.order_no));
+      renderHistoryTable();
+    }catch(err){
+      alert("削除に失敗しました：\n"+err.message);
+      delBtn.disabled = false;
+    }
+    return;
+  }
+  const btn = e.target.closest("[data-reprint]");
+  if(!btn) return;
+  const rec = ORDERS_HISTORY.find(r=>String(r.order_no)===String(btn.dataset.reprint));
+  if(!rec) return;
+  showOrderView();
+  renderDocuments(rec);
+  $("os-previewPanel").style.display="block";
+  $("os-orderView").classList.add("os-has-preview");
+  $("os-orderNoTag").textContent = "オーダーNo "+rec.order_no;
+  requestAnimationFrame(()=>requestAnimationFrame(fitZoom));
+});
 
 $("os-mAddBtn").addEventListener("click", ()=>openModal(null));
 $("os-mCloseBtn").addEventListener("click", closeModal);
@@ -17840,11 +18022,13 @@ $("os-zoomOutBtn").addEventListener("click", ()=>{
 $("os-zoomFitBtn").addEventListener("click", fitZoom);
 window.addEventListener("resize", ()=>{ if($("os-previewPanel").style.display!=="none") fitZoom(); });
 
-/* ===== 備考を1文字ずつ〇で囲む ===== */
-function bikoCircled(text){
+/* ===== 備考を1文字ずつ〇で囲む（〇を付けるのは田中鉄工のみ） ===== */
+function bikoCircled(text, supplier){
   if(!text) return "";
   // 「機械加工」と完全一致のときは〇囲み・文字間隔なしのプレーン表示
   if(text.trim()==="機械加工") return esc(text.trim());
+  // 田中鉄工以外は〇を付けずプレーン表示
+  if(supplier!=="田中鉄工") return esc(text.trim());
   // 全角/半角スペースを除去して1文字ずつ
   const chars = text.replace(/[\s　]+/g,"").split("");
   return '<span class="biko-circ">'+chars.map(c=>`<span>${c}</span>`).join("")+'</span>';
@@ -17858,7 +18042,7 @@ function renderDocuments(r){
   const amtStr = "¥"+Number(amount).toLocaleString("ja-JP");
   const taxStr = "¥"+Math.floor(amount*0.1).toLocaleString("ja-JP");
   const sup = SUP_ADDR[r.supplier] || {zip:"",addr:""};
-  const biko = bikoCircled(r.work_type);
+  const biko = bikoCircled(r.work_type, r.supplier);
   const del = r.delivery_date||"";
   const qty = r.order_qty;
   const unit = r.unit || "本";
@@ -18055,14 +18239,16 @@ rebuildUnitList();
 
 let _osLoaded = false;
 function osInitPage(){
-  // ログイン中ユーザー名を発注担当者の初期値に（未入力の場合のみ）
-  try{
-    const nm = (window.currentUser && (window.currentUser.loginname || window.currentUser.userid)) || "";
-    if(nm && !$("os-staffInput").value.trim()){
-      $("os-staffInput").value = nm;
-      OWN.staff = nm;
-    }
-  }catch(e){}
+  // ログイン中ユーザー名を発注担当者の初期値にする（初回表示時のみ。以降は入力内容を尊重）
+  if(!_osLoaded){
+    try{
+      const nm = (window.currentUser && (window.currentUser.loginname || window.currentUser.userid)) || "";
+      if(nm){
+        $("os-staffInput").value = nm;
+        OWN.staff = nm;
+      }
+    }catch(e){}
+  }
   loadMaster();
   refreshLastOrderNo();
   _osLoaded = true;
