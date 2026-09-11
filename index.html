@@ -17556,6 +17556,14 @@ function osSupplierInitial(name){
   const n = String(name).trim().replace(/^(株式会社|有限会社)/, "");
   return (n || String(name).trim()).charAt(0);
 }
+/* ロゴが無い外注先向け：社名からかぶりにくい配色を決定（同じ社名は常に同じ色） */
+const OS_AVATAR_PALETTE = ["#1d4ed8","#059669","#d97706","#dc2626","#7c3aed","#db2777","#0891b2","#ea580c","#4338ca","#65a30d","#0f766e","#be123c"];
+function osSupplierColor(name){
+  const s = String(name||"");
+  let h = 0;
+  for(let i=0;i<s.length;i++){ h = (h*31 + s.charCodeAt(i)) >>> 0; }
+  return OS_AVATAR_PALETTE[h % OS_AVATAR_PALETTE.length];
+}
 function osSupplierIconHtml(name, sizePx){
   const logo = osSupplierLogo(name);
   const s = sizePx || 18;
@@ -17563,8 +17571,9 @@ function osSupplierIconHtml(name, sizePx){
     return `<img src="${logo}" alt="" style="width:${s}px;height:${s}px;object-fit:contain;border-radius:3px;flex-shrink:0;">`;
   }
   const initial = esc(osSupplierInitial(name));
+  const color = osSupplierColor(name);
   const fs = Math.round(s * 0.55);
-  return `<span style="display:inline-flex;align-items:center;justify-content:center;width:${s}px;height:${s}px;border-radius:50%;background:#1d4ed8;color:#fff;font-size:${fs}px;font-weight:700;flex-shrink:0;line-height:1;">${initial}</span>`;
+  return `<span style="display:inline-flex;align-items:center;justify-content:center;width:${s}px;height:${s}px;border-radius:50%;background:${color};color:#fff;font-size:${fs}px;font-weight:700;flex-shrink:0;line-height:1;">${initial}</span>`;
 }
 function osSupplierCell(name){
   const label = esc(name||"");
