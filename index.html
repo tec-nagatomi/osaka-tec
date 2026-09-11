@@ -468,6 +468,48 @@
     display:flex; align-items:center; justify-content:center; overflow:hidden; }
   .pu-req-table td.q { font-weight:800; color:#1d4ed8; white-space:nowrap; }
   .pu-req-actions { margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; }
+
+  /* ---- 仕入れ台帳 ---- */
+  .pu-ledger-overlay { position:fixed; inset:0; background:#fff; z-index:4000; display:flex; flex-direction:column; }
+  .pu-ledger-topbar { display:flex; align-items:center; justify-content:space-between; padding:22px 32px 8px; flex-shrink:0; }
+  .pu-ledger-year-nav { display:flex; align-items:center; gap:16px; }
+  .pu-ledger-year { font-size:36px; font-weight:800; color:#38bdf8; letter-spacing:.01em; min-width:110px; }
+  .pu-ledger-year-btn { width:30px; height:30px; border-radius:50%; border:1px solid #e2e8f0; background:#f8fafc;
+    color:#64748b; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .pu-ledger-year-btn:hover { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; }
+  .pu-ledger-close { border:none; background:none; font-size:26px; line-height:1; color:#94a3b8; cursor:pointer; padding:4px 8px; }
+  .pu-ledger-close:hover { color:#334155; }
+  .pu-ledger-body { flex:1; min-height:0; padding:14px 32px 6px; display:flex; flex-direction:column; }
+  .pu-ledger-wrap { flex:1; min-height:0; overflow:hidden; }
+  .pu-ledger-track { display:flex; gap:32px; height:100%; align-items:stretch; transition:transform .18s ease-out; will-change:transform; }
+  .pu-ledger-month { width:640px; flex:0 0 640px; display:flex; flex-direction:column; min-height:0; }
+  .pu-ledger-month-title { font-size:26px; font-weight:800; color:#38bdf8; margin-bottom:10px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:space-between; }
+  .pu-ledger-export-btn { font-size:11.5px; font-weight:700; color:#059669; background:#ecfdf5; border:1px solid #a7f3d0;
+    border-radius:6px; padding:4px 10px; cursor:pointer; }
+  .pu-ledger-export-btn:hover { background:#d1fae5; }
+  .pu-ledger-table-wrap { flex:1; min-height:0; overflow-y:auto; background:#fff; border:1px solid #e2e8f0; border-radius:6px; }
+  .pu-ledger-table { width:100%; border-collapse:collapse; font-size:11px; }
+  .pu-ledger-table th, .pu-ledger-table td { border-bottom:1px solid #eef2f7; padding:5px 6px; }
+  .pu-ledger-table thead th { position:sticky; top:0; z-index:1; background:#f1f5f9; color:#475569; font-weight:700;
+    text-align:left; box-shadow:0 1px 0 #e2e8f0; }
+  .pu-ledger-table td.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .pu-ledger-table td.pu-ledger-name { min-width:110px; }
+  .pu-ledger-table td.pu-ledger-memo { color:#64748b; min-width:80px; }
+  .pu-ledger-month-foot { flex-shrink:0; display:flex; justify-content:flex-end; gap:22px; padding:10px 4px 0; font-size:12.5px; color:#475569; }
+  .pu-ledger-month-foot b { font-size:14px; color:#111827; margin-left:4px; }
+  .pu-ledger-scrubber { flex-shrink:0; display:flex; align-items:center; gap:10px; padding:16px 4px 4px; }
+  .pu-ledger-scrubber .plg-cap { width:9px; height:9px; background:#111827; flex-shrink:0; }
+  .pu-ledger-scrubber input[type="range"] { flex:1; -webkit-appearance:none; appearance:none; height:2px; background:#111827;
+    border-radius:2px; outline:none; margin:0; }
+  .pu-ledger-scrubber input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:26px; height:14px;
+    border-radius:8px; background:#111827; cursor:grab; border:none; }
+  .pu-ledger-scrubber input[type="range"]::-moz-range-thumb { width:26px; height:14px; border-radius:8px;
+    background:#111827; cursor:grab; border:none; }
+  .pu-ledger-scrubber input[type="range"]::-moz-range-track { height:2px; background:#111827; border-radius:2px; }
+  #pu-ledger-btn { background:#7c3aed; color:#fff; border:none; border-radius:6px; padding:6px 14px; font-size:12.5px;
+    font-weight:700; cursor:pointer; }
+  #pu-ledger-btn:hover { background:#6d28d9; }
   .pu-ri-input { border:1px solid transparent; background:transparent; padding:2px 4px; border-radius:4px; }
   .pu-ri-input:hover, .pu-ri-input:focus { border-color:#cbd5e1; background:#fff; }
 
@@ -2879,6 +2921,7 @@
         <button id="pu-tab-requests" class="pu-tab" onclick="puSwitchTab('requests')">依頼一覧<span id="pu-req-badge" class="pu-reqbadge" style="display:none;"></span></button>
         <button id="pu-tab-orderhistory" class="pu-tab" onclick="puSwitchTab('orderhistory')" style="display:none;">発注履歴</button>
         <button id="pu-tab-history" class="pu-tab" onclick="puSwitchTab('history')">依頼履歴</button>
+        <button id="pu-ledger-btn" type="button" onclick="puOpenLedger()">📒 仕入れ台帳</button>
       </div>
     </div>
 
@@ -3017,6 +3060,7 @@
           <div style="flex:1;"><label>単位</label><input id="pu-f-unit" class="pu-input" placeholder="本入り など"></div>
           <div style="flex:1;"><label>荷姿</label><input id="pu-f-box" class="pu-input" placeholder="箱/バラ など"></div>
         </div>
+        <div class="pu-form-row"><label>金額（単価・円）</label><input id="pu-f-price" class="pu-input" type="number" min="0" step="1" placeholder="例）1500"></div>
         <div class="pu-form-row"><label>仕入先</label><input id="pu-f-company" class="pu-input" list="pu-company-list"><datalist id="pu-company-list"></datalist></div>
         <div class="pu-form-row" style="display:flex;gap:8px;">
           <div style="flex:1;">
@@ -3048,6 +3092,61 @@
       </div>
     </div>
   </div>
+
+  <div id="pu-deliver-modal" class="pu-overlay" style="display:none;" onclick="if(event.target===this)puCloseDeliverModal()">
+    <div class="pu-modal" style="max-width:560px;">
+      <div class="pu-modal-head"><span>📦 納品済みにする</span> <button class="pu-x" onclick="puCloseDeliverModal()">×</button></div>
+      <div class="pu-modal-body" id="pu-deliver-body"></div>
+      <div class="pu-modal-foot" style="display:flex;justify-content:flex-end;gap:8px;">
+        <button class="pu-btn ghost" onclick="puCloseDeliverModal()">キャンセル</button>
+        <button class="pu-btn primary" onclick="puConfirmDelivered()">登録する</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="pu-forceprice-modal" class="pu-overlay" style="display:none;">
+    <div class="pu-modal" style="max-width:420px;">
+      <div class="pu-modal-head"><span>⚠️ 単価が未設定です</span></div>
+      <div class="pu-modal-body" id="pu-forceprice-body"></div>
+      <div class="pu-modal-foot" style="display:flex;justify-content:flex-end;gap:8px;">
+        <button class="pu-btn ghost" onclick="puCancelForcePrice()">キャンセル</button>
+        <button class="pu-btn primary" onclick="puConfirmForcePrice()">登録して納品済みにする</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="pu-ledger-edit-modal" class="pu-overlay" style="display:none;z-index:4100;" onclick="if(event.target===this)puCloseLedgerEditModal()">
+    <div class="pu-modal" style="max-width:420px;">
+      <div class="pu-modal-head"><span>✏️ 仕入れ台帳の編集</span> <button class="pu-x" onclick="puCloseLedgerEditModal()">×</button></div>
+      <div class="pu-modal-body" id="pu-ledger-edit-body"></div>
+      <div class="pu-modal-foot" style="display:flex;justify-content:flex-end;gap:8px;">
+        <button class="pu-btn ghost" onclick="puCloseLedgerEditModal()">キャンセル</button>
+        <button class="pu-btn primary" onclick="puSaveLedgerEdit()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="pu-ledger-overlay" class="pu-ledger-overlay" style="display:none;">
+    <div class="pu-ledger-topbar">
+      <div class="pu-ledger-year-nav">
+        <button class="pu-ledger-year-btn" onclick="puLedgerChangeYear(-1)">◀</button>
+        <span id="pu-ledger-year" class="pu-ledger-year">2026</span>
+        <button class="pu-ledger-year-btn" onclick="puLedgerChangeYear(1)">▶</button>
+      </div>
+      <button class="pu-ledger-close" onclick="puCloseLedger()">×</button>
+    </div>
+    <div class="pu-ledger-body">
+      <div class="pu-ledger-wrap" id="pu-ledger-wrap">
+        <div class="pu-ledger-track" id="pu-ledger-track"></div>
+      </div>
+      <div class="pu-ledger-scrubber">
+        <span class="plg-cap"></span>
+        <input type="range" id="pu-ledger-range" min="0" max="0" value="0" oninput="puLedgerOnScrub(this.value)">
+        <span class="plg-cap"></span>
+      </div>
+    </div>
+  </div>
+
 
   <input type="file" id="pu-img-file" accept="image/png,image/jpeg,image/webp" style="display:none;" onchange="puImageSelected(event)">
   <input type="file" id="pu-csv-file" accept=".csv" style="display:none;" onchange="puCsvSelected(event)">
@@ -8325,6 +8424,7 @@ const PU_STATUS = {
   pending: { label: '依頼中',   color: '#d97706', bg: '#fffbeb', bd: '#fde68a' },
   ordered: { label: '発注済み', color: '#2563eb', bg: '#eff6ff', bd: '#bfdbfe' },
   done:    { label: '完了',     color: '#059669', bg: '#ecfdf5', bd: '#a7f3d0' },
+  delivered: { label: '納品済み', color: '#7c3aed', bg: '#f5f3ff', bd: '#ddd6fe' },
 };
 
 async function puLoadRequests(render) {
@@ -8362,6 +8462,7 @@ async function puLoadRequests(render) {
   }
   if (render || document.getElementById('pu-orderhistory-view').style.display !== 'none') puRenderOrderHistory();
   if (document.getElementById('pu-history-view').style.display !== 'none') puRenderHistory();
+  if (document.getElementById('pu-ledger-overlay').style.display !== 'none') puRenderLedger();
   puUpdateTopTicker();
 }
 
@@ -8469,7 +8570,8 @@ function puRenderHistory() {
   const me = puUserName();
   const canCancelAll = puCanSeeRequestsTab();
   tbody.innerHTML = rows.map(({ req, it }) => {
-    const st = PU_STATUS[it.status || 'pending'] || PU_STATUS.pending;
+    const itStatus = it.status || 'pending';
+    const st = PU_STATUS[itStatus] || PU_STATUS.pending;
     const destination = it.destination || puDefaultDestination(req.requested_by);
     const dt = puToJstParts(req.created_at).date;
     const tm = puToJstParts(req.created_at).time; // HH:MM（日本時間）
@@ -8496,7 +8598,9 @@ function puRenderHistory() {
       + '<td>' + puEsc(it.box || '') + '</td>'
       + '<td>' + puEsc(destination) + '</td>'
       + '<td>' + urgencyHtml + '</td>'
-      + '<td><span class="pu-xl-status" style="color:' + st.color + ';background:' + st.bg + ';border:1px solid ' + st.bd + ';">' + st.label + '</span></td>'
+      + '<td><span class="pu-xl-status" style="color:' + st.color + ';background:' + st.bg + ';border:1px solid ' + st.bd + ';' + (itStatus === 'done' || itStatus === 'delivered' ? 'cursor:pointer;' : '') + '"'
+          + (itStatus === 'done' || itStatus === 'delivered' ? ' title="クリックで切替" onclick="puToggleHistoryItemStatus(' + it.id + ',\'' + itStatus + '\')"' : '')
+          + '>' + st.label + '</span></td>'
       + '<td>' + cancelBtn + '</td>'
       + '</tr>';
   }).join('');
@@ -8523,6 +8627,365 @@ async function puCancelHistoryItem(itemId) {
   await puLoadRequests(true);
 }
 
+// 依頼履歴のステータスバッジをクリックしたときの切替: 完了⇔納品済みのみ許可、それ以外は何もしない
+async function puToggleHistoryItemStatus(itemId, currentStatus) {
+  if (currentStatus === 'delivered') {
+    // 納品済み→完了に戻す（単価チェック不要）
+    const body = { status: 'done', delivered_at: null };
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_request_items?id=eq.${itemId}`,
+      { method: 'PATCH', headers: { ...PU_H(), 'Prefer': 'return=minimal' }, body: JSON.stringify(body) });
+    if (!res.ok) { alert('更新に失敗しました: ' + await res.text()); return; }
+    for (const arr of _puReqItems.values()) {
+      const it = arr.find(x => x.id === itemId);
+      if (it) Object.assign(it, body);
+    }
+    puRenderHistory();
+    puToast('✅ 完了に戻しました', '#059669');
+    return;
+  }
+  if (currentStatus !== 'done') return; // それ以外の状態は何もしない
+
+  // 完了→納品済み：購入品マスタの単価を確認し、未設定なら強制入力モーダルを開く
+  let target = null;
+  for (const [reqId, items] of _puReqItems.entries()) {
+    const it = items.find(x => x.id === itemId);
+    if (it) { target = it; break; }
+  }
+  if (!target) return;
+  const master = target.item_id != null ? _puItemsById.get(target.item_id) : null;
+  if (!master || master.unit_price == null || master.unit_price === '') {
+    puOpenForcePriceModal(itemId);
+    return;
+  }
+  // マスタに単価があればそれを使って即座に納品済みへ
+  const nowIso = new Date().toISOString();
+  const qty = target.qty || 0;
+  const body = { status: 'delivered', delivered_at: nowIso, unit_price: master.unit_price, line_amount: Math.round(master.unit_price * qty) };
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_request_items?id=eq.${itemId}`,
+    { method: 'PATCH', headers: { ...PU_H(), 'Prefer': 'return=minimal' }, body: JSON.stringify(body) });
+  if (!res.ok) { alert('更新に失敗しました: ' + await res.text()); return; }
+  Object.assign(target, body);
+  puRenderHistory();
+  puToast('📦 納品済みにしました', '#7c3aed');
+}
+
+// ---- 単価未設定の強制入力モーダル（完了→納品済みへの切替時、入力完了までキャンセル以外の操作を不可にする） ----
+let _puForcePriceItemId = null;
+function puOpenForcePriceModal(itemId) {
+  let target = null;
+  for (const items of _puReqItems.values()) {
+    const it = items.find(x => x.id === itemId);
+    if (it) { target = it; break; }
+  }
+  if (!target) return;
+  _puForcePriceItemId = itemId;
+  const qty = target.qty || 0;
+  const body = document.getElementById('pu-forceprice-body');
+  body.innerHTML = '<div style="font-size:12px;color:#64748b;margin-bottom:10px;">この物品は購入品マスタに単価が登録されていません。納品済みにするには単価の入力が必要です。</div>'
+    + '<div style="font-weight:700;font-size:13px;margin-bottom:8px;">' + puEsc(target.product_name)
+    + '　<span style="color:#94a3b8;font-weight:400;">数量: ' + qty + puEsc(target.unit || '') + '</span></div>'
+    + '<div style="display:flex;gap:8px;">'
+    + '<div style="flex:1;"><label style="font-size:11px;color:#64748b;">単価（円）</label>'
+    + '<input class="pu-input" id="pu-forceprice-input" type="number" min="0" step="1" placeholder="単価を入力" oninput="puForcePriceInputChanged()"></div>'
+    + '<div style="flex:1;"><label style="font-size:11px;color:#64748b;">金額（円）</label>'
+    + '<input class="pu-input" id="pu-forceprice-amount" type="number" value="" readonly style="background:#f9fafb;"></div>'
+    + '</div>';
+  document.getElementById('pu-forceprice-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('pu-forceprice-input')?.focus(), 0);
+}
+function puForcePriceInputChanged() {
+  let target = null;
+  for (const items of _puReqItems.values()) {
+    const it = items.find(x => x.id === _puForcePriceItemId);
+    if (it) { target = it; break; }
+  }
+  const qty = (target && target.qty) || 0;
+  const priceInput = document.getElementById('pu-forceprice-input');
+  const amountInput = document.getElementById('pu-forceprice-amount');
+  const price = parseFloat(priceInput.value);
+  amountInput.value = isNaN(price) ? '' : Math.round(price * qty);
+}
+function puCancelForcePrice() {
+  document.getElementById('pu-forceprice-modal').style.display = 'none';
+  _puForcePriceItemId = null;
+}
+async function puConfirmForcePrice() {
+  const itemId = _puForcePriceItemId;
+  if (itemId == null) return;
+  const priceInput = document.getElementById('pu-forceprice-input');
+  const priceStr = priceInput.value.trim();
+  const price = parseFloat(priceStr);
+  if (priceStr === '' || isNaN(price) || price < 0) {
+    alert('単価を正しく入力してください');
+    priceInput.focus();
+    return;
+  }
+  let target = null;
+  for (const items of _puReqItems.values()) {
+    const it = items.find(x => x.id === itemId);
+    if (it) { target = it; break; }
+  }
+  if (!target) { puCancelForcePrice(); return; }
+  const qty = target.qty || 0;
+  const lineAmount = Math.round(price * qty);
+  const nowIso = new Date().toISOString();
+  try {
+    // 購入品マスタに単価を登録（次回以降は自動で使われる）
+    if (target.item_id != null) {
+      const master = _puItemsById.get(target.item_id);
+      const res1 = await fetch(`${SUPABASE_URL}/rest/v1/purchase_items?id=eq.${target.item_id}`,
+        { method: 'PATCH', headers: { ...PU_H(), 'Prefer': 'return=minimal' }, body: JSON.stringify({ unit_price: price }) });
+      if (!res1.ok) throw new Error(await res1.text());
+      if (master) master.unit_price = price;
+    }
+    // この依頼品目を納品済みに更新
+    const body = { status: 'delivered', delivered_at: nowIso, unit_price: price, line_amount: lineAmount };
+    const res2 = await fetch(`${SUPABASE_URL}/rest/v1/purchase_request_items?id=eq.${itemId}`,
+      { method: 'PATCH', headers: { ...PU_H(), 'Prefer': 'return=minimal' }, body: JSON.stringify(body) });
+    if (!res2.ok) throw new Error(await res2.text());
+    Object.assign(target, body);
+    puCancelForcePrice();
+    puRenderHistory();
+    puToast('📦 納品済みにしました', '#7c3aed');
+  } catch (err) {
+    alert('登録に失敗しました: ' + err.message);
+  }
+}
+
+// ---- 仕入れ台帳（納品済み＆単価入力済みの品目を月別に集計表示） ----
+let _puLedgerYear = new Date().getFullYear();
+let _puLedgerScrollPx = 0;
+
+function puOpenLedger() {
+  document.getElementById('pu-ledger-overlay').style.display = 'flex';
+  _puLedgerScrollPx = 0;
+  puRenderLedger();
+  window.addEventListener('resize', puLedgerUpdateScrubberRange);
+}
+function puCloseLedger() {
+  document.getElementById('pu-ledger-overlay').style.display = 'none';
+  window.removeEventListener('resize', puLedgerUpdateScrubberRange);
+}
+function puLedgerChangeYear(diff) {
+  _puLedgerYear += diff;
+  _puLedgerScrollPx = 0;
+  puRenderLedger();
+}
+
+// 納品済み＆単価入力済みの品目を、指定年の月ごとに集計する。備考には依頼履歴の宛先の名前部分のみを使用
+function puLedgerCollectEntries(year) {
+  const reqById = new Map(_puRequests.map(r => [r.id, r]));
+  const entries = [];
+  for (const [reqId, items] of _puReqItems.entries()) {
+    const req = reqById.get(reqId);
+    if (!req) continue;
+    items.forEach(it => {
+      if (it.status !== 'delivered' || it.unit_price == null) return;
+      if (!it.delivered_at) return;
+      const jst = puToJstParts(it.delivered_at);
+      if (!jst.date) return;
+      const [y, m, d] = jst.date.split('-').map(Number);
+      if (y !== year) return;
+      const destination = it.destination || puDefaultDestination(req.requested_by);
+      const destName = destination.includes('_') ? destination.split('_').pop() : destination;
+      entries.push({
+        id: it.id,
+        date: jst.date, day: d, month: m - 1,
+        product_name: it.product_name,
+        packAmount: it.amount, qty: it.qty, unit: it.unit || '', box: it.box || '',
+        unit_price: it.unit_price,
+        lineAmount: it.line_amount != null ? it.line_amount : Math.round((it.unit_price || 0) * (it.qty || 0)),
+        note: destName, noteRaw: destination
+      });
+    });
+  }
+  return entries;
+}
+
+function puRenderLedger() {
+  document.getElementById('pu-ledger-year').textContent = _puLedgerYear;
+  const admin = puCanSeeRequestsTab();
+  const entries = puLedgerCollectEntries(_puLedgerYear);
+  const byMonth = Array.from({ length: 12 }, () => []);
+  entries.forEach(e => byMonth[e.month].push(e));
+  byMonth.forEach(arr => arr.sort((a, b) => a.date.localeCompare(b.date)));
+  const track = document.getElementById('pu-ledger-track');
+  track.innerHTML = byMonth.map((arr, idx) => puLedgerMonthHtml(idx + 1, arr, admin)).join('');
+  puLedgerUpdateScrubberRange();
+}
+
+function puLedgerRowHtml(e, admin) {
+  return '<tr>'
+    + '<td>' + e.day + '日</td>'
+    + '<td class="pu-ledger-name">' + puEsc(e.product_name) + '</td>'
+    + '<td class="num">' + (e.packAmount != null ? e.packAmount : '') + '</td>'
+    + '<td>' + puEsc(e.unit) + '</td>'
+    + '<td class="num">' + (e.qty != null ? e.qty : '') + '</td>'
+    + '<td>' + puEsc(e.box) + '</td>'
+    + '<td class="num">¥' + Number(e.unit_price).toLocaleString('ja-JP') + '</td>'
+    + '<td class="num">¥' + Number(e.lineAmount || 0).toLocaleString('ja-JP') + '</td>'
+    + '<td class="pu-ledger-memo">' + puEsc(e.note) + '</td>'
+    + (admin ? '<td><a style="font-size:10.5px;color:#1d4ed8;cursor:pointer;" onclick="puOpenLedgerEditModal(' + e.id + ')">編集</a></td>' : '')
+    + '</tr>';
+}
+
+function puLedgerMonthHtml(monthNum, arr, admin) {
+  const total = arr.reduce((s, e) => s + (e.lineAmount || 0), 0);
+  const tax = Math.floor(total * 0.1);
+  const colCount = admin ? 10 : 9;
+  const rows = arr.length
+    ? arr.map(e => puLedgerRowHtml(e, admin)).join('')
+    : '<tr><td colspan="' + colCount + '" style="text-align:center;color:#cbd5e1;padding:22px 0;">データがありません</td></tr>';
+  return '<div class="pu-ledger-month">'
+    + '<div class="pu-ledger-month-title">' + monthNum + '月'
+      + '<button class="pu-ledger-export-btn" onclick="puLedgerExportMonth(' + monthNum + ')" title="この月をExcelに出力">⬇ Excel</button>'
+    + '</div>'
+    + '<div class="pu-ledger-table-wrap"><table class="pu-ledger-table">'
+      + '<thead><tr><th>仕入れ日</th><th>品名</th><th>入数</th><th>単位</th><th>数量</th><th>荷姿</th><th>単価</th><th>金額</th><th>備考</th>' + (admin ? '<th></th>' : '') + '</tr></thead>'
+      + '<tbody>' + rows + '</tbody>'
+    + '</table></div>'
+    + '<div class="pu-ledger-month-foot">'
+      + '<span>合計金額<b>¥' + total.toLocaleString('ja-JP') + '</b></span>'
+      + '<span>消費税<b>¥' + tax.toLocaleString('ja-JP') + '</b></span>'
+    + '</div>'
+  + '</div>';
+}
+
+// ---- 編集ポップアップ（永冨・山下のみ「編集」リンクから起動） ----
+let _puLedgerEditItemId = null;
+function puLedgerFindItemAndReq(itemId) {
+  for (const [reqId, items] of _puReqItems.entries()) {
+    const it = items.find(x => x.id === itemId);
+    if (it) return { req: _puRequests.find(r => r.id === reqId), it };
+  }
+  return null;
+}
+function puOpenLedgerEditModal(itemId) {
+  const found = puLedgerFindItemAndReq(itemId);
+  if (!found) return;
+  const { req, it } = found;
+  _puLedgerEditItemId = itemId;
+  const jst = puToJstParts(it.delivered_at);
+  const destination = it.destination || puDefaultDestination(req ? req.requested_by : '');
+  const amount = it.line_amount != null ? it.line_amount : Math.round((it.unit_price || 0) * (it.qty || 0));
+  const body = document.getElementById('pu-ledger-edit-body');
+  body.innerHTML = '<div class="pu-form-row"><label>仕入れ日</label><input class="pu-input" id="pu-lge-date" type="date" value="' + (jst.date || '') + '"></div>'
+    + '<div class="pu-form-row"><label>品名</label><input class="pu-input" id="pu-lge-name" value="' + puEsc(it.product_name) + '"></div>'
+    + '<div style="display:flex;gap:8px;">'
+      + '<div class="pu-form-row" style="flex:1;"><label>入数</label><input class="pu-input" id="pu-lge-packamount" type="number" min="0" step="any" value="' + (it.amount != null ? it.amount : '') + '"></div>'
+      + '<div class="pu-form-row" style="flex:1;"><label>単位</label><input class="pu-input" id="pu-lge-unit" value="' + puEsc(it.unit || '') + '"></div>'
+    + '</div>'
+    + '<div style="display:flex;gap:8px;">'
+      + '<div class="pu-form-row" style="flex:1;"><label>数量</label><input class="pu-input" id="pu-lge-qty" type="number" min="0" step="any" value="' + (it.qty != null ? it.qty : '') + '" oninput="puLedgerEditRecalc()"></div>'
+      + '<div class="pu-form-row" style="flex:1;"><label>荷姿</label><input class="pu-input" id="pu-lge-box" value="' + puEsc(it.box || '') + '"></div>'
+    + '</div>'
+    + '<div style="display:flex;gap:8px;">'
+      + '<div class="pu-form-row" style="flex:1;"><label>単価（円）</label><input class="pu-input" id="pu-lge-price" type="number" min="0" step="1" value="' + (it.unit_price != null ? it.unit_price : '') + '" oninput="puLedgerEditRecalc()"></div>'
+      + '<div class="pu-form-row" style="flex:1;"><label>金額（円）</label><input class="pu-input" id="pu-lge-amount" type="number" min="0" step="1" value="' + amount + '"></div>'
+    + '</div>'
+    + '<div class="pu-form-row"><label>備考</label><input class="pu-input" id="pu-lge-note" value="' + puEsc(destination) + '"></div>';
+  document.getElementById('pu-ledger-edit-modal').style.display = 'flex';
+}
+function puLedgerEditRecalc() {
+  const qty = parseFloat(document.getElementById('pu-lge-qty').value) || 0;
+  const price = parseFloat(document.getElementById('pu-lge-price').value);
+  const amountInput = document.getElementById('pu-lge-amount');
+  if (amountInput && !isNaN(price)) amountInput.value = Math.round(price * qty);
+}
+function puCloseLedgerEditModal() {
+  document.getElementById('pu-ledger-edit-modal').style.display = 'none';
+  _puLedgerEditItemId = null;
+}
+async function puSaveLedgerEdit() {
+  const itemId = _puLedgerEditItemId;
+  if (itemId == null) return;
+  const dateVal = document.getElementById('pu-lge-date').value;
+  const name = document.getElementById('pu-lge-name').value.trim();
+  if (!name) { alert('品名は空にできません'); return; }
+  if (!dateVal) { alert('仕入れ日を入力してください'); return; }
+  const packAmountRaw = document.getElementById('pu-lge-packamount').value;
+  const qtyRaw = document.getElementById('pu-lge-qty').value;
+  const unit = document.getElementById('pu-lge-unit').value.trim();
+  const box = document.getElementById('pu-lge-box').value.trim();
+  const priceRaw = document.getElementById('pu-lge-price').value;
+  const price = parseFloat(priceRaw);
+  if (priceRaw.trim() === '' || isNaN(price) || price < 0) { alert('単価を正しく入力してください'); return; }
+  const amountRaw = document.getElementById('pu-lge-amount').value;
+  const note = document.getElementById('pu-lge-note').value.trim();
+  const qty = qtyRaw.trim() === '' ? null : parseFloat(qtyRaw);
+  const body = {
+    product_name: name,
+    amount: packAmountRaw.trim() === '' ? null : parseFloat(packAmountRaw),
+    qty: qty,
+    unit: unit,
+    box: box,
+    unit_price: price,
+    line_amount: amountRaw.trim() === '' ? Math.round(price * (qty || 0)) : parseFloat(amountRaw),
+    destination: note,
+    delivered_at: new Date(dateVal + 'T12:00:00+09:00').toISOString()
+  };
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_request_items?id=eq.${itemId}`,
+    { method: 'PATCH', headers: { ...PU_H(), 'Prefer': 'return=minimal' }, body: JSON.stringify(body) });
+  if (!res.ok) { alert('更新に失敗しました: ' + await res.text()); return; }
+  for (const arr of _puReqItems.values()) {
+    const it = arr.find(x => x.id === itemId);
+    if (it) Object.assign(it, body);
+  }
+  puCloseLedgerEditModal();
+  puRenderLedger();
+  puToast('✅ 更新しました', '#059669');
+}
+
+// この月のデータをExcelへ出力
+function puLedgerExportMonth(monthNum) {
+  const year = _puLedgerYear;
+  const arr = puLedgerCollectEntries(year).filter(e => e.month === monthNum - 1).sort((a, b) => a.date.localeCompare(b.date));
+  const total = arr.reduce((s, e) => s + (e.lineAmount || 0), 0);
+  const tax = Math.floor(total * 0.1);
+  const aoa = [['仕入れ日', '品名', '入数', '単位', '数量', '荷姿', '単価', '金額', '備考']];
+  arr.forEach(e => aoa.push([e.date, e.product_name, e.packAmount != null ? e.packAmount : '', e.unit, e.qty != null ? e.qty : '', e.box, e.unit_price, e.lineAmount, e.note]));
+  aoa.push([]);
+  aoa.push(['', '', '', '', '', '', '', '合計金額', total]);
+  aoa.push(['', '', '', '', '', '', '', '消費税', tax]);
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, year + '年' + monthNum + '月');
+  XLSX.writeFile(wb, `仕入れ台帳_${year}年${monthNum}月.xlsx`);
+}
+
+// 横スクロール（カスタムスクラバー）: トラック全体の幅と表示領域の差分からスライダーの可動域を決め、
+// スライダー操作・ホイール操作の両方でトラックをtranslateXする
+function puLedgerUpdateScrubberRange() {
+  const wrap = document.getElementById('pu-ledger-wrap');
+  const track = document.getElementById('pu-ledger-track');
+  const range = document.getElementById('pu-ledger-range');
+  if (!wrap || !track || !range) return;
+  const maxScroll = Math.max(0, track.scrollWidth - wrap.clientWidth);
+  range.max = maxScroll;
+  if (_puLedgerScrollPx > maxScroll) _puLedgerScrollPx = maxScroll;
+  range.value = _puLedgerScrollPx;
+  track.style.transform = 'translateX(-' + _puLedgerScrollPx + 'px)';
+}
+function puLedgerOnScrub(value) {
+  _puLedgerScrollPx = Number(value) || 0;
+  const track = document.getElementById('pu-ledger-track');
+  if (track) track.style.transform = 'translateX(-' + _puLedgerScrollPx + 'px)';
+}
+(function puLedgerWheelSetup() {
+  document.addEventListener('wheel', function (e) {
+    const wrap = document.getElementById('pu-ledger-wrap');
+    if (!wrap || document.getElementById('pu-ledger-overlay').style.display === 'none') return;
+    if (!wrap.contains(e.target)) return;
+    const range = document.getElementById('pu-ledger-range');
+    const maxScroll = Number(range.max) || 0;
+    const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+    _puLedgerScrollPx = Math.min(maxScroll, Math.max(0, _puLedgerScrollPx + delta));
+    puLedgerOnScrub(_puLedgerScrollPx);
+    range.value = _puLedgerScrollPx;
+    e.preventDefault();
+  }, { passive: false });
+})();
+
 function puDefaultDestination(requester) {
   const factory = _puUserFactory.get(requester) || '';
   return (factory ? factory + '_' : '') + requester;
@@ -8530,7 +8993,7 @@ function puDefaultDestination(requester) {
 
 // 依頼一覧のグルーピング: 第一優先=日付、第二優先=依頼者、第三優先=仕入先
 // 同じ(日付・依頼者・仕入先)の品物は1枚のカードにまとめて表示する（内部的には元の依頼IDごとの状態を保持）
-const PU_STATUS_ORDER = ['pending', 'ordered', 'done'];
+const PU_STATUS_ORDER = ['pending', 'ordered', 'done', 'delivered'];
 function puGroupRequests() {
   const groups = new Map(); // key -> group
   _puRequests.forEach(r => {
@@ -9025,6 +9488,68 @@ async function puSetGroupStatus(key, status) {
   await puLoadRequests(true);
 }
 
+// ---- 納品済みにする（単価・金額を手入力して登録） ----
+let _puDeliverKey = null;
+function puOpenDeliverModal(key) {
+  const g = puFindGroup(key); if (!g) return;
+  _puDeliverKey = key;
+  const body = document.getElementById('pu-deliver-body');
+  body.innerHTML = '<div style="font-size:12px;color:#64748b;margin-bottom:10px;">単価・金額を入力してください（仕入先: ' + puEsc(g.company) + '）</div>'
+    + g.items.map(it => {
+        const master = _puItems.find(m => m.id === it.item_id);
+        const defPrice = (master && master.unit_price != null) ? master.unit_price : '';
+        const qty = it.qty || 0;
+        const defAmount = defPrice !== '' ? Math.round(defPrice * qty) : '';
+        return '<div style="border-bottom:1px solid #f1f5f9;padding-bottom:10px;margin-bottom:10px;">'
+          + '<div style="font-weight:700;font-size:13px;">' + puEsc(it.product_name)
+          + '　<span style="color:#94a3b8;font-weight:400;">数量: ' + qty + puEsc(it.unit || '') + '</span></div>'
+          + '<div style="display:flex;gap:8px;margin-top:6px;">'
+          + '<div style="flex:1;"><label style="font-size:11px;color:#64748b;">単価（円）</label>'
+          + '<input class="pu-input pu-deliver-price" data-item-id="' + it.id + '" data-qty="' + qty + '" type="number" min="0" step="1" value="' + defPrice + '" oninput="puDeliverPriceChanged(this)"></div>'
+          + '<div style="flex:1;"><label style="font-size:11px;color:#64748b;">金額（円）</label>'
+          + '<input class="pu-input pu-deliver-amount" data-item-id="' + it.id + '" type="number" min="0" step="1" value="' + defAmount + '"></div>'
+          + '</div></div>';
+      }).join('');
+  document.getElementById('pu-deliver-modal').style.display = 'flex';
+}
+function puCloseDeliverModal() {
+  document.getElementById('pu-deliver-modal').style.display = 'none';
+  _puDeliverKey = null;
+}
+function puDeliverPriceChanged(input) {
+  const qty = parseFloat(input.dataset.qty) || 0;
+  const price = parseFloat(input.value);
+  const amountInput = document.querySelector('.pu-deliver-amount[data-item-id="' + input.dataset.itemId + '"]');
+  if (amountInput && !isNaN(price)) amountInput.value = Math.round(price * qty);
+}
+async function puConfirmDelivered() {
+  const key = _puDeliverKey;
+  const g = puFindGroup(key); if (!g) return;
+  const priceInputs = document.querySelectorAll('#pu-deliver-body .pu-deliver-price');
+  const rows = [];
+  for (const p of priceInputs) {
+    const id = p.dataset.itemId;
+    const amountInput = document.querySelector('.pu-deliver-amount[data-item-id="' + id + '"]');
+    const price = p.value.trim() === '' ? null : parseFloat(p.value);
+    const lineAmount = (amountInput && amountInput.value.trim() !== '') ? parseFloat(amountInput.value) : null;
+    rows.push({ id: Number(id), unit_price: price, line_amount: lineAmount });
+  }
+  const nowIso = new Date().toISOString();
+  try {
+    for (const r of rows) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_request_items?id=eq.${r.id}`,
+        { method: 'PATCH', headers: { ...PU_H(), 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ status: 'delivered', delivered_at: nowIso, unit_price: r.unit_price, line_amount: r.line_amount }) });
+      if (!res.ok) throw new Error(await res.text());
+    }
+    puCloseDeliverModal();
+    await puLoadRequests(true);
+    puToast('📦 納品済みにしました', '#7c3aed');
+  } catch (err) {
+    alert('登録に失敗しました: ' + err.message);
+  }
+}
+
 async function puDeleteGroup(key) {
   const g = puFindGroup(key); if (!g) return;
   if (!confirm(puFmtDate(g.date) + ' ・ ' + g.requester + ' 様の依頼（' + g.company + '）をすべて削除します。よろしいですか？')) return;
@@ -9240,6 +9765,7 @@ function puOpenItemModal(id) {
   document.getElementById('pu-f-amount').value = it?.amount ?? '';
   document.getElementById('pu-f-unit').value = it?.unit || '';
   document.getElementById('pu-f-box').value = it?.box || '';
+  document.getElementById('pu-f-price').value = it?.unit_price ?? '';
   document.getElementById('pu-f-company').value = it?.company || '';
   document.getElementById('pu-f-alert-name').checked = !!it?.alert_name;
   document.getElementById('pu-f-alert-amount').checked = !!it?.alert_amount;
@@ -9277,6 +9803,7 @@ async function puSaveItem() {
   const name = document.getElementById('pu-f-name').value.trim();
   if (!name) { alert('品名を入力してください'); return; }
   const amtRaw = document.getElementById('pu-f-amount').value.trim();
+  const priceRaw = document.getElementById('pu-f-price').value.trim();
   const cat1 = document.getElementById('pu-f-cat1').value.trim();
   const cat2 = document.getElementById('pu-f-cat2').value.trim();
   const body = {
@@ -9285,6 +9812,7 @@ async function puSaveItem() {
     amount: amtRaw === '' ? null : parseInt(amtRaw, 10),
     unit: document.getElementById('pu-f-unit').value.trim(),
     box: document.getElementById('pu-f-box').value.trim(),
+    unit_price: priceRaw === '' ? null : parseFloat(priceRaw),
     company: document.getElementById('pu-f-company').value.trim(),
     alert_name: document.getElementById('pu-f-alert-name').checked,
     alert_amount: document.getElementById('pu-f-alert-amount').checked,
