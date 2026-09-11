@@ -17550,11 +17550,26 @@ function osSupplierLogo(name){
   if(name.includes("ワコーメタル")) return SUP_LOGO_WAKO;
   return null;
 }
-function osSupplierCell(name){
+/* ロゴが無い外注先向け：先頭の「株式会社」「有限会社」を除いた社名の1文字目 */
+function osSupplierInitial(name){
+  if(!name) return "";
+  const n = String(name).trim().replace(/^(株式会社|有限会社)/, "");
+  return (n || String(name).trim()).charAt(0);
+}
+function osSupplierIconHtml(name, sizePx){
   const logo = osSupplierLogo(name);
+  const s = sizePx || 18;
+  if(logo){
+    return `<img src="${logo}" alt="" style="width:${s}px;height:${s}px;object-fit:contain;border-radius:3px;flex-shrink:0;">`;
+  }
+  const initial = esc(osSupplierInitial(name));
+  const fs = Math.round(s * 0.55);
+  return `<span style="display:inline-flex;align-items:center;justify-content:center;width:${s}px;height:${s}px;border-radius:50%;background:#1d4ed8;color:#fff;font-size:${fs}px;font-weight:700;flex-shrink:0;line-height:1;">${initial}</span>`;
+}
+function osSupplierCell(name){
   const label = esc(name||"");
-  if(!logo) return label;
-  return `<span style="display:inline-flex;align-items:center;gap:6px;"><img src="${logo}" alt="" style="width:18px;height:18px;object-fit:contain;border-radius:3px;flex-shrink:0;">${label}</span>`;
+  if(!name) return label;
+  return `<span style="display:inline-flex;align-items:center;gap:6px;">${osSupplierIconHtml(name,18)}${label}</span>`;
 }
 
 /* ===== 単位（プルダウン＋直接入力・localStorageに履歴保持） ===== */
@@ -18447,7 +18462,7 @@ function osWireIconSelect(selectId){
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "os-iconselect-btn";
-  btn.innerHTML = '<img class="os-iconselect-logo"><span class="os-iconselect-label"></span>'
+  btn.innerHTML = '<span class="os-iconselect-icon" style="display:inline-flex;flex-shrink:0;"></span><span class="os-iconselect-label"></span>'
     + '<svg class="os-iconselect-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
   const panel = document.createElement("div");
   panel.className = "os-iconselect-panel";
@@ -18460,8 +18475,8 @@ function osWireIconSelect(selectId){
     Array.prototype.forEach.call(sel.options, opt=>{
       const row = document.createElement("div");
       row.className = "os-iconselect-option" + (opt.selected ? " sel" : "");
-      const logo = osSupplierLogo(opt.value || opt.textContent);
-      row.innerHTML = (logo ? `<img src="${logo}">` : '<span class="os-iconselect-noicon"></span>') + `<span>${esc(opt.textContent)}</span>`;
+      const label = opt.value || opt.textContent;
+      row.innerHTML = (label ? osSupplierIconHtml(label, 20) : '<span class="os-iconselect-noicon"></span>') + `<span>${esc(opt.textContent)}</span>`;
       row.addEventListener("click", ()=>{
         sel.value = opt.value;
         sel.dispatchEvent(new Event("change", { bubbles:true }));
@@ -18473,9 +18488,9 @@ function osWireIconSelect(selectId){
   function updateBtn(){
     const opt = sel.options[sel.selectedIndex];
     btn.querySelector(".os-iconselect-label").textContent = opt ? opt.textContent : "";
-    const img = btn.querySelector(".os-iconselect-logo");
-    const logo = opt ? osSupplierLogo(opt.value || opt.textContent) : null;
-    if(logo){ img.src = logo; img.style.display = ""; } else { img.style.display = "none"; }
+    const iconWrap = btn.querySelector(".os-iconselect-icon");
+    const label = opt ? (opt.value || opt.textContent) : "";
+    iconWrap.innerHTML = label ? osSupplierIconHtml(label, 20) : "";
     btn.disabled = sel.disabled;
   }
   function closePanel(){ panel.style.display = "none"; document.removeEventListener("click", outsideClick); }
