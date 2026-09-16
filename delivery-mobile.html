@@ -444,7 +444,7 @@ function buildItemCardHtml(row) {
       + '<span class="item-requester">' + esc(row.requester) + '様</span>'
     + '</div>'
     + '<div class="item-name">' + esc(it.product_name) + '</div>'
-    + '<div class="item-sub">数量: ' + qty + esc(it.unit || '') + (it.box ? '（' + esc(it.box) + '）' : '') + '　宛先: ' + esc(it.destination || '') + '</div>'
+    + '<div class="item-sub">入数: ' + (it.amount != null ? it.amount + esc(it.unit || '') : esc(it.unit || '')) + '　注文数: ' + qty + (it.box ? '　荷姿: ' + esc(it.box) : '') + '　宛先: ' + esc(it.destination || '') + '</div>'
     + '<div class="item-inputs">'
       + '<div class="grp"><label>単価（円）</label>'
         + '<input type="number" min="0" step="1" class="price-input" value="' + defPrice + '" oninput="onPriceInput(\'' + rowId + '\')"></div>'
