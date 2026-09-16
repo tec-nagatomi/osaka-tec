@@ -562,6 +562,8 @@
   .pu-sup-btn:hover { box-shadow:0 4px 14px rgba(0,0,0,.10); transform:translateY(-2px); }
   .pu-sup-logo { height:36px; max-width:100%; object-fit:contain; margin-bottom:8px; }
   .pu-sup-name { font-size:12.5px; font-weight:700; color:#1e293b; line-height:1.35; word-break:break-word; }
+  .pu-btn.accent { background:#7c3aed; color:#fff; }
+  .pu-btn.accent:hover { background:#6d28d9; }
   .pu-sup-badge { position:absolute; top:-12px; right:-12px; min-width:32px; height:32px; border-radius:16px;
     background:linear-gradient(155deg, #ffd580 0%, #f59e0b 45%, #d97706 100%);
     color:#fff; font-size:16px; font-weight:800; display:flex; align-items:center;
@@ -2961,8 +2963,9 @@
       </div>
       <div id="pu-supplier-view"></div>
       <div id="pu-req-list-view" style="display:none;">
-        <div style="margin-bottom:10px;">
+        <div style="margin-bottom:10px;display:flex;align-items:center;gap:10px;">
           <button id="pu-req-back-btn" class="pu-btn ghost" onclick="puShowSupplierList()">← 仕入先一覧に戻る</button>
+          <button id="pu-req-bulk-btn" class="pu-btn accent" style="display:none;" onclick="puBulkRegisterSupplier(_puSelectedCompany)">まとめて登録</button>
         </div>
         <div id="pu-req-list"></div>
       </div>
@@ -2987,8 +2990,8 @@
         <select id="pu-history-status" class="pu-input" style="width:140px;" onchange="puRenderHistory()">
           <option value="">状態: すべて</option>
           <option value="pending">依頼中</option>
-          <option value="ordered">発注済み</option>
-          <option value="done">完了</option>
+          <option value="ordered">発注完了</option>
+          <option value="delivered">納品済み</option>
         </select>
         <button type="button" class="pu-btn ghost" onclick="puOpenHistorySupplierPopup()">🏭 仕入先リスト</button>
         <span id="pu-history-supplier-chip" style="display:none;"></span>
@@ -8422,8 +8425,7 @@ function puShowSendSuccess(reqId) {
 // ---- 依頼一覧 ----
 const PU_STATUS = {
   pending: { label: '依頼中',   color: '#d97706', bg: '#fffbeb', bd: '#fde68a' },
-  ordered: { label: '発注済み', color: '#2563eb', bg: '#eff6ff', bd: '#bfdbfe' },
-  done:    { label: '完了',     color: '#059669', bg: '#ecfdf5', bd: '#a7f3d0' },
+  ordered: { label: '発注完了', color: '#2563eb', bg: '#eff6ff', bd: '#bfdbfe' },
   delivered: { label: '納品済み', color: '#7c3aed', bg: '#f5f3ff', bd: '#ddd6fe' },
 };
 
@@ -8598,8 +8600,8 @@ function puRenderHistory() {
       + '<td>' + puEsc(it.box || '') + '</td>'
       + '<td>' + puEsc(destination) + '</td>'
       + '<td>' + urgencyHtml + '</td>'
-      + '<td><span class="pu-xl-status" style="color:' + st.color + ';background:' + st.bg + ';border:1px solid ' + st.bd + ';' + (itStatus === 'done' || itStatus === 'delivered' ? 'cursor:pointer;' : '') + '"'
-          + (itStatus === 'done' || itStatus === 'delivered' ? ' title="クリックで切替" onclick="puToggleHistoryItemStatus(' + it.id + ',\'' + itStatus + '\')"' : '')
+      + '<td><span class="pu-xl-status" style="color:' + st.color + ';background:' + st.bg + ';border:1px solid ' + st.bd + ';' + (itStatus === 'ordered' || itStatus === 'delivered' ? 'cursor:pointer;' : '') + '"'
+          + (itStatus === 'ordered' || itStatus === 'delivered' ? ' title="クリックで切替" onclick="puToggleHistoryItemStatus(' + it.id + ',\'' + itStatus + '\')"' : '')
           + '>' + st.label + '</span></td>'
       + '<td>' + cancelBtn + '</td>'
       + '</tr>';
@@ -8627,11 +8629,11 @@ async function puCancelHistoryItem(itemId) {
   await puLoadRequests(true);
 }
 
-// 依頼履歴のステータスバッジをクリックしたときの切替: 完了⇔納品済みのみ許可、それ以外は何もしない
+// 依頼履歴のステータスバッジをクリックしたときの切替: 発注完了⇔納品済みのみ許可、それ以外は何もしない
 async function puToggleHistoryItemStatus(itemId, currentStatus) {
   if (currentStatus === 'delivered') {
-    // 納品済み→完了に戻す（単価チェック不要）
-    const body = { status: 'done', delivered_at: null };
+    // 納品済み→発注完了に戻す（単価チェック不要）
+    const body = { status: 'ordered', delivered_at: null };
     const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_request_items?id=eq.${itemId}`,
       { method: 'PATCH', headers: { ...PU_H(), 'Prefer': 'return=minimal' }, body: JSON.stringify(body) });
     if (!res.ok) { alert('更新に失敗しました: ' + await res.text()); return; }
@@ -8640,12 +8642,12 @@ async function puToggleHistoryItemStatus(itemId, currentStatus) {
       if (it) Object.assign(it, body);
     }
     puRenderHistory();
-    puToast('✅ 完了に戻しました', '#059669');
+    puToast('✅ 発注完了に戻しました', '#2563eb');
     return;
   }
-  if (currentStatus !== 'done') return; // それ以外の状態は何もしない
+  if (currentStatus !== 'ordered') return; // それ以外の状態は何もしない
 
-  // 完了→納品済み：購入品マスタの単価を確認し、未設定なら強制入力モーダルを開く
+  // 発注完了→納品済み：購入品マスタの単価を確認し、未設定なら強制入力モーダルを開く
   let target = null;
   for (const [reqId, items] of _puReqItems.entries()) {
     const it = items.find(x => x.id === itemId);
@@ -8669,7 +8671,7 @@ async function puToggleHistoryItemStatus(itemId, currentStatus) {
   puToast('📦 納品済みにしました', '#7c3aed');
 }
 
-// ---- 単価未設定の強制入力モーダル（完了→納品済みへの切替時、入力完了までキャンセル以外の操作を不可にする） ----
+// ---- 単価未設定の強制入力モーダル（発注完了→納品済みへの切替時、入力完了までキャンセル以外の操作を不可にする） ----
 let _puForcePriceItemId = null;
 function puOpenForcePriceModal(itemId) {
   let target = null;
@@ -8991,9 +8993,11 @@ function puDefaultDestination(requester) {
   return (factory ? factory + '_' : '') + requester;
 }
 
-// 依頼一覧のグルーピング: 第一優先=日付、第二優先=依頼者、第三優先=仕入先
-// 同じ(日付・依頼者・仕入先)の品物は1枚のカードにまとめて表示する（内部的には元の依頼IDごとの状態を保持）
-const PU_STATUS_ORDER = ['pending', 'ordered', 'done', 'delivered'];
+// 依頼一覧のグルーピング: 第一優先=日付、第二優先=依頼者、第三優先=仕入先、第四優先=ステータス
+// 同じ(日付・依頼者・仕入先・ステータス)の品物は1枚のカードにまとめて表示する（内部的には元の依頼IDごとの状態を保持）
+// ※ステータスもキーに含めることで、同じ日に同じ仕入先へ複数回依頼した場合でも、既に発注登録済みの品目が
+//   新しく届いた依頼中の品目に引きずられて依頼一覧へ逆戻りしてしまうことを防ぐ
+const PU_STATUS_ORDER = ['pending', 'ordered', 'delivered'];
 function puGroupRequests() {
   const groups = new Map(); // key -> group
   _puRequests.forEach(r => {
@@ -9001,7 +9005,10 @@ function puGroupRequests() {
     const dateKey = puToJstParts(r.created_at).date; // YYYY-MM-DD（日本時間）
     items.forEach(it => {
       const company = it.company || '（仕入先未設定）';
-      const key = dateKey + '|' + r.requested_by + '|' + company;
+      // ステータスは品目（purchase_request_items）ごとに持つ。1回の依頼送信に複数の仕入先が
+      // 混ざっていても、会社ごとのカードで独立してステータスを進められるようにするため。
+      const itStatus = it.status || r.status || 'pending';
+      const key = dateKey + '|' + r.requested_by + '|' + company + '|' + itStatus;
       if (!groups.has(key)) {
         groups.set(key, {
           key, date: dateKey, requester: r.requested_by, company,
@@ -9009,9 +9016,6 @@ function puGroupRequests() {
         });
       }
       const g = groups.get(key);
-      // ステータスは品目（purchase_request_items）ごとに持つ。1回の依頼送信に複数の仕入先が
-      // 混ざっていても、会社ごとのカードで独立してステータスを進められるようにするため。
-      const itStatus = it.status || r.status || 'pending';
       g.items.push({ ...it, _req_status: itStatus, _req_id: r.id });
       g.requestIds.add(r.id);
       g.statuses.add(itStatus);
@@ -9019,7 +9023,8 @@ function puGroupRequests() {
     });
   });
   const list = [...groups.values()].map(g => {
-    // 複数の元依頼が混ざる場合は最も進んでいない状態をグループの状態とする
+    // キーにステータスを含めているため通常はstatusesの要素は1種類のみだが、念のため
+    // 複数混ざっていた場合は最も進んでいない状態をグループの状態とする
     g.status = PU_STATUS_ORDER.find(s => g.statuses.has(s)) || 'pending';
     // ドラッグ&ドロップでまとめた場合も含め、同じ宛先の品目がまとまって見えるよう宛先順に並べる
     g.items.sort((a, b) => {
@@ -9049,9 +9054,9 @@ function puRenderRequests() {
   // タブの閲覧権限と同じ永冨・山下のみに許可する
   const admin = puCanSeeRequestsTab();
   const me = puUserName();
-  // 完了（done）した依頼は依頼一覧からは除外し、発注履歴タブへ移す
+  // 発注登録（ordered）以降になった依頼は依頼一覧からは除外し、発注履歴タブへ移す
   const groups = puGroupRequests()
-    .filter(g => g.status !== 'done')
+    .filter(g => g.status === 'pending')
     .filter(g => !_puSelectedCompany || g.company === _puSelectedCompany)
     .filter(g => {
       if (!_puReqSearchQuery) return true;
@@ -9063,6 +9068,13 @@ function puRenderRequests() {
       + (_puReqSearchQuery ? '該当する依頼が見つかりません' : '依頼はまだありません') + '</div>';
   } else {
     box.innerHTML = groups.map(g => puBuildGroupCardHtml(g, admin, me)).join('');
+  }
+  // 「← 仕入先一覧に戻る」の横の「まとめて登録」ボタン：選択中の仕入先に依頼中が1件でもあれば表示
+  const bulkBtn = document.getElementById('pu-req-bulk-btn');
+  if (bulkBtn) {
+    const hasPending = admin && _puSelectedCompany
+      && puGroupRequests().some(g => g.status === 'pending' && g.company === _puSelectedCompany);
+    bulkBtn.style.display = hasPending ? '' : 'none';
   }
   puRenderOrderHistory();
 }
@@ -9081,22 +9093,17 @@ function puBuildGroupCardHtml(g, admin, me, orderLabel) {
   const st = PU_STATUS[g.status] || PU_STATUS.pending;
   let actions = '';
   if (admin) {
-    if (g.status === 'pending') actions += '<button class="pu-btn primary" onclick="puMarkGroupOrdered(\'' + g.key.replace(/'/g, "\\'") + '\')">材料発注登録</button>';
+    if (g.status === 'pending') actions += '<button class="pu-btn primary" onclick="puMarkGroupOrdered(\'' + g.key.replace(/'/g, "\\'") + '\')">発注登録</button>';
     if (g.status === 'ordered') actions += '<button class="pu-btn ghost" onclick="puSetGroupStatus(\'' + g.key.replace(/'/g, "\\'") + '\',\'pending\')">依頼中に戻す</button>'
-      + '<button class="pu-btn primary" onclick="puSetGroupStatus(\'' + g.key.replace(/'/g, "\\'") + '\',\'done\')">完了にする</button>'
       + '<button class="pu-btn ghost" onclick="puOpenOrderPreview(\'' + g.key.replace(/'/g, "\\'") + '\')">注文書を見る</button>';
-    if (g.status === 'done') {
-      actions += '<button class="pu-btn ghost" onclick="puSetGroupStatus(\'' + g.key.replace(/'/g, "\\'") + '\',\'ordered\')">発注済みに戻す</button>'
-      + '<button class="pu-btn ghost" onclick="puOpenOrderPreview(\'' + g.key.replace(/'/g, "\\'") + '\')">注文書を見る</button>';
-    }
   }
   if (puCanSeeRequestsTab() || g.requester === me)
     actions += '<button class="pu-btn ghost" style="color:#dc2626;border-color:#fecaca;" onclick="puDeleteGroup(\'' + g.key.replace(/'/g, "\\'") + '\')">削除</button>';
   const notes = [...g.notes];
   const keyEsc = g.key.replace(/'/g, "\\'");
   const cardId = 'pu-oc-' + puSimpleHash(g.key);
-  // ドラッグ&ドロップでのまとめ機能は、まだ動いている依頼（依頼中・発注済み）同士でのみ有効にする
-  const dragAttrs = (admin && g.status !== 'done')
+  // ドラッグ&ドロップでのまとめ機能は、まだ動いている依頼（依頼中・発注完了）同士でのみ有効にする
+  const dragAttrs = (admin && g.status !== 'delivered')
     ? ' draggable="true" ondragstart="puDragStartGroup(event,\'' + keyEsc + '\')" '
       + 'ondragover="puDragOverGroup(event)" ondragleave="puDragLeaveGroup(event)" '
       + 'ondrop="puDropGroup(event,\'' + keyEsc + '\')" ondragend="puDragEndGroup(event)"'
@@ -9131,7 +9138,7 @@ function puToggleOrderCard(ev, cardId) {
   if (chev) chev.textContent = hidden ? '▼' : '▶';
 }
 
-// 発注履歴：完了（done）した依頼をデータカードのまま一覧表示する（永冨・山下のみ閲覧可）
+// 発注履歴：発注完了（ordered、まだ納品されていない）の依頼をデータカードのまま一覧表示する（永冨・山下のみ閲覧可）
 const PU_CIRCLED_NUMS = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩','⑪','⑫','⑬','⑭','⑮','⑯','⑰','⑱','⑲','⑳'];
 function puCircledNum(n) { return PU_CIRCLED_NUMS[n - 1] || ('(' + n + ')'); }
 
@@ -9181,7 +9188,7 @@ function puRenderOrderHistory() {
   }
   const admin = puCanSeeRequestsTab();
   const me = puUserName();
-  let groups = puGroupRequests().filter(g => g.status === 'done');
+  let groups = puGroupRequests().filter(g => g.status === 'ordered');
   if (_puOrderHistoryDate) groups = groups.filter(g => g.date === _puOrderHistoryDate);
 
   const countEl = document.getElementById('pu-orderhistory-count');
@@ -9189,7 +9196,7 @@ function puRenderOrderHistory() {
 
   if (!groups.length) {
     box.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:40px 0;">'
-      + (_puOrderHistoryDate ? 'この日の完了した発注はありません' : '完了した発注はまだありません') + '</div>';
+      + (_puOrderHistoryDate ? 'この日の発注はありません' : '発注した注文はまだありません') + '</div>';
     return;
   }
 
@@ -9244,9 +9251,9 @@ function puRenderOrderHistoryCalendar() {
   const wrap = document.getElementById('pu-oh-calendar');
   if (!wrap) return;
 
-  // 完了（done）した発注（注文書）の件数を日付ごとに集計
+  // 発注済み（ordered、まだ納品されていない）の発注（注文書）の件数を日付ごとに集計
   const counts = new Map(); // 'YYYY-MM-DD' -> 件数
-  puGroupRequests().filter(g => g.status === 'done').forEach(g => counts.set(g.date, (counts.get(g.date) || 0) + 1));
+  puGroupRequests().filter(g => g.status === 'ordered').forEach(g => counts.set(g.date, (counts.get(g.date) || 0) + 1));
 
   if (!_puOhCalMonth) {
     const base = _puOrderHistoryDate || (counts.size ? [...counts.keys()].sort().reverse()[0] : null);
@@ -9472,20 +9479,42 @@ async function puDeleteReqItem(itemId) {
 
 function puFindGroup(key) { return puGroupRequests().find(g => g.key === key); }
 
+// 品目ID配列に対してステータスを一括更新する共通ヘルパー（単一グループ・複数グループ統合の両方から利用）
+async function puPatchItemsStatus(itemIds, status) {
+  if (!itemIds.length) return true;
+  const body = { status };
+  if (status === 'ordered') { body.ordered_at = new Date().toISOString(); }
+  if (status === 'pending') { body.ordered_at = null; }
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_request_items?id=in.(${itemIds.join(',')})`,
+    { method: 'PATCH', headers: { ...PU_H(), 'Prefer': 'return=minimal' }, body: JSON.stringify(body) });
+  if (!res.ok) { alert('更新に失敗しました: ' + await res.text()); return false; }
+  return true;
+}
+
 async function puSetGroupStatus(key, status) {
   const g = puFindGroup(key); if (!g) return;
-  const body = { status };
-  if (status === 'ordered') { body.ordered_at = new Date().toISOString(); body.done_at = null; }
-  if (status === 'pending') { body.ordered_at = null; body.done_at = null; }
-  if (status === 'done')    { body.done_at = new Date().toISOString(); }
   // ステータスは品目（purchase_request_items）単位で更新する。1回の依頼に複数の仕入先が
   // 混ざっている場合、purchase_requests側で更新すると他の仕入先のカードまで変わってしまうため。
   const itemIds = g.items.map(it => it.id).filter(id => id != null);
-  if (!itemIds.length) return;
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_request_items?id=in.(${itemIds.join(',')})`,
-    { method: 'PATCH', headers: { ...PU_H(), 'Prefer': 'return=minimal' }, body: JSON.stringify(body) });
-  if (!res.ok) { alert('更新に失敗しました: ' + await res.text()); await puLoadRequests(true); return; }
+  await puPatchItemsStatus(itemIds, status);
   await puLoadRequests(true);
+}
+
+// 「まとめて登録」: 指定仕入先の依頼中グループ（日付・依頼者が異なるものも含む）を
+// すべて発注済みにし、まとめた注文書プレビューを自動表示する
+async function puBulkRegisterSupplier(company) {
+  if (!puCanSeeRequestsTab()) return;
+  const groups = puGroupRequests().filter(g => g.company === company && g.status === 'pending');
+  if (!groups.length) { puToast('依頼中の注文はありません', '#64748b'); return; }
+  const itemCount = groups.reduce((sum, g) => sum + g.items.length, 0);
+  if (!confirm('「' + company + '」宛の依頼中 ' + groups.length + '件（品目 ' + itemCount + '件）をまとめて材料発注登録します。よろしいですか？')) return;
+  const itemIds = groups.flatMap(g => g.items.map(it => it.id)).filter(id => id != null);
+  const ok = await puPatchItemsStatus(itemIds, 'ordered');
+  const keys = new Set(groups.map(g => g.key));
+  await puLoadRequests(true);
+  if (!ok) return;
+  const freshGroups = puGroupRequests().filter(g => keys.has(g.key));
+  await puOpenOrderPreviewMerged(company, freshGroups);
 }
 
 // ---- 納品済みにする（単価・金額を手入力して登録） ----
@@ -9581,23 +9610,44 @@ async function puMarkGroupOrdered(key) {
 }
 
 // ---- 注文書プレビュー ＆ 材料発注管理表 追記用データ ----
+
+// グループ配列から注文書用の行データを組み立てる（宛先はグループごとの依頼者のデフォルト宛先で補完）
+async function puBuildOrderRows(groups) {
+  let rows = [];
+  for (const g of groups) {
+    const factory = await puGetUserFactory(g.requester);
+    const groupDefaultDest = (factory ? factory + '_' : '') + g.requester;
+    rows = rows.concat(g.items.map(it => {
+      const totalQty = it.qty * (it.amount || 1);
+      return { name: it.product_name, amount: it.amount, unit: it.unit, qty: it.qty, totalQty, box: it.box || '', destination: it.destination || groupDefaultDest };
+    }));
+  }
+  return rows;
+}
+
 async function puOpenOrderPreview(key) {
   const g = puFindGroup(key); if (!g) return;
+  const rows = await puBuildOrderRows([g]);
+  puRenderOrderPreviewModal(g.company, rows);
+}
+
+// 「まとめて登録」から呼ばれる: 複数グループ（仕入先は共通）の品目をまとめて1枚の注文書プレビューとして表示
+async function puOpenOrderPreviewMerged(company, groups) {
+  if (!groups.length) return;
+  const rows = await puBuildOrderRows(groups);
+  puRenderOrderPreviewModal(company, rows);
+}
+
+function puRenderOrderPreviewModal(company, rows) {
   const today = new Date();
   const dateStr = (today.getMonth() + 1) + '/' + today.getDate() + '/' + today.getFullYear();
   const pasteDateStr = today.getFullYear() + '/' + (today.getMonth() + 1) + '/' + today.getDate();
-  const factory = await puGetUserFactory(g.requester);
-  const groupDefaultDest = (factory ? factory + '_' : '') + g.requester;
-  const rows = g.items.map(it => {
-    const totalQty = it.qty * (it.amount || 1);
-    return { name: it.product_name, amount: it.amount, unit: it.unit, qty: it.qty, totalQty, box: it.box || '', destination: it.destination || groupDefaultDest };
-  });
 
   // --- 注文書プレビュー（印刷可能） ---
   const orderHtml = '<div id="pu-order-print">'
     + '<div style="font-size:20px;font-weight:800;text-align:center;margin-bottom:14px;">注文書</div>'
     + '<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px;">'
-      + '<div style="font-size:15px;font-weight:700;">' + puEsc(g.company) + '　御中</div>'
+      + '<div style="font-size:15px;font-weight:700;">' + puEsc(company) + '　御中</div>'
       + '<div style="font-size:13px;">' + dateStr + '</div>'
     + '</div>'
     + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
@@ -9629,8 +9679,8 @@ async function puOpenOrderPreview(key) {
   // G列は各行の「宛先」（例: 第1工場_山本悠）の "_" より後ろの名前を使い、全行「〇〇氏　依頼分」の形式に統一する
   const executor = puUserName();
   const pasteRows = rows.map(r => {
-    const dest = r.destination || groupDefaultDest || '';
-    const destName = dest.includes('_') ? dest.split('_').pop() : (dest || g.requester);
+    const dest = r.destination || '';
+    const destName = dest.includes('_') ? dest.split('_').pop() : dest;
     // 注文数は「入数＋単位(注文数＋荷姿)」の形式で表示（例: 5000本入り(2箱)）
     const qtyDisplay = (r.amount != null ? r.amount : '') + (r.unit || '') + '(' + r.qty + (r.box || '') + ')';
     return { name: r.name, qty: qtyDisplay, date: pasteDateStr, executor, remark: destName + '氏\u3000依頼分' };
@@ -9703,9 +9753,8 @@ function puPrintOrder() {
 
 async function puSetStatus(id, status) {
   const body = { status };
-  if (status === 'ordered') { body.ordered_at = new Date().toISOString(); body.done_at = null; }
-  if (status === 'pending') { body.ordered_at = null; body.done_at = null; }
-  if (status === 'done')    { body.done_at = new Date().toISOString(); }
+  if (status === 'ordered') { body.ordered_at = new Date().toISOString(); }
+  if (status === 'pending') { body.ordered_at = null; }
   const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_requests?id=eq.${id}`,
     { method: 'PATCH', headers: { ...PU_H(), 'Prefer': 'return=minimal' }, body: JSON.stringify(body) });
   if (!res.ok) { alert('更新に失敗しました: ' + await res.text()); return; }
