@@ -507,9 +507,9 @@
   .pu-ledger-scrubber input[type="range"]::-moz-range-thumb { width:26px; height:14px; border-radius:8px;
     background:#111827; cursor:grab; border:none; }
   .pu-ledger-scrubber input[type="range"]::-moz-range-track { height:2px; background:#111827; border-radius:2px; }
-  #pu-ledger-btn { background:#7c3aed; color:#fff; border:none; border-radius:6px; padding:6px 14px; font-size:12.5px;
+  #pu-ledger-btn { background:#059669; color:#fff; border:none; border-radius:6px; padding:6px 14px; font-size:12.5px;
     font-weight:700; cursor:pointer; }
-  #pu-ledger-btn:hover { background:#6d28d9; }
+  #pu-ledger-btn:hover { background:#047857; }
   .pu-ri-input { border:1px solid transparent; background:transparent; padding:2px 4px; border-radius:4px; }
   .pu-ri-input:hover, .pu-ri-input:focus { border-color:#cbd5e1; background:#fff; }
 
@@ -8426,7 +8426,7 @@ function puShowSendSuccess(reqId) {
 const PU_STATUS = {
   pending: { label: '依頼中',   color: '#d97706', bg: '#fffbeb', bd: '#fde68a' },
   ordered: { label: '発注完了', color: '#2563eb', bg: '#eff6ff', bd: '#bfdbfe' },
-  delivered: { label: '納品済み', color: '#7c3aed', bg: '#f5f3ff', bd: '#ddd6fe' },
+  delivered: { label: '納品済み', color: '#059669', bg: '#ecfdf5', bd: '#a7f3d0' },
 };
 
 async function puLoadRequests(render) {
@@ -8668,7 +8668,7 @@ async function puToggleHistoryItemStatus(itemId, currentStatus) {
   if (!res.ok) { alert('更新に失敗しました: ' + await res.text()); return; }
   Object.assign(target, body);
   puRenderHistory();
-  puToast('📦 納品済みにしました', '#7c3aed');
+  puToast('📦 納品済みにしました', '#059669');
 }
 
 // ---- 単価未設定の強制入力モーダル（発注完了→納品済みへの切替時、入力完了までキャンセル以外の操作を不可にする） ----
@@ -8748,7 +8748,7 @@ async function puConfirmForcePrice() {
     Object.assign(target, body);
     puCancelForcePrice();
     puRenderHistory();
-    puToast('📦 納品済みにしました', '#7c3aed');
+    puToast('📦 納品済みにしました', '#059669');
   } catch (err) {
     alert('登録に失敗しました: ' + err.message);
   }
@@ -9507,14 +9507,37 @@ async function puBulkRegisterSupplier(company) {
   const groups = puGroupRequests().filter(g => g.company === company && g.status === 'pending');
   if (!groups.length) { puToast('依頼中の注文はありません', '#64748b'); return; }
   const itemCount = groups.reduce((sum, g) => sum + g.items.length, 0);
-  if (!confirm('「' + company + '」宛の依頼中 ' + groups.length + '件（品目 ' + itemCount + '件）をまとめて材料発注登録します。よろしいですか？')) return;
-  const itemIds = groups.flatMap(g => g.items.map(it => it.id)).filter(id => id != null);
+  if (!confirm('「' + company + '」宛の依頼中 ' + groups.length + '件（品目 ' + itemCount + '件）をまとめて発注登録します。よろしいですか？')) return;
+
+  // 依頼者・日付が異なる依頼が混ざっている場合も、発注登録時に1つの注文書（発注履歴カード）へ
+  // 統合する（ドラッグ&ドロップでの「まとめる」機能と同じ方式：品目を1件の依頼へ移し替える。
+  // 宛先は各品目の元の依頼者のもので固定するため、統合後も宛先の情報は失われない）
+  if (groups.length > 1) {
+    const sorted = groups.slice().sort((a, b) => puGroupMinCreatedAt(a).localeCompare(puGroupMinCreatedAt(b)));
+    const target = sorted[0];
+    const targetRequestId = [...target.requestIds][0];
+    for (const g of sorted.slice(1)) {
+      for (const it of g.items) {
+        const fixedDestination = it.destination || puDefaultDestination(g.requester);
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_request_items?id=eq.${it.id}`,
+          { method: 'PATCH', headers: { ...PU_H(), 'Prefer': 'return=minimal' },
+            body: JSON.stringify({ request_id: targetRequestId, destination: fixedDestination }) });
+        if (!res.ok) { alert('依頼の統合に失敗しました: ' + await res.text()); await puLoadRequests(true); return; }
+      }
+    }
+    await puLoadRequests(true);
+  }
+
+  const mergedGroups = puGroupRequests().filter(g => g.company === company && g.status === 'pending');
+  const itemIds = mergedGroups.flatMap(g => g.items.map(it => it.id)).filter(id => id != null);
+  // 注文書プレビュー用の行データは、ステータス変更前（＝グループキーがまだ 'pending' のまま）の
+  // スナップショットから組み立てる。キーにはステータスも含まれるため、先にステータスを変更してから
+  // 同じキーで再検索すると見つからずプレビューが開けなくなるため。
+  const rows = await puBuildOrderRows(mergedGroups);
   const ok = await puPatchItemsStatus(itemIds, 'ordered');
-  const keys = new Set(groups.map(g => g.key));
   await puLoadRequests(true);
   if (!ok) return;
-  const freshGroups = puGroupRequests().filter(g => keys.has(g.key));
-  await puOpenOrderPreviewMerged(company, freshGroups);
+  puRenderOrderPreviewModal(company, rows);
 }
 
 // ---- 納品済みにする（単価・金額を手入力して登録） ----
@@ -9573,7 +9596,7 @@ async function puConfirmDelivered() {
     }
     puCloseDeliverModal();
     await puLoadRequests(true);
-    puToast('📦 納品済みにしました', '#7c3aed');
+    puToast('📦 納品済みにしました', '#059669');
   } catch (err) {
     alert('登録に失敗しました: ' + err.message);
   }
@@ -9601,12 +9624,19 @@ async function puDeleteGroup(key) {
   await puLoadRequests(true);
 }
 
-// 「材料発注登録」: グループを発注済みにし、注文書プレビュー＋コピー用データを表示
+// 「発注登録」: グループを発注済みにし、注文書プレビュー＋コピー用データを表示
 async function puMarkGroupOrdered(key) {
   const g = puFindGroup(key); if (!g) return;
   if (!confirm(g.company + ' 宛（' + puFmtDate(g.date) + ' ・ ' + g.requester + '様）の材料発注を登録します。よろしいですか？')) return;
-  await puSetGroupStatus(key, 'ordered');
-  await puOpenOrderPreview(key);
+  const itemIds = g.items.map(it => it.id).filter(id => id != null);
+  // 注文書プレビュー用の行データは、ステータス変更前（＝グループキーがまだ 'pending' のまま）の
+  // スナップショット g から組み立てる。キーにはステータスも含まれるため、先にステータスを変更してから
+  // 同じキーで再検索すると見つからずプレビューが開けなくなるため。
+  const rows = await puBuildOrderRows([g]);
+  const ok = await puPatchItemsStatus(itemIds, 'ordered');
+  await puLoadRequests(true);
+  if (!ok) return;
+  puRenderOrderPreviewModal(g.company, rows);
 }
 
 // ---- 注文書プレビュー ＆ 材料発注管理表 追記用データ ----
@@ -9629,13 +9659,6 @@ async function puOpenOrderPreview(key) {
   const g = puFindGroup(key); if (!g) return;
   const rows = await puBuildOrderRows([g]);
   puRenderOrderPreviewModal(g.company, rows);
-}
-
-// 「まとめて登録」から呼ばれる: 複数グループ（仕入先は共通）の品目をまとめて1枚の注文書プレビューとして表示
-async function puOpenOrderPreviewMerged(company, groups) {
-  if (!groups.length) return;
-  const rows = await puBuildOrderRows(groups);
-  puRenderOrderPreviewModal(company, rows);
 }
 
 function puRenderOrderPreviewModal(company, rows) {
