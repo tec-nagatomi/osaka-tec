@@ -8659,10 +8659,11 @@ async function puToggleHistoryItemStatus(itemId, currentStatus) {
     puOpenForcePriceModal(itemId);
     return;
   }
-  // マスタに単価があればそれを使って即座に納品済みへ
+  // マスタに単価があればそれを使って即座に納品済みへ（金額＝単価×入数×注文数）
   const nowIso = new Date().toISOString();
   const qty = target.qty || 0;
-  const body = { status: 'delivered', delivered_at: nowIso, unit_price: master.unit_price, line_amount: Math.round(master.unit_price * qty) };
+  const packAmount = target.amount != null ? target.amount : 1;
+  const body = { status: 'delivered', delivered_at: nowIso, unit_price: master.unit_price, line_amount: Math.round(master.unit_price * packAmount * qty) };
   const res = await fetch(`${SUPABASE_URL}/rest/v1/purchase_request_items?id=eq.${itemId}`,
     { method: 'PATCH', headers: { ...PU_H(), 'Prefer': 'return=minimal' }, body: JSON.stringify(body) });
   if (!res.ok) { alert('更新に失敗しました: ' + await res.text()); return; }
@@ -8682,10 +8683,12 @@ function puOpenForcePriceModal(itemId) {
   if (!target) return;
   _puForcePriceItemId = itemId;
   const qty = target.qty || 0;
+  const packAmount = target.amount != null ? target.amount : 1;
+  const qtyLabel = (target.amount != null ? target.amount + puEsc(target.unit || '') : puEsc(target.unit || '')) + ' × 注文数 ' + qty + puEsc(target.box || '');
   const body = document.getElementById('pu-forceprice-body');
   body.innerHTML = '<div style="font-size:12px;color:#64748b;margin-bottom:10px;">この物品は購入品マスタに単価が登録されていません。納品済みにするには単価の入力が必要です。</div>'
     + '<div style="font-weight:700;font-size:13px;margin-bottom:8px;">' + puEsc(target.product_name)
-    + '　<span style="color:#94a3b8;font-weight:400;">数量: ' + qty + puEsc(target.unit || '') + '</span></div>'
+    + '　<span style="color:#94a3b8;font-weight:400;">入数: ' + qtyLabel + '</span></div>'
     + '<div style="display:flex;gap:8px;">'
     + '<div style="flex:1;"><label style="font-size:11px;color:#64748b;">単価（円）</label>'
     + '<input class="pu-input" id="pu-forceprice-input" type="number" min="0" step="1" placeholder="単価を入力" oninput="puForcePriceInputChanged()"></div>'
@@ -8702,10 +8705,11 @@ function puForcePriceInputChanged() {
     if (it) { target = it; break; }
   }
   const qty = (target && target.qty) || 0;
+  const packAmount = (target && target.amount != null) ? target.amount : 1;
   const priceInput = document.getElementById('pu-forceprice-input');
   const amountInput = document.getElementById('pu-forceprice-amount');
   const price = parseFloat(priceInput.value);
-  amountInput.value = isNaN(price) ? '' : Math.round(price * qty);
+  amountInput.value = isNaN(price) ? '' : Math.round(price * packAmount * qty);
 }
 function puCancelForcePrice() {
   document.getElementById('pu-forceprice-modal').style.display = 'none';
@@ -8729,7 +8733,8 @@ async function puConfirmForcePrice() {
   }
   if (!target) { puCancelForcePrice(); return; }
   const qty = target.qty || 0;
-  const lineAmount = Math.round(price * qty);
+  const packAmount = target.amount != null ? target.amount : 1;
+  const lineAmount = Math.round(price * packAmount * qty);
   const nowIso = new Date().toISOString();
   try {
     // 購入品マスタに単価を登録（次回以降は自動で使われる）
@@ -8790,9 +8795,11 @@ function puLedgerCollectEntries(year) {
       if (y !== year) return;
       const destination = it.destination || puDefaultDestination(req.requested_by);
       const destName = destination.includes('_') ? destination.split('_').pop() : destination;
+      const orderJst = puToJstParts(req.created_at);
       entries.push({
         id: it.id,
         date: jst.date, day: d, month: m - 1,
+        orderDate: orderJst.date || '',
         product_name: it.product_name,
         packAmount: it.amount, qty: it.qty, unit: it.unit || '', box: it.box || '',
         unit_price: it.unit_price,
@@ -8818,7 +8825,8 @@ function puRenderLedger() {
 
 function puLedgerRowHtml(e, admin) {
   return '<tr>'
-    + '<td>' + e.day + '日</td>'
+    + '<td style="font-weight:800;color:#38bdf8;">' + e.day + '日</td>'
+    + '<td>' + (e.orderDate ? puEsc(e.orderDate.slice(5).replace('-', '/')) : '') + '</td>'
     + '<td class="pu-ledger-name">' + puEsc(e.product_name) + '</td>'
     + '<td class="num">' + (e.packAmount != null ? e.packAmount : '') + '</td>'
     + '<td>' + puEsc(e.unit) + '</td>'
@@ -8834,7 +8842,7 @@ function puLedgerRowHtml(e, admin) {
 function puLedgerMonthHtml(monthNum, arr, admin) {
   const total = arr.reduce((s, e) => s + (e.lineAmount || 0), 0);
   const tax = Math.floor(total * 0.1);
-  const colCount = admin ? 10 : 9;
+  const colCount = admin ? 11 : 10;
   const rows = arr.length
     ? arr.map(e => puLedgerRowHtml(e, admin)).join('')
     : '<tr><td colspan="' + colCount + '" style="text-align:center;color:#cbd5e1;padding:22px 0;">データがありません</td></tr>';
@@ -8843,7 +8851,7 @@ function puLedgerMonthHtml(monthNum, arr, admin) {
       + '<button class="pu-ledger-export-btn" onclick="puLedgerExportMonth(' + monthNum + ')" title="この月をExcelに出力">⬇ Excel</button>'
     + '</div>'
     + '<div class="pu-ledger-table-wrap"><table class="pu-ledger-table">'
-      + '<thead><tr><th>仕入れ日</th><th>品名</th><th>入数</th><th>単位</th><th>数量</th><th>荷姿</th><th>単価</th><th>金額</th><th>備考</th>' + (admin ? '<th></th>' : '') + '</tr></thead>'
+      + '<thead><tr><th>仕入れ日</th><th>注文日</th><th>品名</th><th>入数</th><th>単位</th><th>数量</th><th>荷姿</th><th>単価</th><th>金額</th><th>備考</th>' + (admin ? '<th></th>' : '') + '</tr></thead>'
       + '<tbody>' + rows + '</tbody>'
     + '</table></div>'
     + '<div class="pu-ledger-month-foot">'
@@ -9551,13 +9559,14 @@ function puOpenDeliverModal(key) {
         const master = _puItems.find(m => m.id === it.item_id);
         const defPrice = (master && master.unit_price != null) ? master.unit_price : '';
         const qty = it.qty || 0;
-        const defAmount = defPrice !== '' ? Math.round(defPrice * qty) : '';
+        const packAmount = it.amount != null ? it.amount : 1;
+        const defAmount = defPrice !== '' ? Math.round(defPrice * packAmount * qty) : '';
         return '<div style="border-bottom:1px solid #f1f5f9;padding-bottom:10px;margin-bottom:10px;">'
           + '<div style="font-weight:700;font-size:13px;">' + puEsc(it.product_name)
-          + '　<span style="color:#94a3b8;font-weight:400;">数量: ' + qty + puEsc(it.unit || '') + '</span></div>'
+          + '　<span style="color:#94a3b8;font-weight:400;">入数: ' + (it.amount != null ? it.amount + puEsc(it.unit || '') : puEsc(it.unit || '')) + ' × 注文数 ' + qty + puEsc(it.box || '') + '</span></div>'
           + '<div style="display:flex;gap:8px;margin-top:6px;">'
           + '<div style="flex:1;"><label style="font-size:11px;color:#64748b;">単価（円）</label>'
-          + '<input class="pu-input pu-deliver-price" data-item-id="' + it.id + '" data-qty="' + qty + '" type="number" min="0" step="1" value="' + defPrice + '" oninput="puDeliverPriceChanged(this)"></div>'
+          + '<input class="pu-input pu-deliver-price" data-item-id="' + it.id + '" data-qty="' + qty + '" data-pack-amount="' + packAmount + '" type="number" min="0" step="1" value="' + defPrice + '" oninput="puDeliverPriceChanged(this)"></div>'
           + '<div style="flex:1;"><label style="font-size:11px;color:#64748b;">金額（円）</label>'
           + '<input class="pu-input pu-deliver-amount" data-item-id="' + it.id + '" type="number" min="0" step="1" value="' + defAmount + '"></div>'
           + '</div></div>';
@@ -9570,9 +9579,10 @@ function puCloseDeliverModal() {
 }
 function puDeliverPriceChanged(input) {
   const qty = parseFloat(input.dataset.qty) || 0;
+  const packAmount = parseFloat(input.dataset.packAmount) || 1;
   const price = parseFloat(input.value);
   const amountInput = document.querySelector('.pu-deliver-amount[data-item-id="' + input.dataset.itemId + '"]');
-  if (amountInput && !isNaN(price)) amountInput.value = Math.round(price * qty);
+  if (amountInput && !isNaN(price)) amountInput.value = Math.round(price * packAmount * qty);
 }
 async function puConfirmDelivered() {
   const key = _puDeliverKey;
@@ -10255,6 +10265,8 @@ async function handleFiles(files) {
   extractedRows = [];
   document.getElementById('preview-wrap').style.display = 'none';
   showStatus('processing', 'ファイルを解析中...', 10);
+  let skippedCount = 0;
+  const unreadableFiles = [];
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     showStatus('processing', `解析中: ${file.name}`, Math.round(((i+0.5)/files.length)*70));
@@ -10265,20 +10277,41 @@ async function handleFiles(files) {
       } else if (file.name.toLowerCase().match(/\.xlsx?$/)) {
         parsed = await parseExcel(file);
       }
+      // 空行・見出し行の混入防止: 図番もOT番号も取れない行、注番が見出し語/日付だけの行は登録対象外
+      const valid = parsed.filter(isValidOrderRow);
+      skippedCount += parsed.length - valid.length;
+      if (parsed.length && !valid.length) unreadableFiles.push(file.name);
       // 注文書の原本ファイルを各行に紐付け（_始まりなので保存時にDBへは送られない）
-      for (const r of parsed) r._sourceFile = file;
-      extractedRows.push(...parsed);
+      for (const r of valid) r._sourceFile = file;
+      extractedRows.push(...valid);
     } catch(e) {
       showStatus('error', 'エラー: ' + file.name + ' — ' + e.message);
       return;
     }
   }
   if (extractedRows.length === 0) {
-    showStatus('error', 'データを抽出できませんでした。画像PDFの場合はテキスト抽出不可です（YP4-N等）。テキスト付きPDFをご使用ください。');
+    showStatus('error', unreadableFiles.length
+      ? `注文書の形式を判別できませんでした（${unreadableFiles.join('、')}）。図番・注番の列が見つからないため登録しません。`
+      : 'データを抽出できませんでした。画像PDFの場合はテキスト抽出不可です（YP4-N等）。テキスト付きPDFをご使用ください。');
     return;
   }
-  showStatus('success', extractedRows.length + '件のデータを抽出しました', 100);
+  let msg = extractedRows.length + '件のデータを抽出しました';
+  if (skippedCount) msg += `（図番の無い行 ${skippedCount}件は除外）`;
+  if (unreadableFiles.length) msg += ` ※形式を判別できず除外: ${unreadableFiles.join('、')}`;
+  showStatus('success', msg, 100);
   renderPreview();
+}
+
+// 登録対象として有効な受注行か（図番またはOT番号が必須。注番が見出し語や日付だけの行は除外）
+function isValidOrderRow(r) {
+  if (!r) return false;
+  const dno = String(r.drawingno || '').trim();
+  const ot  = String(r._otNumber || '').trim();
+  if (!dno && !ot) return false;
+  const ono = String(r.orderno || '').trim();
+  if (EXCEL_HEADER_WORDS.includes(ono) || EXCEL_HEADER_WORDS.includes(dno)) return false;
+  if (/^\d{4}[\/\-.]\d{1,2}[\/\-.]\d{1,2}$/.test(ono) && !dno) return false;
+  return true;
 }
 
 // ---- PDF Parser ----
@@ -11028,7 +11061,11 @@ async function parseExcel(file) {
   }
 
   const ws = wb.Sheets[wb.SheetNames[0]];
-  const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+  const rawData = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+  // 見出し行が1行目に無い注文書（例: ヤマザキマザックは1行目に日付、3行目が見出し）に対応するため、
+  // 先頭15行から既知の見出し語を最も多く含む行を見出し行として採用し、それより上は捨てる
+  const hdrIdx = findExcelHeaderRow(rawData);
+  const data = rawData.slice(hdrIdx);
   if (data.length < 2) return [];
   const header = data[0].map(h => String(h).trim());
   const ci = {};
@@ -11048,6 +11085,25 @@ async function parseExcel(file) {
     // 従来フォーマット（オークマ系）
     return parseExcelOkuma(data, ci);
   }
+}
+
+// 見出し行の自動検出（先頭15行のうち既知の見出し語を最も多く含む行。2語未満なら0行目）
+const EXCEL_HEADER_WORDS = [
+  '受発注No','受注日','商品名','受注数','客先希望納期',                 // ユアサ北陸
+  '手配番号','部品番号','図面番号','指示納期','納場','オーダ','要求日',   // 手配状況照会（ニデックOKK等）
+  '品番','品名','型式','オーダーNo.','発注数','納期','税抜単価','工場','発注日','納入先', // ヤマザキマザック
+  '数量','単価','金額',
+];
+function findExcelHeaderRow(data) {
+  let best = 0, bestScore = 0;
+  const limit = Math.min(data.length, 15);
+  for (let r = 0; r < limit; r++) {
+    const cells = new Set((data[r] || []).map(v => String(v).trim()));
+    let score = 0;
+    for (const w of EXCEL_HEADER_WORDS) if (cells.has(w)) score++;
+    if (score > bestScore) { bestScore = score; best = r; }
+  }
+  return bestScore >= 2 ? best : 0;
 }
 
 // ---- フォーマットE: LGM（寧夏小巨人机床有限公司）----
@@ -11164,18 +11220,21 @@ function parseExcelTehaijo(data, ci, filename) {
     delivery_destination: ci['納場'],  // 「納場名」ではなく「納場」
   };
 
-  // ファイル名から受注日を抽出（例: 手配状況照会_-_2026-06-19T142207_074.xlsx → 2026/06/19）
-  let orderdate = '';
-  const m = (filename || '').match(/(\d{4})-(\d{2})-(\d{2})/);
-  if (m) orderdate = `${m[1]}/${m[2]}/${m[3]}`;
+  // 受注日: 行ごとの「要求日」列を優先。無ければファイル名の日付を使用
+  //  （例: 手配状況照会_-_2026-06-19T142207_074.xlsx / NIDEC-OKK_2026_09_28.xlsx → 2026/06/19）
+  let fileDate = '';
+  const m = (filename || '').match(/(20\d{2})[-_](\d{2})[-_](\d{2})/);
+  if (m) fileDate = `${m[1]}/${m[2]}/${m[3]}`;
+  const reqDateCol = ci['要求日'];
 
   for (let r = 1; r < data.length; r++) {
     const row = data[r];
     const orderno  = String(row[colMap.orderno]   || '').trim();
     const drawingno = String(row[colMap.drawingno] || row[colMap.hinban] || '').trim();
     if (!orderno && !drawingno) continue;
+    const reqDate = reqDateCol !== undefined ? excelDateToStr(row[reqDateCol]) : '';
     rows.push({
-      orderdate,
+      orderdate:            /^\d{4}\/\d{2}\/\d{2}$/.test(reqDate) ? reqDate : fileDate,
       orderno,
       drawingno,
       quantity:             parseInt(row[colMap.quantity]) || 0,
@@ -11204,7 +11263,23 @@ function parseExcelNewOrder(data, ci) {
     price:        ci['税抜単価'],
     deliverydate: ci['納期'],
     delivery_destination: ci['納入先'],
+    factory:      ci['工場'],   // 納入先列が無い版（「工場」列のみ）の場合に使用
   };
+  // 「工場」の略称 → 納入先の正式名称（既存の受注データと表記を合わせる）
+  const MAZAK_FACTORY_MAP = [
+    [/大口/,           'ヤマザキマザック(株)　大口製作所'],
+    [/美濃/,           'ヤマザキマザックマニュファクチャリング(株)　美濃加茂製作所'],
+    [/いなべ/,         'ヤマザキマザック　マニュファクチャリング(株)　いなべ製作所'],
+    [/ワールドパーツ/, 'ワールドパーツセンター'],
+  ];
+  function destOf(row) {
+    const d = colMap.delivery_destination != null ? String(row[colMap.delivery_destination] || '').trim() : '';
+    if (d) return d;
+    const f = colMap.factory != null ? String(row[colMap.factory] || '').trim() : '';
+    if (!f) return '';
+    for (const [re, name] of MAZAK_FACTORY_MAP) if (re.test(f)) return name;
+    return f;
+  }
   for (let r = 1; r < data.length; r++) {
     const row = data[r];
     const orderno = String(row[colMap.orderno] || '').trim();
@@ -11220,7 +11295,7 @@ function parseExcelNewOrder(data, ci) {
       price:                parseFloat(row[colMap.price]) || 0,
       originalno:           '',
       deliverydate:         excelDateToStr(row[colMap.deliverydate]),
-      delivery_destination: String(row[colMap.delivery_destination] || '').trim(),
+      delivery_destination: destOf(row),
       shippingdate:         null,
     });
   }
