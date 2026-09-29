@@ -2173,7 +2173,18 @@
   /* 左：作業指示書／右：メモ パネルの見出しをそろえる */
   .detail-col-left .work-order-title { font-size:15px; color:#111827; border-bottom:2px solid #1d4ed8; letter-spacing:.3em; }
   .detail-col-left .work-order-table td { border-color:#d1d5db; padding:6px 8px; font-size:12.5px; }
-  .detail-col-left .work-order-table .label { background:#f3f4f6; color:#374151; font-size:12px; }
+  .detail-col-left .work-order-table .label { background:#f3f4f6; color:#111827; font-size:12px; }
+  /* 作業指示書の値：文字サイズ・色・書体・揃えを統一（色はすべて黒・太字なし） */
+  .work-order { font-family: inherit; color:#111827; }
+  .work-order-table .value,
+  .detail-col-left .work-order-table .value { font-size:13px; font-weight:500; color:#111827; font-family:inherit; text-align:left; letter-spacing:.02em; line-height:1.45; }
+  /* 各表の左端ラベル幅をそろえて値の開始位置を揃える */
+  .work-order-table td.label:first-child,
+  .detail-col-left .work-order-table td.label:first-child { width:64px; }
+  .work-order-table .value.nw { white-space:nowrap; word-break:normal; letter-spacing:0; }
+  .detail-col-left .work-order-table { table-layout:fixed; }
+
+  .detail-col-left .work-order-title { color:#111827; }
 
   @media (max-width: 1100px) {
     .detail-col-left, .detail-col-center, .detail-col-right { max-height:none; }
@@ -14991,42 +15002,42 @@ function renderWorkOrder(p, pd, children) {
       <!-- 受注日 ↔ 製番 対角線レイアウト -->
       <table class="work-order-table" style="margin-bottom:8px;">
         <tr>
-          <td class="label" style="width:52px;">受注日</td>
-          <td class="value" style="font-size:10px;">${p.orderdate || '-'}</td>
-          <td class="label" style="width:42px;">製　番</td>
-          <td class="value" style="font-family:monospace;font-size:10px;font-weight:700;">${productNo}</td>
+          <td class="label">受注日</td>
+          <td class="value nw">${p.orderdate || '-'}</td>
+          <td class="label" style="width:52px;">製　番</td>
+          <td class="value nw">${productNo}</td>
         </tr>
       </table>
 
       <table class="work-order-table" style="margin-bottom:8px;">
         <tr>
           <td class="label">希望納期</td>
-          <td class="value" colspan="3" style="font-weight:700;font-size:13px;color:#dc2626;">${deliveryDate}</td>
+          <td class="value" colspan="3">${deliveryDate}</td>
         </tr>
         <tr>
           <td class="label">数　量</td>
-          <td class="value" style="font-weight:700;font-size:12px;">${quantity}</td>
-          <td class="label" style="width:42px;">単　位</td>
-          <td class="value" style="text-align:center;">${unit}</td>
+          <td class="value">${quantity}</td>
+          <td class="label" style="width:52px;">単　位</td>
+          <td class="value">${unit}</td>
         </tr>
       </table>
 
       <table class="work-order-table" style="margin-bottom:8px;">
         <tr>
           <td class="label">品　名</td>
-          <td class="value" style="font-weight:600;">${productName}</td>
+          <td class="value">${productName}</td>
         </tr>
         <tr>
           <td class="label">図　番</td>
-          <td class="value" style="font-family:monospace;font-size:10px;">${drawingNo}</td>
+          <td class="value">${drawingNo}</td>
         </tr>
         <tr>
           <td class="label">OT番号</td>
-          <td class="value" style="font-family:monospace;font-size:10px;">${otNumber}</td>
+          <td class="value">${otNumber}</td>
         </tr>
         <tr>
           <td class="label">受注番号</td>
-          <td class="value" style="font-family:monospace;font-size:10px;">${orderNo}</td>
+          <td class="value">${orderNo}</td>
         </tr>
       </table>
 
@@ -15037,7 +15048,7 @@ function renderWorkOrder(p, pd, children) {
         </tr>
         <tr>
           <td class="label">納入先</td>
-          <td class="value" style="font-weight:600;">${destination}</td>
+          <td class="value">${destination}</td>
         </tr>
       </table>
 
@@ -15045,14 +15056,14 @@ function renderWorkOrder(p, pd, children) {
       <table class="work-order-table" style="margin-bottom:8px;">
         <tr>
           <td class="label">備　考</td>
-          <td class="value" style="color:#b45309;">${remarks}</td>
+          <td class="value">${remarks}</td>
         </tr>
       </table>` : ''}
 
       <table class="work-order-table" style="margin-bottom:0;">
         <tr>
           <td class="label">シールNo</td>
-          <td class="value" style="font-weight:700;font-size:12px;letter-spacing:0.05em;">${sealDisplay}</td>
+          <td class="value">${sealDisplay}</td>
         </tr>
       </table>
     </div>
