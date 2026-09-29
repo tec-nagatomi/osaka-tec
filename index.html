@@ -1927,6 +1927,259 @@
     table.ttbl td.lbl{background:#d5d9de !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     .th-onleft .onbox,.th-onbox .onbox{background:#e8f4fb !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   }
+
+  /* ==== 受注管理 レイアウト刷新（左サイドバー＋全幅一覧） ==== */
+  #page-orders .orders-page { padding: 10px 14px 10px 10px; }
+  #page-orders .orders-layout { grid-template-columns: 250px minmax(0,1fr); gap: 14px; height: max(calc(100vh - 122px), 640px); }
+  #page-orders .ord-side { display:flex; flex-direction:column; gap:12px; min-width:0; }
+  #page-orders .ord-side-title { display:flex; align-items:center; gap:10px; background:#f1f5f9; border-radius:8px; padding:14px 16px; font-size:22px; font-weight:800; color:#111827; letter-spacing:.04em; flex-shrink:0; }
+  #page-orders .ord-side-title svg { width:24px; height:24px; color:#1d4ed8; flex-shrink:0; }
+  #page-orders .import-card { padding:10px; border-radius:8px; }
+  #page-orders .import-title { font-size:12px; margin-bottom:8px; }
+  #page-orders .import-title svg { width:14px; height:14px; }
+  #page-orders .drop-zone { padding:22px 8px; margin-bottom:8px; }
+  #page-orders .drop-zone svg { width:30px; height:30px; margin-bottom:8px; }
+  #page-orders .drop-zone-title { font-size:11px; }
+  #page-orders .drop-zone-sub { font-size:10px; margin-bottom:8px; }
+  #page-orders .file-badge { font-size:9.5px; padding:2px 6px; }
+  #page-orders .status-box { font-size:11px; padding:8px 10px; margin-bottom:8px; }
+  #page-orders .preview-wrap { margin-top:8px; }
+  #page-orders .action-row { flex-wrap:wrap; }
+  #page-orders .calendar-card { padding:8px; border-radius:8px; }
+  #page-orders .calendar-header-row { flex-wrap:wrap; gap:4px; margin-bottom:6px; }
+  #page-orders .calendar-header-row > * { flex-shrink:0; }
+  #page-orders .cal-month-label { font-size:11px; white-space:nowrap; }
+  #page-orders .cal-nav-btn { width:22px; height:22px; font-size:12px; }
+  #page-orders .cal-today-btn, #page-orders .cal-inspect-btn { padding:2px 6px; font-size:10px; }
+  #page-orders #cal-base-shipping, #page-orders #cal-base-order { padding:2px 7px !important; font-size:10px !important; }
+  #page-orders .cal-grid { gap:1px; }
+  #page-orders .cal-dow { font-size:9px; padding:2px 0; }
+  #page-orders .cal-cell { min-height:36px; padding:2px; border-radius:4px; }
+  #page-orders .cal-date { font-size:8.5px; margin-bottom:2px; }
+  #page-orders .cal-count-btn { font-size:8.5px; padding:1px 0; letter-spacing:-.02em; }
+  #page-orders .cal-more { font-size:8px; }
+  /* 狭いサイドバーでも日付ポップオーバーが画面外にはみ出さないよう列位置で寄せ方を変える */
+  #page-orders .cal-grid > :nth-child(7n+1) .cal-popover,
+  #page-orders .cal-grid > :nth-child(7n+2) .cal-popover,
+  #page-orders .cal-grid > :nth-child(7n+3) .cal-popover { left:0; right:auto; transform:none; }
+  #page-orders .cal-grid > :nth-child(7n+5) .cal-popover,
+  #page-orders .cal-grid > :nth-child(7n+6) .cal-popover,
+  #page-orders .cal-grid > :nth-child(7n) .cal-popover { left:auto; right:0; transform:none; }
+
+  #page-orders .orders-list-card { border-radius:8px; }
+  #page-orders .ord-toolbar { padding:10px 12px; gap:12px; align-items:stretch; }
+  #page-orders .ord-toolbar-main { display:flex; flex-direction:column; gap:8px; min-width:0; flex:1; }
+  #page-orders .ord-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  #page-orders .orders-count { font-size:14px; padding:4px 12px; border-radius:14px; font-weight:600; }
+  #page-orders .ord-ctl { font-size:13px; padding:5px 8px; border:1px solid #d1d5db; border-radius:6px; background:#fff; color:#374151; height:32px; box-sizing:border-box; }
+  #page-orders select.ord-ctl { min-width:150px; max-width:190px; cursor:pointer; font-weight:600; }
+  #page-orders .ord-date { width:126px; }
+  #page-orders .ord-range { display:flex; align-items:center; gap:4px; }
+  #page-orders .ord-lbl { font-size:12px; color:#6b7280; font-weight:600; }
+  #page-orders .ord-tilde { font-size:12px; color:#9ca3af; }
+  #page-orders .ord-toolbar .refresh-btn { font-size:14px; padding:5px 14px; height:34px; box-sizing:border-box; font-weight:600; border-radius:7px; }
+  #page-orders .ord-toolbar .refresh-btn svg { width:15px !important; height:15px !important; }
+  #page-orders .ord-toolbar .ord-clear { font-size:15px; }
+  #page-orders .ord-toolbar .delivery-seg-btn { font-size:14px; padding:6px 16px; }
+  #page-orders #unregistered-banner { align-items:center; gap:8px; background:#fef3c7; border:1px solid #fde68a; color:#92400e; border-radius:8px; padding:8px 12px; font-size:12px; font-weight:600; cursor:pointer; max-width:270px; flex-shrink:0; line-height:1.45; }
+  #page-orders #unregistered-banner-text { flex:1; }
+  #page-orders .ord-banner-link { font-weight:700; text-decoration:underline; white-space:nowrap; flex-shrink:0; }
+  #page-orders .orders-search { padding:8px 12px; }
+  #page-orders .search-input { font-size:14px; padding:9px 14px; }
+  #page-orders .client-filter-bar { padding:8px 12px; }
+  #page-orders .pagination { padding:8px 16px; }
+  @media (max-width: 1500px) {
+    #page-orders .orders-layout { grid-template-columns: 230px minmax(0,1fr); gap:10px; }
+    #page-orders .ord-side-title { font-size:19px; padding:10px 12px; }
+    #page-orders .ord-toolbar { gap:8px; padding:8px 10px; }
+    #page-orders .ord-row { gap:5px; }
+    #page-orders .ord-ctl { font-size:12px; height:30px; padding:4px 6px; }
+    #page-orders select.ord-ctl { min-width:110px; max-width:140px; }
+    #page-orders .ord-date { width:112px; }
+    #page-orders .ord-toolbar .refresh-btn { font-size:12.5px; padding:4px 9px; height:30px; }
+    #page-orders .ord-toolbar .ord-clear { font-size:13px; }
+    #page-orders .ord-toolbar .delivery-seg-btn { font-size:12.5px; padding:5px 10px; }
+    #page-orders .orders-count { font-size:12.5px; padding:3px 9px; }
+    #page-orders #unregistered-banner { max-width:210px; font-size:11px; padding:6px 8px; }
+  }
+  @media (max-width: 1100px) {
+    #page-orders .orders-layout { grid-template-columns: 1fr; height:auto; }
+    #page-orders .ord-side { overflow:visible; }
+    #page-orders .orders-layout > .orders-list-card { height: max(calc(100vh - 122px), 640px); }
+    #page-orders .ord-toolbar { flex-wrap:wrap; }
+    #page-orders #unregistered-banner { max-width:none; width:100%; }
+  }
+
+  /* ==== 受注一覧のステータスバッジ（コンパクト・フラット） ==== */
+  .ob-cell { padding:2px 6px 2px 8px !important; white-space:nowrap; }
+  .ob-slots { display:inline-grid; grid-template-columns:46px 14px 14px; align-items:center; column-gap:4px; }
+  .ob-slots > span { display:inline-flex; align-items:center; justify-content:center; min-height:16px; }
+  .ob-new { display:inline-block; background:#ef4444; color:#fff; font-size:8.5px; font-weight:800; letter-spacing:.04em; line-height:1; padding:3px 3px 2px; border-radius:3px; }
+  .ob-dl { display:inline-block; width:100%; box-sizing:border-box; text-align:center; font-size:10px; font-weight:700; line-height:1; padding:3px 0 2px; border-radius:4px; border:1px solid; }
+  .ob-dl.unset { background:#f3f4f6; color:#6b7280; border-color:#e5e7eb; }
+  .ob-dl.ok { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+  .cat-badge { display:inline-block; vertical-align:middle; font-size:10.5px; font-weight:700; line-height:1; padding:3px 7px 2px; border-radius:4px; border:1px solid; white-space:nowrap; }
+  .cat-cover { background:#e0f2fe; color:#0369a1; border-color:#bae6fd; }
+  .cat-other { background:#f3e8ff; color:#6d28d9; border-color:#e9d5ff; }
+  .cat-sub { display:inline-flex; align-items:center; justify-content:center; vertical-align:middle; min-width:16px; height:16px; padding:0 3px; box-sizing:border-box; margin-left:3px; border-radius:8px; background:#f3f4f6; color:#4b5563; border:1px solid #d1d5db; font-size:9px; font-weight:800; line-height:1; text-decoration:none; cursor:default; }
+  .cat-sub.link { cursor:pointer; background:#fff7ed; color:#c2410c; border-color:#fed7aa; }
+  .cat-sub.link:hover { background:#ffedd5; }
+
+  /* ==================== 受注詳細 v3（受注一覧とトンマナ統一：白・グレー・ブルー／フラット） ==================== */
+  .detail-overlay { background: rgba(15,23,42,0.45); padding: 16px; }
+  .detail-modal { border-radius: 12px; max-width: 1480px; box-shadow: 0 20px 60px rgba(15,23,42,0.25); }
+  .detail-modal-header {
+    background: #fff; border-bottom: 1px solid #e5e7eb; box-shadow: none; border-radius: 12px 12px 0 0;
+    padding: 10px 16px; gap: 10px; position: sticky; top: 0; z-index: 5;
+  }
+  .detail-modal-header::before { display: none; }
+  .detail-modal-title { font-size: 14px; font-weight: 700; color: #111827; text-shadow: none; letter-spacing: 0; gap: 10px; flex-wrap: wrap; min-width: 0; }
+  .detail-modal-title .dm-icon { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:8px; background:#eff6ff; color:#1d4ed8; flex-shrink:0; }
+  .detail-modal-title .dm-icon svg { width: 17px; height: 17px; }
+  #detail-modal-title-text { display:inline-flex; align-items:baseline; gap:8px; }
+  .dm-kicker { font-size: 12px; font-weight: 600; color: #6b7280; }
+  .dm-no { font-family: 'SF Mono','Consolas',monospace; font-size: 20px; font-weight: 800; color: #111827; letter-spacing: .02em; }
+  .dm-head-meta { display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .dm-client { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:600; color:#374151; padding:3px 8px 3px 6px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:6px; }
+  .dm-client-logo { height:14px; width:auto; max-width:40px; object-fit:contain; }
+  .ob-dl.dm-dl { width:auto; padding:3px 7px 2px; }
+  .dm-head-meta .cat-badge { font-size:11px; }
+  .dm-actions { display:flex; align-items:center; gap:6px; margin-left:auto; }
+  .dm-sep { width:1px; height:22px; background:#e5e7eb; margin:0 4px; }
+
+  /* ボタン共通 */
+  .dm-btn { display:inline-flex; align-items:center; gap:5px; height:32px; padding:0 12px; font-size:12.5px; font-weight:700; font-family:inherit;
+    border-radius:7px; border:1px solid #d1d5db; background:#fff; color:#374151; cursor:pointer; white-space:nowrap; transition:background .12s,border-color .12s,color .12s; box-shadow:none; }
+  .dm-btn svg { width:14px; height:14px; flex-shrink:0; }
+  .dm-btn:hover { background:#f9fafb; border-color:#9ca3af; }
+  .dm-btn.primary { background:#1d4ed8; border-color:#1d4ed8; color:#fff; }
+  .dm-btn.primary:hover { background:#1e40af; border-color:#1e40af; color:#fff; }
+  .dm-btn.danger { color:#dc2626; border-color:#fecaca; background:#fff; }
+  .dm-btn.danger:hover { background:#fef2f2; border-color:#f87171; }
+  .dm-btn.success { color:#047857; border-color:#a7f3d0; background:#ecfdf5; }
+  .dm-btn.success:hover { background:#d1fae5; }
+  .dm-btn.amber { color:#b45309; border-color:#fde68a; background:#fffbeb; }
+  .dm-btn.amber:hover { background:#fef3c7; }
+  .dm-btn.toggle { color:#9ca3af; }
+  .dm-btn.toggle.on { color:#1d4ed8; border-color:#bfdbfe; background:#eff6ff; }
+  .dm-btn.sm { height:26px; padding:0 9px; font-size:11.5px; border-radius:6px; }
+  .dm-btn.sm svg { width:12px; height:12px; }
+  .detail-modal-close { width:32px; height:32px; border-radius:7px; background:#fff; border:1px solid #e5e7eb; color:#6b7280; box-shadow:none; }
+  .detail-modal-close:hover { background:#fef2f2; border-color:#fecaca; color:#dc2626; }
+  .detail-modal-close svg { width:16px; height:16px; }
+  /* 編集ボタン（旧スタイルを上書き） */
+  .detail-edit-btn.dm-btn { background:#1d4ed8; border-color:#1d4ed8; color:#fff; box-shadow:none; }
+  .detail-edit-btn.dm-btn:hover { background:#1e40af; color:#fff; border-color:#1e40af; }
+  .detail-modal.editing .detail-edit-btn.dm-btn { background:#fff; color:#374151; border-color:#d1d5db; }
+
+  /* 3カラム */
+  .detail-col-left { background:#f9fafb; padding:14px; width:300px; min-width:280px; max-height:calc(100vh - 100px); }
+  .detail-col-center { background:#f3f4f6; max-height:calc(100vh - 100px); }
+  .detail-col-right { background:#f9fafb; padding:14px; width:270px; min-width:250px; max-height:calc(100vh - 100px); }
+  .detail-col-center .detail-view-mode, .detail-col-center .detail-edit-mode { padding:14px !important; }
+
+  /* カード */
+  .dm-card { background:#fff; border:1px solid #e5e7eb; border-radius:10px; margin-bottom:12px; overflow:hidden; }
+  .dm-card.sub { background:#fff; }
+  .dm-card-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:9px 14px; border-bottom:1px solid #f3f4f6; min-height:26px; }
+  .dm-card-title { display:inline-flex; align-items:center; gap:8px; font-size:13px; font-weight:800; color:#111827; }
+  .dm-card-title::before { content:''; width:3px; height:14px; border-radius:2px; background:#1d4ed8; }
+  .dm-card.sub .dm-card-title::before { background:#9ca3af; }
+  .dm-count { font-size:11px; font-weight:700; color:#6b7280; background:#f3f4f6; border-radius:10px; padding:2px 8px; }
+  .dm-head-tags { display:inline-flex; gap:4px; }
+  #changelog-btn-area { margin-left:auto; }
+  .dm-urls { display:inline-flex; gap:5px; flex-wrap:wrap; margin-left:auto; }
+  .dm-url { display:inline-flex; align-items:center; gap:4px; font-size:11.5px; font-weight:700; color:#1d4ed8; background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:3px 9px; text-decoration:none; }
+  .dm-url:hover { background:#dbeafe; }
+  .dm-url svg { width:11px; height:11px; }
+
+  .dm-hero { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:12px 14px 4px; }
+  .dm-hero-name { font-size:18px; font-weight:800; color:#111827; line-height:1.35; min-width:0; }
+  .dm-hero-tags { display:inline-flex; align-items:center; gap:2px; }
+  .dm-hero-tags .cat-badge { font-size:11.5px; padding:4px 9px 3px; }
+
+  .dm-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:0; background:#fff; border-top:1px solid #f3f4f6; margin-bottom:-1px; margin-right:-1px; }
+  .dm-hero + .dm-grid { margin-top:8px; }
+  .dm-f { background:#fff; padding:8px 14px 9px; min-width:0; border-right:1px solid #f3f4f6; border-bottom:1px solid #f3f4f6; }
+  .dm-f.span2 { grid-column: span 2; }
+  .dm-f-l { font-size:10.5px; font-weight:700; color:#9ca3af; margin-bottom:3px; letter-spacing:.02em; }
+  .dm-f-v { font-size:13.5px; font-weight:600; color:#111827; word-break:break-all; line-height:1.4; }
+  .dm-f-v.mono { font-family:'SF Mono','Consolas',monospace; font-size:13px; }
+  .dm-f-v.strong { font-weight:800; }
+  .dm-f-v.violet { color:#7c3aed; font-weight:800; }
+  .dm-f-v.big b { font-size:17px; color:#1d4ed8; }
+  .dm-f-v.big small { font-size:11px; color:#6b7280; font-weight:600; }
+  .dm-f-v.num { font-variant-numeric:tabular-nums; }
+  .dm-f-v.warn { color:#ea580c; }
+  .dm-f-v.note { color:#b45309; background:#fffbeb; margin:-2px -6px; padding:2px 6px; border-radius:4px; }
+  .dm-warn-tag { display:inline-block; font-size:10px; font-weight:800; color:#fff; background:#f97316; border-radius:3px; padding:2px 4px 1px; vertical-align:1px; }
+  .dm-muted { color:#9ca3af; font-weight:500; }
+  .dm-date { display:inline-block; font-size:11.5px; font-weight:700; color:#1d4ed8; background:#eff6ff; border:1px solid #bfdbfe; border-radius:4px; padding:1px 6px; margin:1px 3px 1px 0; }
+  .dm-link { display:inline-flex; align-items:center; gap:4px; color:#1d4ed8; font-size:12px; font-weight:700; text-decoration:none; cursor:pointer; max-width:100%; }
+  .dm-link:hover { text-decoration:underline; }
+  .dm-link svg { width:13px; height:13px; flex-shrink:0; }
+  .dm-link span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .dm-client-inline { display:inline-flex; align-items:center; gap:6px; }
+  .dm-tag { display:inline-block; font-size:10.5px; font-weight:700; line-height:1; padding:3px 7px 2px; border-radius:4px; border:1px solid; }
+  .dm-tag.green { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+  .dm-tag.amber { background:#fffbeb; color:#b45309; border-color:#fde68a; }
+  .dm-tag.gray  { background:#f3f4f6; color:#6b7280; border-color:#e5e7eb; }
+  .dm-empty { margin:12px 14px; padding:14px; font-size:12px; color:#9ca3af; text-align:center; border:1px dashed #d1d5db; border-radius:8px; background:#f9fafb; }
+
+  .dm-progress { display:inline-flex; align-items:center; gap:8px; margin-left:auto; }
+  .dm-progress-bar { width:120px; height:6px; background:#e5e7eb; border-radius:3px; overflow:hidden; }
+  .dm-progress-fill { display:block; height:100%; background:#1d4ed8; border-radius:3px; }
+  .dm-progress-fill.done { background:#059669; }
+  .dm-progress-txt { font-size:11.5px; color:#6b7280; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .dm-progress-txt b { color:#111827; }
+
+  /* 子データ表：受注一覧と同じテーブル表現 */
+  .dm-card .child-table-wrap { border:none; border-radius:0; overflow-x:auto; }
+  .dm-card .child-table { font-size:12.5px; }
+  .dm-card .child-table th { background:#f9fafb; color:#6b7280; font-size:11px; font-weight:700; padding:7px 12px; letter-spacing:0; text-transform:none; border-bottom:1px solid #e5e7eb; white-space:nowrap; }
+  .dm-card .child-table td { padding:5px 12px; border-bottom:1px solid #f3f4f6; }
+  .dm-card .child-table tr:hover td { background:#eff6ff; }
+  .dm-card .child-table .sealno-cell { color:#111827; font-size:13px; font-weight:700; }
+  .dm-card .child-table .seq-num { font-size:11px; }
+  .ct-name { font-size:12px; color:#374151; max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ct-ot { font-size:12px; color:#7c3aed; font-family:'SF Mono','Consolas',monospace; white-space:nowrap; }
+  .ct-ops { white-space:nowrap; text-align:right; }
+  .ct-date { font-family:inherit; font-size:12px; font-weight:700; color:#111827; background:#fff; border:1px solid #d1d5db; border-radius:5px; padding:2px 8px; cursor:pointer; }
+  .ct-date:hover { border-color:#1d4ed8; color:#1d4ed8; background:#eff6ff; }
+  .ct-date.unset { color:#6b7280; background:#f3f4f6; border-color:#e5e7eb; font-size:11px; }
+  .ct-date.unset:hover { color:#1d4ed8; border-color:#93c5fd; background:#eff6ff; }
+  .ct-btn { display:inline-flex; align-items:center; gap:4px; font-family:inherit; font-size:11.5px; font-weight:700; color:#1d4ed8; background:#fff; border:1px solid #bfdbfe; border-radius:5px; padding:3px 9px; cursor:pointer; }
+  .ct-btn:hover { background:#eff6ff; }
+  .ct-btn svg { width:12px; height:12px; }
+  .ct-del { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; margin-left:4px; padding:0; vertical-align:middle; color:#9ca3af; background:#fff; border:1px solid transparent; border-radius:5px; cursor:pointer; }
+  .ct-del:hover { color:#dc2626; background:#fef2f2; border-color:#fecaca; }
+  .ct-del svg { width:13px; height:13px; }
+
+  /* 編集モードも同じカード表現に */
+  .detail-edit-mode .edit-section { background:#fff; border:1px solid #e5e7eb !important; border-left:1px solid #e5e7eb !important; border-radius:10px; padding:12px 14px 14px; margin-bottom:12px; }
+  .detail-edit-mode .edit-section.child-edit { background:#fff; }
+  .detail-edit-mode .edit-section-title { font-size:13px; font-weight:800; color:#111827 !important; letter-spacing:0; text-transform:none; margin-bottom:10px; }
+  .detail-edit-mode .edit-section-title::before { background:#1d4ed8 !important; }
+  .detail-edit-mode .edit-grid { gap:10px 12px; }
+  .detail-edit-mode .edit-field label { font-size:10.5px; color:#9ca3af; letter-spacing:.02em; text-transform:none; }
+  .detail-edit-mode .edit-input { padding:7px 9px; font-size:13px; border-radius:6px; }
+  .detail-edit-mode .child-edit-row { border-bottom-color:#f3f4f6; }
+  .detail-edit-mode .child-edit-row .sealno-badge { color:#111827; background:#f3f4f6; }
+  .detail-edit-mode .edit-actions { position:sticky; bottom:-14px; background:#f3f4f6; padding:12px 0 14px; margin:0; border-top:1px solid #e5e7eb; }
+  .detail-edit-mode .btn-save-edit { border-radius:7px; font-weight:700; }
+  .detail-edit-mode .btn-cancel-edit { border-radius:7px; }
+  .detail-modal.editing #work-order-toggle-btn { display:none; }
+
+  /* 左：作業指示書／右：メモ パネルの見出しをそろえる */
+  .detail-col-left .work-order-title { font-size:15px; color:#111827; border-bottom:2px solid #1d4ed8; letter-spacing:.3em; }
+  .detail-col-left .work-order-table td { border-color:#d1d5db; padding:6px 8px; font-size:12.5px; }
+  .detail-col-left .work-order-table .label { background:#f3f4f6; color:#374151; font-size:12px; }
+
+  @media (max-width: 1100px) {
+    .detail-col-left, .detail-col-center, .detail-col-right { max-height:none; }
+    .dm-actions { margin-left:0; }
+    .dm-progress { margin-left:0; }
+  }
 </style>
 </head>
 <body>
@@ -2136,16 +2389,13 @@
 <!-- ==================== ORDERS PAGE ==================== -->
 <div id="page-orders" class="page">
   <div class="orders-page">
-    <div class="page-header">
-      <div class="page-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
-        受注管理
-      </div>
-    </div>
-
     <div class="orders-layout">
-      <!-- Left: Import -->
-      <div>
+      <!-- Left: タイトル + インポート + カレンダー -->
+      <div class="ord-side">
+        <div class="ord-side-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+          受注管理
+        </div>
         <div class="import-card">
           <div class="import-title" style="display:flex;align-items:center;justify-content:space-between;">
             <div style="display:flex;align-items:center;gap:6px;">
@@ -2198,7 +2448,7 @@
           </div>
         </div>
         <!-- Calendar -->
-        <div class="calendar-card" id="calendar-card" style="margin-top:14px;">
+        <div class="calendar-card" id="calendar-card">
           <div class="calendar-header-row">
             <button class="cal-nav-btn" onclick="calPrevMonth()">‹</button>
             <span class="cal-month-label" id="cal-month-label"></span>
@@ -2219,45 +2469,35 @@
         </div>
       </div>
       <div class="orders-list-card">
-        <div class="orders-list-header">
-          <div class="orders-list-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-            受注一覧 (osakatec_DB) <span class="click-hint" style="margin-left:8px;display:inline-flex;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>&nbsp;クリックで詳細</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <div class="orders-list-header ord-toolbar">
+          <div class="ord-toolbar-main">
+            <div class="ord-row">
             <span class="orders-count" id="orders-count">読込中...</span>
             <!-- 取引先フィルター -->
-            <select id="filter-client-select" onchange="applyListFilters()"
-              style="font-size:11px;padding:4px 8px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;color:#374151;cursor:pointer;max-width:120px;">
+            <select id="filter-client-select" class="ord-ctl" onchange="applyListFilters()">
               <option value="">全取引先</option>
             </select>
             <!-- 出荷日フィルター -->
-            <div style="display:flex;align-items:center;gap:3px;">
-              <span style="font-size:10px;color:#6b7280;font-weight:600;">出荷日</span>
-              <input type="date" id="filter-shipping-from" onchange="applyListFilters()"
-                style="font-size:10px;padding:3px 5px;border:1px solid #e5e7eb;border-radius:5px;width:110px;">
-              <span style="font-size:10px;color:#9ca3af;">〜</span>
-              <input type="date" id="filter-shipping-to" onchange="applyListFilters()"
-                style="font-size:10px;padding:3px 5px;border:1px solid #e5e7eb;border-radius:5px;width:110px;">
+            <div class="ord-range">
+              <span class="ord-lbl">出荷日</span>
+              <input type="date" id="filter-shipping-from" class="ord-ctl ord-date" onchange="applyListFilters()">
+              <span class="ord-tilde">〜</span>
+              <input type="date" id="filter-shipping-to" class="ord-ctl ord-date" onchange="applyListFilters()">
             </div>
             <!-- 受注日フィルター -->
-            <div style="display:flex;align-items:center;gap:3px;">
-              <span style="font-size:10px;color:#6b7280;font-weight:600;">受注日</span>
-              <input type="date" id="filter-order-from" onchange="applyListFilters()"
-                style="font-size:10px;padding:3px 5px;border:1px solid #e5e7eb;border-radius:5px;width:110px;">
-              <span style="font-size:10px;color:#9ca3af;">〜</span>
-              <input type="date" id="filter-order-to" onchange="applyListFilters()"
-                style="font-size:10px;padding:3px 5px;border:1px solid #e5e7eb;border-radius:5px;width:110px;">
+            <div class="ord-range">
+              <span class="ord-lbl">受注日</span>
+              <input type="date" id="filter-order-from" class="ord-ctl ord-date" onchange="applyListFilters()">
+              <span class="ord-tilde">〜</span>
+              <input type="date" id="filter-order-to" class="ord-ctl ord-date" onchange="applyListFilters()">
             </div>
             <!-- フィルタークリア -->
-            <button onclick="clearListFilters()" class="refresh-btn" style="background:#fff7ed;border-color:#fed7aa;color:#c2410c;">
+            <button onclick="clearListFilters()" class="refresh-btn ord-clear" style="background:#fff7ed;border-color:#fed7aa;color:#c2410c;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               クリア
             </button>
-            <button class="refresh-btn" id="today-filter-btn" onclick="toggleTodayFilter()" title="登録から12時間以内（NEW）の受注のみ表示" style="background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              NEW
-            </button>
+            </div>
+            <div class="ord-row">
             <button class="refresh-btn" onclick="exportOrdersCSV()" style="background:#f9fafb;border-color:#d1d5db;color:#4b5563;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               CSV出力
@@ -2281,12 +2521,13 @@
               <button type="button" class="delivery-seg-btn seg-maintenance" data-category="メンテ" onclick="setCategoryFilter('メンテ')" title="カバー以外の品目をすべて表示">メンテ</button>
               <button type="button" class="delivery-seg-btn seg-all active" data-category="" onclick="setCategoryFilter('')" title="すべての品目区分を表示">すべて</button>
             </div>
+            </div>
           </div>
-        </div>
-        <div id="unregistered-banner" style="display:none;align-items:center;gap:8px;background:#fef3c7;border:1px solid #fde68a;color:#92400e;border-radius:8px;padding:8px 14px;margin:0 16px 8px;font-size:12px;font-weight:600;cursor:pointer;" onclick="toggleUnregisteredFilter()">
+        <div id="unregistered-banner" style="display:none;" onclick="toggleUnregisteredFilter()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <span id="unregistered-banner-text"></span>
-          <span style="margin-left:auto;font-weight:700;text-decoration:underline;">クリックで絞り込み</span>
+          <span class="ord-banner-link">クリックで<br>絞り込み</span>
+        </div>
         </div>
         <div class="orders-search">
           <input class="search-input" id="search-input" type="text" placeholder="受注番号・図番・取引先・受注日・出荷日で検索..." oninput="filterOrders()">
@@ -2319,7 +2560,7 @@
           <table class="orders-table">
             <thead>
               <tr>
-                <th style="width:40px;"></th>
+                <th style="width:1%;"></th>
                 <th onclick="sortOrders('orderdate')">受注日 ↕</th>
                 <th onclick="sortOrders('pd_client')">取引先 ↕</th>
                 <th onclick="sortOrders('pd_product_name')">製品名 ↕</th>
@@ -11484,165 +11725,390 @@ function renderPreview() {
   }
 }
 
-async function saveToSupabase() {
-  if (!extractedRows.length) return;
-  rtSuppress();  // 自分の受注登録／変更保存による再読込を抑制（変更差分ダイアログ経由も含む）
-
-  const changeRows = extractedRows.filter(r => r._isChange);
-  const newRows    = extractedRows.filter(r => !r._isChange);
-
-  // 変更行がある場合は差分確認ポップアップを先に表示
-  if (changeRows.length > 0) {
-    await showChangeDiffDialog(changeRows, newRows);
-    return;
-  }
-
-  // 変更行なし → 通常の新規保存
-  await doSaveNewRows(newRows);
+// ==================== 数量変更に合わせた子データ（シールNo）の自動増減 ====================
+// 受注の数量が変わったとき、差分（新数量−旧数量）× 1個あたりの子データ数 だけ子データを増減する。
+//  ・カバー：1個あたり＝productdate_child の数量合計（未登録なら1）。追加分はシール番号を新規採番
+//  ・カバー以外（品目区分あり）：1個あたり1件、シール番号なし（空文字）
+//  ・製品マスタ未登録：子データを作らない運用のため増減しない
+// 減らす場合は、シール番号の大きい順に「未使用」の子データ（レーザー未完了・パレット/便に未積載）だけを削除する。
+async function allocSealNos(count) {
+  const H = { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/generate_sealnos`, { method: 'POST', headers: H, body: JSON.stringify({ count }) });
+    if (r.ok) { const v = await r.json(); if (typeof v === 'number' && v > 0) return v; }
+  } catch (e) { console.warn('[allocSealNos] RPC例外', e); }
+  try {
+    const m = await fetch(`${SUPABASE_URL}/rest/v1/orders_child?select=sealno&sealno=neq.&order=sealno.desc&limit=1`, { headers: H });
+    if (m.ok) { const rows = await m.json(); const mx = rows.length ? parseInt(rows[0].sealno) : 400000; if (!isNaN(mx)) return mx + 1; }
+  } catch (e) { console.warn('[allocSealNos] フォールバック例外', e); }
+  return null;
 }
 
-async function showChangeDiffDialog(changeRows, newRows) {
-  // 既存ordersからorderno一致するデータを取得
-  const orderNos = changeRows.map(r => r.orderno).filter(Boolean);
-  let existingMap = new Map();
-  try {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/orders?orderno=in.(${orderNos.map(n => `"${n}"`).join(',')})&select=*`,
-      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }
-    );
-    if (res.ok) {
-      const list = await res.json();
-      list.forEach(o => existingMap.set(o.orderno, o));
-    }
-  } catch(e) { console.warn('[diff] 既存データ取得失敗', e); }
+async function planChildSync(orderId, drawingno, oldQty, newQty) {
+  const H = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+  const o = parseInt(oldQty) || 0, n = parseInt(newQty) || 0;
+  const plan = { orderId, drawingno, oldQty: o, newQty: n, perUnit: 0, category: null, add: 0, del: [], blocked: 0, children: [], skip: '' };
+  if (o === n) { plan.skip = '数量変更なし'; return plan; }
+  if (!drawingno) { plan.skip = '図番なし'; return plan; }
+  const pdRes = await fetch(`${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=eq.${encodeURIComponent(drawingno)}&select=designid,product_category&limit=1`, { headers: H });
+  const pd = pdRes.ok ? (await pdRes.json())[0] : null;
+  if (!pd || !pd.product_category) { plan.skip = '製品マスタ未登録のため子データは増減しません'; return plan; }
+  plan.category = pd.product_category;
+  if (pd.product_category === 'カバー') {
+    const cRes = await fetch(`${SUPABASE_URL}/rest/v1/productdate_child?parent_designid=eq.${pd.designid}&select=quantity`, { headers: H });
+    const list = cRes.ok ? await cRes.json() : [];
+    plan.perUnit = list.length ? list.reduce((s, c) => s + (c.quantity || 1), 0) : 1;
+  } else {
+    plan.perUnit = 1;
+  }
+  const chRes = await fetch(`${SUPABASE_URL}/rest/v1/orders_child?order_id=eq.${orderId}&select=id,sealno,delivery,laser_done&order=id.asc`, { headers: H });
+  plan.children = chRes.ok ? await chRes.json() : [];
+  const delta = (n - o) * plan.perUnit;
+  if (delta > 0) { plan.add = delta; return plan; }
 
-  // 差分テーブルHTML生成
-  const diffRows = changeRows.map(r => {
-    const old = existingMap.get(r.orderno);
-    const fields = [
-      { label: '受注日',   key: 'orderdate' },
-      { label: '数量',     key: 'quantity' },
-      { label: '単価',     key: 'price' },
-      { label: '希望納期', key: 'deliverydate' },
-      { label: '図番',     key: 'drawingno' },
-    ];
-    const diffs = fields.filter(f => old && String(old[f.key]) !== String(r[f.key]));
-    return { r, old, diffs };
+  // 減らす：使用中（レーザー完了・パレット/便に積載済み）は削除しない
+  const need = Math.min(-delta, plan.children.length);
+  const ids = plan.children.map(c => c.id);
+  const used = new Set(plan.children.filter(c => c.laser_done).map(c => c.id));
+  if (ids.length) {
+    for (const tbl of ['pallet_items', 'shipment_items']) {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/${tbl}?child_id=in.(${ids.join(',')})&select=child_id`, { headers: H });
+      if (r.ok) (await r.json()).forEach(x => used.add(x.child_id));
+    }
+  }
+  const sealNum = c => { const v = parseInt(c.sealno); return isNaN(v) ? -1 : v; };
+  const cands = plan.children.filter(c => !used.has(c.id))
+    .sort((a, b) => (sealNum(b) - sealNum(a)) || (b.id - a.id));
+  plan.del = cands.slice(0, need);
+  plan.blocked = need - plan.del.length;
+  return plan;
+}
+
+async function applyChildSync(plan) {
+  const H = { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+  const result = { added: 0, removed: 0, blocked: plan.blocked || 0, error: '' };
+  if (plan.skip) return result;
+  try {
+    if (plan.add > 0) {
+      // 既存の子データが全て同じ納期なら、追加分にも同じ納期を引き継ぐ
+      const ds = [...new Set(plan.children.map(c => c.delivery || ''))];
+      const delivery = ds.length === 1 && ds[0] ? ds[0] : null;
+      const rows = [];
+      if (plan.category === 'カバー') {
+        const start = await allocSealNos(plan.add);
+        if (start == null) throw new Error('シール番号の採番に失敗しました');
+        for (let i = 0; i < plan.add; i++) rows.push({ order_id: plan.orderId, sealno: String(start + i), delivery, inspectionsheet: null });
+      } else {
+        for (let i = 0; i < plan.add; i++) rows.push({ order_id: plan.orderId, sealno: '', delivery, inspectionsheet: null });
+      }
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders_child`, { method: 'POST', headers: { ...H, 'Prefer': 'return=representation' }, body: JSON.stringify(rows) });
+      if (!res.ok) throw new Error('子データ追加失敗: ' + (await res.text()).slice(0, 120));
+      const inserted = await res.json();
+      result.added = inserted.length;
+      try {
+        await createChildRoutesFromBase(inserted, inserted.map(() => ({ _drawingno: plan.drawingno })), [], []);
+      } catch (e) { console.warn('[childSync] 固有ルート生成失敗', e); }
+    }
+    if (plan.del.length) {
+      const ids = plan.del.map(c => c.id).join(',');
+      await fetch(`${SUPABASE_URL}/rest/v1/orders_child_route?child_id=in.(${ids})`, { method: 'DELETE', headers: H });
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders_child?id=in.(${ids})`, { method: 'DELETE', headers: { ...H, 'Prefer': 'return=representation' } });
+      if (!res.ok) throw new Error('子データ削除失敗: ' + (await res.text()).slice(0, 120));
+      result.removed = (await res.json()).length;
+    }
+  } catch (e) {
+    result.error = e.message;
+  }
+  return result;
+}
+
+function childSyncSummary(label, plan, res) {
+  if (plan.skip) return plan.skip === '数量変更なし' ? '' : `${label}: ${plan.skip}`;
+  const parts = [];
+  if (res.added) parts.push(`子データ ${res.added}件追加`);
+  if (res.removed) parts.push(`子データ ${res.removed}件削除`);
+  if (res.blocked) parts.push(`⚠️ 使用中（レーザー完了・積載済み）のため ${res.blocked}件は削除できませんでした`);
+  if (res.error) parts.push(`⚠️ ${res.error}`);
+  return parts.length ? `${label}: ${parts.join('、')}` : '';
+}
+
+// ==================== 受注保存（重複防止・上書き確認付き） ====================
+// 受注の一意キーは「受注番号＋図番」。DB側にも UNIQUE (orderno, drawingno) 制約を設定済み。
+// （CGDD〜 のように1つの受注番号に複数図番がぶら下がる注文があるため、受注番号単独では一意にしない）
+function ordNorm(v) { return String(v == null ? '' : v).trim(); }
+function ordKey(orderno, drawingno) { return ordNorm(orderno) + '\u0001' + ordNorm(drawingno); }
+
+// 保存対象行の受注番号で既存ordersを取得し、キー別・受注番号別のMapを返す
+async function fetchExistingOrdersFor(rows) {
+  const byKey = new Map();      // 受注番号+図番 → 既存行
+  const byOrderNo = new Map();  // 受注番号 → [既存行]
+  const nos = [...new Set(rows.map(r => ordNorm(r.orderno)).filter(Boolean))];
+  for (let i = 0; i < nos.length; i += 80) {
+    const chunk = nos.slice(i, i + 80);
+    const inList = chunk.map(n => `"${encodeURIComponent(n.replace(/"/g, '\\"'))}"`).join(',');
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?orderno=in.(${inList})&select=*`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } });
+    if (!res.ok) throw new Error('既存受注の確認に失敗しました (HTTP ' + res.status + ')');
+    for (const o of await res.json()) {
+      byKey.set(ordKey(o.orderno, o.drawingno), o);
+      const no = ordNorm(o.orderno);
+      if (!byOrderNo.has(no)) byOrderNo.set(no, []);
+      byOrderNo.get(no).push(o);
+    }
+  }
+  return { byKey, byOrderNo };
+}
+
+// 保存用に補助フィールド（_で始まるキー）を除去し、空の日付をnullにする
+function ordSanitizeRow(r) {
+  const row = {};
+  Object.keys(r).forEach(k => { if (!k.startsWith('_')) row[k] = r[k]; });
+  ['orderdate','deliverydate','shippingdate'].forEach(f => { if (!row[f]) row[f] = null; });
+  return row;
+}
+
+async function saveToSupabase() {
+  if (!extractedRows.length) return;
+  rtSuppress();  // 自分の受注登録／変更保存による再読込を抑制（確認ダイアログ経由も含む）
+  const btn = document.getElementById('save-btn');
+  try {
+    // 1) 取込データ内の重複（同じ注文書を2回ドロップ等）を除去
+    const seen = new Set();
+    const rows = [];
+    let inBatchDup = 0;
+    for (const r of extractedRows) {
+      const k = ordKey(r.orderno, r.drawingno);
+      if (ordNorm(r.orderno) && seen.has(k)) { inBatchDup++; continue; }
+      seen.add(k);
+      rows.push(r);
+    }
+
+    // 2) 登録済みかどうかを確認
+    showStatus('processing', '登録済みデータを確認中...', 30);
+    const existing = await fetchExistingOrdersFor(rows);
+
+    // 既存と一致する行（受注番号+図番）＋ 変更注文の行 → 上書き確認の対象
+    const conflictRows = [];
+    const newRows = [];
+    for (const r of rows) {
+      let old = ordNorm(r.orderno) ? existing.byKey.get(ordKey(r.orderno, r.drawingno)) : null;
+      // 変更注文で図番自体が変わった場合：同じ受注番号の既存が1件だけならそれを変更前とみなす
+      if (!old && r._isChange) {
+        const cands = existing.byOrderNo.get(ordNorm(r.orderno)) || [];
+        if (cands.length === 1) old = cands[0];
+      }
+      if (old || r._isChange) conflictRows.push({ r, old: old || null });
+      else newRows.push(r);
+    }
+
+    if (conflictRows.length > 0) {
+      showStatus('warning', `登録済みの受注が ${conflictRows.filter(c => c.old).length}件 あります。上書きするか確認してください。`, 40);
+      showChangeDiffDialog(conflictRows, newRows, inBatchDup);
+      return;
+    }
+
+    // 重複なし → 通常の新規保存
+    await doSaveNewRows(newRows);
+    if (inBatchDup > 0) console.log(`[save] 取込データ内の重複 ${inBatchDup}件を除外`);
+  } catch (e) {
+    showStatus('error', '保存エラー: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = 'Supabaseに保存'; }
+  }
+}
+
+const ORD_DIFF_FIELDS = [
+  { label: '受注日',   key: 'orderdate' },
+  { label: '図番',     key: 'drawingno' },
+  { label: '数量',     key: 'quantity' },
+  { label: '単位',     key: 'unit' },
+  { label: '単価',     key: 'price' },
+  { label: '希望納期', key: 'deliverydate' },
+  { label: '出荷日',   key: 'shippingdate' },
+  { label: '原番',     key: 'originalno' },
+  { label: '納入先',   key: 'delivery_destination' },
+];
+function ordCmpVal(v) {
+  if (v == null || v === '') return '';
+  const s = String(v).trim();
+  if (/^-?\d+(\.\d+)?$/.test(s)) return String(Number(s));  // 10 と 10.0 を同一視
+  return s;
+}
+
+function showChangeDiffDialog(conflictRows, newRows, inBatchDup = 0) {
+  document.getElementById('change-diff-overlay')?.remove();
+  const items = conflictRows.map(({ r, old }) => {
+    // 取込データに無い（未抽出の）項目は比較しない
+    const fields = ORD_DIFF_FIELDS.filter(f => r[f.key] !== undefined);
+    const diffs = old ? fields.filter(f => ordCmpVal(old[f.key]) !== ordCmpVal(r[f.key])) : [];
+    // 既定: 変更注文 or 差分あり → 上書きON ／ 差分なしの再取込 → スキップ
+    const defaultOn = !!old && (r._isChange || diffs.length > 0);
+    return { r, old, fields, diffs, defaultOn };
   });
+  const dupCount = items.filter(it => it.old).length;
+  const noMatch  = items.filter(it => !it.old).length;
+
+  const cardHtml = (it, idx) => {
+    const { r, old, fields, diffs } = it;
+    const tag = r._isChange
+      ? '<span style="font-size:10px;background:#f59e0b;color:#fff;border-radius:4px;padding:1px 6px;">変更注文</span>'
+      : '<span style="font-size:10px;background:#1d4ed8;color:#fff;border-radius:4px;padding:1px 6px;">登録済み</span>';
+    const head = `
+      <div style="display:flex;align-items:center;gap:8px;background:${old ? '#fef3c7' : '#f0fdf4'};padding:8px 12px;font-size:12px;font-weight:700;color:#92400e;">
+        ${old ? `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:#111827;">
+            <input type="checkbox" class="cdd-chk" data-idx="${idx}" ${it.defaultOn ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;">
+            上書きする</label>` : ''}
+        ${tag}
+        <span>受注番号: ${esc(r.orderno || '-')} ／ 図番: ${esc(r.drawingno || '-')}</span>
+        ${old && r.quantity !== undefined && ordCmpVal(old.quantity) !== ordCmpVal(r.quantity)
+          ? `<span style="font-size:10px;background:#ede9fe;color:#6d28d9;border-radius:4px;padding:1px 6px;" title="数量の差分だけ子データ（シールNo）を追加・削除します。削除はシール番号の大きい未使用分から行い、レーザー完了・積載済みは削除しません。">数量 ${esc(old.quantity)}→${esc(r.quantity)}：子データ自動増減</span>` : ''}
+        <span style="margin-left:auto;font-weight:600;color:${old ? (diffs.length ? '#b45309' : '#6b7280') : '#059669'};">
+          ${old ? (diffs.length ? `差分 ${diffs.length}項目` : '差分なし（同じ内容）') : '既存なし → 新規として追加'}
+        </span>
+      </div>`;
+    if (!old) return `<div style="margin-bottom:10px;border:1px solid #bbf7d0;border-radius:8px;overflow:hidden;">${head}</div>`;
+    const showFields = diffs.length ? fields : fields.slice(0, 4);
+    return `
+      <div style="margin-bottom:10px;border:1px solid #fde68a;border-radius:8px;overflow:hidden;">
+        ${head}
+        <table style="width:100%;border-collapse:collapse;font-size:11px;">
+          <tr style="background:#f9fafb;">
+            <th style="padding:5px 10px;text-align:left;color:#6b7280;width:80px;">項目</th>
+            <th style="padding:5px 10px;text-align:left;color:#6b7280;">登録済み（id:${old.id}）</th>
+            <th style="padding:5px 10px;text-align:left;color:#6b7280;">今回の取込</th>
+          </tr>
+          ${showFields.map(f => {
+            const ov = old[f.key] == null || old[f.key] === '' ? '-' : String(old[f.key]);
+            const nv = r[f.key] == null || r[f.key] === '' ? '-' : String(r[f.key]);
+            const ch = ordCmpVal(old[f.key]) !== ordCmpVal(r[f.key]);
+            return `<tr style="${ch ? 'background:#fef9c3;' : ''}">
+              <td style="padding:4px 10px;border-top:1px solid #f3f4f6;font-weight:600;">${f.label}</td>
+              <td style="padding:4px 10px;border-top:1px solid #f3f4f6;color:${ch ? '#dc2626' : '#374151'};">${esc(ov)}</td>
+              <td style="padding:4px 10px;border-top:1px solid #f3f4f6;color:${ch ? '#059669' : '#374151'};font-weight:${ch ? 700 : 400};">${esc(nv)}</td>
+            </tr>`;
+          }).join('')}
+        </table>
+      </div>`;
+  };
 
   const overlay = document.createElement('div');
   overlay.id = 'change-diff-overlay';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
   overlay.innerHTML = `
-    <div style="background:#fff;border-radius:14px;width:100%;max-width:800px;max-height:90vh;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,0.25);display:flex;flex-direction:column;">
+    <div style="background:#fff;border-radius:14px;width:100%;max-width:860px;max-height:90vh;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,0.25);display:flex;flex-direction:column;">
       <div style="background:linear-gradient(135deg,#d97706,#b45309);padding:16px 20px;color:#fff;">
-        <div style="font-size:15px;font-weight:700;">⚠️ 変更注文の確認</div>
-        <div style="font-size:11px;opacity:0.85;margin-top:3px;">以下の受注データを上書きします。内容を確認してください。</div>
+        <div style="font-size:15px;font-weight:700;">⚠️ 登録済みの受注があります（${dupCount}件）</div>
+        <div style="font-size:11px;opacity:0.9;margin-top:3px;">同じ「受注番号＋図番」の受注は二重登録できません。上書きする行にチェックを入れてください。チェックしない行は保存しません（スキップ）。</div>
       </div>
-      <div style="overflow-y:auto;padding:16px;flex:1;">
-        ${diffRows.map(({r, old, diffs}) => `
-          <div style="margin-bottom:14px;border:1px solid #fde68a;border-radius:8px;overflow:hidden;">
-            <div style="background:#fef3c7;padding:8px 12px;font-size:11px;font-weight:700;color:#92400e;">
-              受注番号: ${r.orderno} / 図番: ${r.drawingno}
-              ${old ? '' : '<span style="color:#dc2626;margin-left:8px;">⚠️ 既存データなし（新規として追加）</span>'}
-            </div>
-            <table style="width:100%;border-collapse:collapse;font-size:11px;">
-              <tr style="background:#f9fafb;">
-                <th style="padding:6px 10px;text-align:left;color:#6b7280;width:80px;">項目</th>
-                <th style="padding:6px 10px;text-align:left;color:#6b7280;">変更前</th>
-                <th style="padding:6px 10px;text-align:left;color:#6b7280;">変更後</th>
-              </tr>
-              ${old ? [
-                { label: '受注日', key: 'orderdate' },
-                { label: '数量',   key: 'quantity' },
-                { label: '単価',   key: 'price' },
-                { label: '希望納期', key: 'deliverydate' },
-                { label: '図番',   key: 'drawingno' },
-              ].map(f => {
-                const oldVal = old ? String(old[f.key] ?? '-') : '-';
-                const newVal = String(r[f.key] ?? '-');
-                const changed = oldVal !== newVal;
-                return `<tr style="${changed ? 'background:#fef9c3;' : ''}">
-                  <td style="padding:5px 10px;border-top:1px solid #f3f4f6;font-weight:600;">${f.label}</td>
-                  <td style="padding:5px 10px;border-top:1px solid #f3f4f6;color:${changed?'#dc2626':'#374151'};">${oldVal}</td>
-                  <td style="padding:5px 10px;border-top:1px solid #f3f4f6;color:${changed?'#059669':'#374151'};font-weight:${changed?'700':'400'};">${newVal}</td>
-                </tr>`;
-              }).join('') : `<tr><td colspan="3" style="padding:8px 10px;color:#6b7280;">既存データが見つかりません。新規として追加します。</td></tr>`}
-            </table>
-          </div>`).join('')}
-        ${newRows.length > 0 ? `<div style="margin-top:8px;font-size:11px;color:#6b7280;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:8px 12px;">✅ 新規追加: ${newRows.length}件（変更なし）</div>` : ''}
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid #f3f4f6;font-size:12px;">
+        <button type="button" onclick="document.querySelectorAll('#change-diff-overlay .cdd-chk').forEach(c=>c.checked=true);cddUpdateCount()"
+          style="padding:5px 12px;border-radius:6px;border:1px solid #fcd34d;background:#fffbeb;color:#b45309;font-weight:700;cursor:pointer;">すべて上書き</button>
+        <button type="button" onclick="document.querySelectorAll('#change-diff-overlay .cdd-chk').forEach(c=>c.checked=false);cddUpdateCount()"
+          style="padding:5px 12px;border-radius:6px;border:1px solid #d1d5db;background:#fff;color:#374151;font-weight:700;cursor:pointer;">すべてスキップ</button>
+        <span style="margin-left:auto;color:#6b7280;">
+          新規追加 <b style="color:#059669;">${newRows.length + noMatch}件</b>
+          ${inBatchDup ? ` ／ 取込データ内の重複 <b>${inBatchDup}件</b> は除外済み` : ''}
+        </span>
       </div>
-      <div style="padding:14px 20px;border-top:1px solid #f3f4f6;display:flex;justify-content:flex-end;gap:8px;background:#f9fafb;">
-        <button onclick="document.getElementById('change-diff-overlay').remove()"
+      <div style="overflow-y:auto;padding:14px 16px;flex:1;">
+        ${items.map(cardHtml).join('')}
+      </div>
+      <div style="padding:14px 20px;border-top:1px solid #f3f4f6;display:flex;align-items:center;justify-content:flex-end;gap:8px;background:#f9fafb;">
+        <span id="cdd-count" style="margin-right:auto;font-size:12px;color:#374151;"></span>
+        <button onclick="document.getElementById('change-diff-overlay').remove();showStatus('warning','保存をキャンセルしました',0);"
           style="padding:8px 20px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;color:#374151;font-size:12px;font-weight:600;cursor:pointer;">キャンセル</button>
         <button onclick="executeChangeSave()"
-          style="padding:8px 20px;border-radius:8px;border:none;background:#d97706;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">この内容で保存する</button>
+          style="padding:8px 20px;border-radius:8px;border:none;background:#d97706;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">この内容で保存する</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
+  overlay.querySelectorAll('.cdd-chk').forEach(c => c.addEventListener('change', cddUpdateCount));
 
   // 保存実行時に使うデータを保持
-  window._pendingChangeRows = changeRows;
-  window._pendingChangeExisting = existingMap;
+  window._pendingConflictItems = items;
   window._pendingNewRows = newRows;
+  cddUpdateCount();
+}
+
+function cddUpdateCount() {
+  const el = document.getElementById('cdd-count');
+  if (!el) return;
+  const all = document.querySelectorAll('#change-diff-overlay .cdd-chk');
+  const on = [...all].filter(c => c.checked).length;
+  el.innerHTML = `上書き <b style="color:#b45309;">${on}件</b> ／ スキップ <b>${all.length - on}件</b>`;
 }
 
 async function executeChangeSave() {
-  document.getElementById('change-diff-overlay')?.remove();
-  const changeRows = window._pendingChangeRows || [];
-  const existingMap = window._pendingChangeExisting || new Map();
+  const overlay = document.getElementById('change-diff-overlay');
+  const checked = new Set([...(overlay?.querySelectorAll('.cdd-chk') || [])].filter(c => c.checked).map(c => Number(c.dataset.idx)));
+  overlay?.remove();
+  const items = window._pendingConflictItems || [];
   const newRows = window._pendingNewRows || [];
   const btn = document.getElementById('save-btn');
   btn.disabled = true; btn.textContent = '保存中...';
-  showStatus('processing', '変更データを保存中...', 40);
+  showStatus('processing', '保存中...', 40);
   const changed_by = currentUser?.loginname || currentUser?.userid || 'unknown';
+  const H = { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=minimal' };
   try {
-    // 1. 変更行を上書き（既存あり→変更前をchangelogに記録してPATCH）
-    //    既存なし（キャンセル後の再アップロード等）→ そのまま新規扱いにして、
-    //    子データ作成込みの doSaveNewRows() に回す（直接POSTすると子データが作られない不具合対策）
-    const noMatchRows = [];
-    for (const r of changeRows) {
-      const old = existingMap.get(r.orderno);
-      const { _isChange, _sealCount, _modelNo, ...data } = r;
-      const dateFields = ['orderdate','deliverydate','shippingdate'];
-      dateFields.forEach(f => { if (!data[f]) data[f] = null; });
-      if (old) {
-        // 変更前データをorders_changelogに記録
-        const logData = {
-          order_id:             old.id,
-          orderno:              old.orderno,
-          drawingno:            old.drawingno,
-          orderdate:            old.orderdate || null,
-          quantity:             old.quantity || null,
-          price:                old.price || null,
-          originalno:           old.originalno || null,
-          deliverydate:         old.deliverydate || null,
-          shippingdate:         old.shippingdate || null,
-          productno:            old.productno || null,
-          delivery_destination: old.delivery_destination || null,
-          unit:                 old.unit || null,
-          changed_by,
-        };
-        await fetch(`${SUPABASE_URL}/rest/v1/orders_changelog`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=minimal' },
-          body: JSON.stringify(logData)
-        });
-        // 既存データを上書き
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${old.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=minimal' },
-          body: JSON.stringify(data)
-        });
-        if (!res.ok) { const e = await res.json(); throw new Error('更新失敗: ' + (e.message||res.status)); }
-      } else {
-        // 既存なし→新規扱い（子データ作成のため doSaveNewRows に合流させる）
-        noMatchRows.push(r);
+    const overwriteItems = items.filter((it, idx) => it.old && checked.has(idx));
+    const skipCount = items.filter((it, idx) => it.old && !checked.has(idx)).length;
+    const noMatchRows = items.filter(it => !it.old).map(it => it.r);
+
+    // 上書き行の原本ファイルもStorageへ保存してURLを差し替える
+    const fileUrlMap = overwriteItems.length ? await uploadSourceFiles(overwriteItems.map(it => it.r)) : new Map();
+
+    // 1. 上書き（変更前をorders_changelogに記録してPATCH）。子データ（シール番号）はそのまま維持
+    const errors = [];
+    let overwritten = 0;
+    const childMsgs = [];
+    let childAdded = 0, childRemoved = 0, childWarn = false;
+    for (const { r, old } of overwriteItems) {
+      const data = ordSanitizeRow(r);
+      const info = r._sourceFile ? fileUrlMap.get(r._sourceFile) : null;
+      if (info) { data.source_file_url = info.url; data.source_file_name = info.name; }
+      delete data.id; delete data.created_at;
+      const logData = {
+        order_id: old.id, orderno: old.orderno, drawingno: old.drawingno,
+        orderdate: old.orderdate || null, quantity: old.quantity ?? null, price: old.price ?? null,
+        originalno: old.originalno || null, deliverydate: old.deliverydate || null, shippingdate: old.shippingdate || null,
+        productno: old.productno || null, delivery_destination: old.delivery_destination || null, unit: old.unit || null,
+        changed_by,
+      };
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/orders_changelog`, { method: 'POST', headers: H, body: JSON.stringify(logData) });
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${old.id}`, { method: 'PATCH', headers: H, body: JSON.stringify(data) });
+        if (!res.ok) {
+          const t = await res.text();
+          throw new Error(t.includes('23505') || t.includes('duplicate') ? '同じ受注番号＋図番が既に存在します' : t);
+        }
+        overwritten++;
+        // 数量が変わった場合は子データ（シールNo）を自動で増減
+        if (r.quantity !== undefined && ordCmpVal(old.quantity) !== ordCmpVal(r.quantity)) {
+          const plan = await planChildSync(old.id, data.drawingno || old.drawingno, old.quantity, r.quantity);
+          const cres = await applyChildSync(plan);
+          const line = childSyncSummary(`${r.orderno} / ${data.drawingno || old.drawingno}（数量 ${plan.oldQty}→${plan.newQty}）`, plan, cres);
+          if (line) childMsgs.push(line);
+          childAdded += cres.added; childRemoved += cres.removed;
+          if (cres.blocked || cres.error) childWarn = true;
+        }
+      } catch (e) {
+        errors.push(`${r.orderno} / ${r.drawingno}: ${e.message}`);
       }
     }
-    // 2. 新規行（既存不一致の「変更」行も含む）を追加。子データもここで自動生成される。
-    await doSaveNewRows([...newRows, ...noMatchRows], true);
-    showStatus('success', `✓ 変更${changeRows.length - noMatchRows.length}件上書き（変更前データ保存済み）・新規${newRows.length + noMatchRows.length}件追加しました`, 100);
+
+    // 2. 新規行（既存なしの変更注文も含む）を追加。子データもここで自動生成される
+    const saved = await doSaveNewRows([...newRows, ...noMatchRows], true) || [];
+    const lateSkip = saved._skipped || 0;
+
+    const childPart = (childAdded || childRemoved) ? `・子データ +${childAdded}／−${childRemoved}件` : '';
+    const msg = `✓ 上書き${overwritten}件（変更前データ保存済み）・新規${saved.length}件追加・スキップ${skipCount + lateSkip}件${childPart}`;
+    if (childWarn) alert('数量変更に伴う子データの増減で確認が必要な行があります:\n' + childMsgs.join('\n'));
+    else if (childMsgs.length) console.log('[childSync]\n' + childMsgs.join('\n'));
+    if (errors.length) {
+      showStatus('warning', msg + ` ／ ⚠️ 失敗${errors.length}件`, 100);
+      alert('一部の上書きに失敗しました:\n' + errors.join('\n'));
+    } else {
+      showStatus('success', msg, 100);
+    }
     btn.textContent = '保存完了';
     isSaving = true;  // 自分の保存通知での二重再読込を抑制
     setTimeout(() => { loadOrders(); loadCalendarEvents(); clearImport(); isSaving = false; }, 1500);
@@ -12258,6 +12724,36 @@ async function doSaveNewRows(rows, silent = false) {
     } catch(e) { console.warn('[doSaveNewRows] OT番号逆引き失敗', e); }
   }
 
+  // 【重複防止の最終チェック】図番の差し替え（型式フォールバック・OT逆引き）後のキーで
+  // 登録済み「受注番号＋図番」と取込データ内の重複を除外する（DBのUNIQUE制約に当たって全件失敗するのを防ぐ）
+  let skippedDup = [];
+  {
+    const existing = await fetchExistingOrdersFor(rows);
+    const seen = new Set();
+    const keep = [];
+    for (const r of rows) {
+      const k = ordKey(r.orderno, r.drawingno);
+      if (ordNorm(r.orderno) && (existing.byKey.has(k) || seen.has(k))) { skippedDup.push(r); continue; }
+      seen.add(k);
+      keep.push(r);
+    }
+    if (skippedDup.length) {
+      console.warn('[doSaveNewRows] 登録済みのためスキップ:', skippedDup.map(r => `${r.orderno}/${r.drawingno}`));
+      rows = keep;
+    }
+    if (!rows.length) {
+      if (!silent) {
+        showStatus('warning', `登録済みの受注のみだったため、新規保存はありません（スキップ ${skippedDup.length}件）`, 100);
+        btn.textContent = '保存完了';
+        isSaving = true;
+        setTimeout(() => { loadOrders(); clearImport(); isSaving = false; }, 1500);
+      }
+      const empty = [];
+      empty._skipped = skippedDup.length;
+      return empty;
+    }
+  }
+
   // 注文書の原本ファイルをStorageへアップロードし、URLを各行に付与
   const fileUrlMap = await uploadSourceFiles(rows);
 
@@ -12280,8 +12776,13 @@ async function doSaveNewRows(rows, silent = false) {
     headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=representation' },
     body: JSON.stringify(sanitized)
   });
-  if (!res.ok) { const e = await res.json(); throw new Error(e.message || 'HTTP '+res.status); }
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    if (e.code === '23505') throw new Error('同じ「受注番号＋図番」の受注が既に登録されています（二重登録防止）。画面を更新して再度取り込んでください。');
+    throw new Error(e.message || 'HTTP '+res.status);
+  }
   const saved = await res.json();
+  saved._skipped = skippedDup.length;
 
   // シール数の決定: product_categoryが「カバー」かつproductdate_childがある場合のみ
   // パーツはシール番号なしで子データのみ数量分作成する
@@ -12451,7 +12952,7 @@ async function doSaveNewRows(rows, silent = false) {
       ? ` ／ ⚠️ 製品マスタ未登録 ${unregisteredDrawingNos.length}件あり`
       : '';
     showStatus(unregisteredDrawingNos.length > 0 ? 'warning' : 'success',
-      `✓ ${saved.length}件を osakatec_DB/orders に保存しました ${childMsg}${warnMsg}`, 100);
+      `✓ ${saved.length}件を osakatec_DB/orders に保存しました ${childMsg}${skippedDup.length ? ` ／ 登録済みのためスキップ ${skippedDup.length}件` : ''}${warnMsg}`, 100);
     btn.textContent = '保存完了';
     isSaving = true;  // 自分の保存通知での二重再読込を抑制
     setTimeout(() => { loadOrders(); loadCalendarEvents(); clearImport(); isSaving = false; }, 1500);
@@ -12816,7 +13317,7 @@ window.addEventListener('beforeunload', () => { stopRealtime(); });
 // ---- Orders List ----
 let allOrders = [], filteredOrders = [], sortKey = 'orderdate', sortAsc = false;
 let currentPage = 1;
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 200;
 
     // Supabaseは1リクエストで最大1000行のため、全件取得にはページネーションが必要
     async function fetchAllRows(url) {
@@ -13099,14 +13600,13 @@ async function loadOrders() {
     updateUnregisteredBanner(); // 製品マスタ未登録の受注があれば警告バナー表示
     filterOrders(); // 現在選択中のフィルター（取引先・カバー/メンテ・未納期など）を再適用してから描画（件数表示・ページングもここで更新される）
     await loadCalendarEvents(); // allOrders確定後にカレンダー更新
-    startNewBadgeRefresh(); // NEWバッジ（12時間）の時間経過を反映する定期再描画を起動
   } catch(e) {
     document.getElementById('orders-tbody').innerHTML = `<tr><td colspan="12"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><p>データ取得エラー: ${e.message}</p></div></td></tr>`;
     document.getElementById('orders-count').textContent = 'エラー';
   }
 }
 
-let todayFilterActive = false;
+let todayFilterActive = false; // NEW表示は廃止（互換のため変数のみ残置）
 let deliveryStatusFilter = ''; // '' = すべて / 'unset' = 未納期のみ / 'confirmed' = 納期確定のみ
 let categoryFilter = '';       // '' = すべて / 'カバー' / 'メンテ'（カバー以外すべて）
 let clientFilterValue = '';
@@ -13175,11 +13675,8 @@ function clearListFilters() {
     if (el) el.value = '';
   });
   clientFilterValue = '';
-  todayFilterActive = false;
   deliveryStatusFilter = '';
   categoryFilter = '';
-  const tBtn = document.getElementById('today-filter-btn');
-  if (tBtn) { tBtn.style.background='#eff6ff'; tBtn.style.borderColor='#bfdbfe'; tBtn.style.color='#1d4ed8'; }
   setDeliveryStatusFilterUI('');
   setCategoryFilterUI('');
   document.querySelectorAll('#page-orders .client-filter-btn').forEach(btn => btn.classList.remove('active'));
@@ -13214,7 +13711,24 @@ function clientLogoSrc(name) {
   if (!name) return null;
   const norm = String(name).replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).toLowerCase();
   const hit = CLIENT_LOGO_MAP.find(e => e.kw.some(k => norm.includes(k)));
-  return hit ? 'data:image/png;base64,' + hit.b64 : null;
+  return hit ? clientLogoUrl(hit) : null;
+}
+// ロゴ画像は1社につき1回だけBlob URLに変換して使い回す。
+// （従来は行ごとに約52KBのbase64文字列を埋め込んでおり、表示件数が多いほど描画が重くなっていた）
+const _clientLogoUrlCache = new Map();
+function clientLogoUrl(entry) {
+  let url = _clientLogoUrlCache.get(entry);
+  if (url) return url;
+  try {
+    const bin = atob(entry.b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    url = URL.createObjectURL(new Blob([bytes], { type: 'image/png' }));
+  } catch (e) {
+    url = 'data:image/png;base64,' + entry.b64;  // 変換できない環境では従来方式
+  }
+  _clientLogoUrlCache.set(entry, url);
+  return url;
 }
 function clientLogoHtml(name, cls) {
   const src = clientLogoSrc(name);
@@ -13235,21 +13749,6 @@ function setClientFilter(client) {
   }
   filterOrders();
   renderCalendar(); // カレンダーも同じフィルターで再描画
-}
-
-function toggleTodayFilter() {
-  todayFilterActive = !todayFilterActive;
-  const btn = document.getElementById('today-filter-btn');
-  if (todayFilterActive) {
-    btn.style.background    = '#1d4ed8';
-    btn.style.borderColor   = '#1d4ed8';
-    btn.style.color         = '#fff';
-  } else {
-    btn.style.background    = '#eff6ff';
-    btn.style.borderColor   = '#bfdbfe';
-    btn.style.color         = '#1d4ed8';
-  }
-  filterOrders();
 }
 
 // 未納期／納期確定／すべて をワンタッチで切り替える（同時表示は「すべて」ボタン）
@@ -13286,10 +13785,6 @@ function filterOrders() {
   const orderTo   = document.getElementById('filter-order-to')?.value || '';
 
   filteredOrders = allOrders.filter(r => {
-    if (todayFilterActive) {
-      // 「本日分」= 登録から12時間以内（NEWバッジが付くもの）のみ表示
-      if (!isNewOrder(r.created_at)) return false;
-    }
     if (deliveryStatusFilter === 'unset') {
       if (!(r.has_child && r.has_unset_delivery)) return false;
     } else if (deliveryStatusFilter === 'confirmed') {
@@ -13340,7 +13835,7 @@ function filterOrders() {
   currentPage = 1;
   renderOrdersTable();
   const countEl = document.getElementById('orders-count');
-  const hasFilter = todayFilterActive || deliveryStatusFilter || categoryFilter || clientFilterValue || shipFrom || shipTo || orderFrom || orderTo || q || unregisteredFilterActive;
+  const hasFilter = deliveryStatusFilter || categoryFilter || clientFilterValue || shipFrom || shipTo || orderFrom || orderTo || q || unregisteredFilterActive;
   if (hasFilter) {
     countEl.textContent = `${filteredOrders.length}件 / 全${allOrders.length}件`;
     countEl.style.color = '#1d4ed8';
@@ -13610,12 +14105,11 @@ function renderOrdersTable() {
 
   document.getElementById('orders-tbody').innerHTML = slice.map(r => `
     <tr onclick="openOrderDetail(${r.id})" title="クリックして詳細を表示">
-      <td style="text-align:center;padding:4px;white-space:nowrap;">
-        <span style="display:inline-flex;align-items:center;gap:2px;">
-          ${newBadgeHtml(r.created_at)}
-          <span style="display:inline-flex;width:18px;height:18px;align-items:center;justify-content:center;flex-shrink:0;">${memoIconHtml(r)}</span>
-          ${sourceFileIconHtml(r)}
-          ${r.has_child ? (r.has_unset_delivery ? deliveryBadgeHtml() : deliveryConfirmedBadgeHtml()) : ''}
+      <td class="ob-cell">
+        <span class="ob-slots">
+          <span class="ob-s-dl">${r.has_child ? (r.has_unset_delivery ? deliveryBadgeHtml() : deliveryConfirmedBadgeHtml()) : ''}</span>
+          <span class="ob-s-ic">${memoIconHtml(r)}</span>
+          <span class="ob-s-ic">${sourceFileIconHtml(r)}</span>
         </span>
       </td>
       <td>${r.orderdate || '-'}</td>
@@ -13650,21 +14144,6 @@ function gotoPage(p) {
   if (p < 1 || p > pages) return;
   currentPage = p;
   renderOrdersTable();
-}
-
-// NEWバッジ（登録12時間以内）の時間経過を反映するための定期再描画。
-// 受注一覧を開きっぱなしでも、12時間を過ぎたNEWが自動的に消えるようにする。
-let _newBadgeTimer = null;
-function startNewBadgeRefresh() {
-  if (_newBadgeTimer) return;
-  _newBadgeTimer = setInterval(() => {
-    const ordersPage = document.getElementById('page-orders');
-    // 受注ページが表示中で、かつ現在表示中のデータにNEW対象が含まれる時だけ再描画
-    if (ordersPage && ordersPage.classList.contains('active')) {
-      const hasNew = filteredOrders.some(r => isNewOrder(r.created_at));
-      if (hasNew) renderOrdersTable();
-    }
-  }, 10 * 60 * 1000); // 10分ごと
 }
 
 // ==================== LOGIN ====================
@@ -13850,12 +14329,8 @@ function renderDetailModal(p, children) {
   // （編集モード中にモーダルを閉じると display:none が残り、次回開いた時にメモが表示されないバグの修正）
   const pdMemoPanel = document.getElementById('detail-pd-memo');
   if (pdMemoPanel) pdMemoPanel.style.display = '';
-  if (woBtn) {
-    woBtn.style.background = '#f0fdf4';
-    woBtn.style.color = '#059669';
-    woBtn.style.borderColor = '#bbf7d0';
-    woBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><rect x="3" y="3" width="7" height="18"/><rect x="14" y="3" width="7" height="18"/></svg> 指示書`;
-  }
+  if (woBtn) woBtn.classList.add('on');
+
   document.getElementById('detail-modal').classList.remove('editing');
   const editBtn = document.getElementById('detail-edit-toggle');
   if (editBtn) { editBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> 編集'; }
@@ -13866,199 +14341,96 @@ function renderDetailModal(p, children) {
   // 受注情報の「納期」欄：子データそれぞれの納期をすべて表示する
   const childDeliveryDates = [...new Set(children.map(c => c.delivery).filter(Boolean))].sort();
   const childDeliveryDatesHtml = childDeliveryDates.length
-    ? childDeliveryDates.map(d => `<span style="display:inline-block;background:#eff6ff;border:1px solid #bfdbfe;border-radius:5px;padding:2px 8px;margin:1px 3px 1px 0;font-size:11px;color:#1d4ed8;font-weight:600;">${d}</span>`).join('')
-    : '<span style="color:#9ca3af;">未設定</span>';
+    ? childDeliveryDates.map(d => `<span class="dm-date">${d}</span>`).join('')
+    : '<span class="dm-muted">未設定</span>';
   // ステータス（全納／分納）：子データの納期が1種類なら全納、2種類以上なら分納。未納期の子データがあれば併せて表示
   const hasUnsetDelivery = children.some(c => !c.delivery);
   const splitBadge = childDeliveryDates.length >= 2
-    ? '<span style="display:inline-block;background:#fffbeb;color:#b45309;border:1px solid #fde68a;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;">分納</span>'
-    : '<span style="display:inline-block;background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;">全納</span>';
+    ? '<span class="dm-tag amber">分納</span>'
+    : '<span class="dm-tag green">全納</span>';
   const unsetBadge = hasUnsetDelivery
-    ? ' <span style="display:inline-block;background:#f3f4f6;color:#6b7280;border:1px solid #d1d5db;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;">未納期あり</span>'
+    ? '<span class="dm-tag gray">未納期あり</span>'
     : '';
-  const deliveryStatusHtml = totalCount > 0 ? (splitBadge + unsetBadge) : '<span style="color:#9ca3af;font-size:11px;">-</span>';
+  const deliveryStatusHtml = totalCount > 0 ? (splitBadge + unsetBadge) : '';
 
-  document.getElementById('detail-modal-title-text').textContent =
-    `受注詳細 — ${p.orderno || ''}`;
+  document.getElementById('detail-modal-title-text').innerHTML =
+    `<span class="dm-kicker">受注詳細</span><span class="dm-no">${esc(p.orderno || '-')}</span>`;
+  const headMeta = document.getElementById('detail-head-meta');
+  if (headMeta) {
+    const pdh = _detailProductdate;
+    headMeta.innerHTML =
+      (pdh && pdh.client ? `<span class="dm-client">${clientLogoHtml(pdh.client, 'dm-client-logo')}<span>${esc(pdh.client)}</span></span>` : '')
+      + (pdh ? categoryBadgeHtml(pdh.product_category) : '')
+      + (totalCount > 0 ? (hasUnsetDelivery ? deliveryBadgeHtml() : deliveryConfirmedBadgeHtml()).replace('ob-dl', 'ob-dl dm-dl') : '');
+  }
+
+  const pd = _detailProductdate;
+  const extIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+  const fileIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+  const q = v => String(v == null ? '' : v).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  const sourceHtml = p.source_file_url
+    ? (/\.pdf(\?|$)/i.test(p.source_file_url)
+      ? `<a class="dm-link" href="javascript:void(0)" onclick="openPdfEditor('${q(p.source_file_url)}','${q(p.source_file_name || '注文書')}',${p.id})" title="注文書の原本を開いて編集">${fileIcon}<span>${esc(p.source_file_name || '注文書を開く')}</span></a>`
+      : `<a class="dm-link" href="${esc(p.source_file_url)}" target="_blank" rel="noopener" title="注文書の原本を開く">${fileIcon}<span>${esc(p.source_file_name || '注文書を開く')}</span></a>`)
+    : '<span class="dm-muted">なし</span>';
+  const urlPills = pd ? [
+      ['承認図', pd.approved_url], ['図面', pd.drawing_url], ['旧図面', pd.old_drawing_url], ['構成パーツ', pd.component_url]
+    ].filter(x => x[1]).map(([label, url]) => `<a class="dm-url" href="${esc(url)}" target="_blank" rel="noopener">${extIcon}${label}</a>`).join('') : '';
+  const near = isNearDeadline(p.deliverydate);
+  const f = (label, value, cls = '', span = 1, style = '') =>
+    `<div class="dm-f${span > 1 ? ' span' + span : ''}"><div class="dm-f-l">${label}</div><div class="dm-f-v ${cls}"${style ? ` style="${style}"` : ''}>${value}</div></div>`;
+  const dash = v => (v == null || v === '') ? '<span class="dm-muted">-</span>' : esc(v);
 
   document.getElementById('detail-view-content').innerHTML = `
-    <!-- 製品マスタ情報（productdate） -->
-    ${_detailProductdate ? `
-    <div class="dsection">
-      <div class="dsection-head">
-        <span class="dsection-title cyan">製品マスタ情報</span>
-      </div>
-
-      <!-- ヒーロー: 品名 + 品目区分バッジ -->
-      <div class="dhero pd">
-        <div class="dhero-row">
-          <div style="min-width:0;flex:1;">
-            <div class="dhero-label">品名</div>
-            <div class="dhero-value">${_detailProductdate.product_name || '-'}</div>
-          </div>
-          <div class="dhero-badges">
-            ${categoryBadgeHtml(_detailProductdate.product_category)}${secondCategoryBadgeHtml(_detailProductdate.second_category, _detailProductdate.part_number, _detailProductdate.part_number_url)}
-          </div>
-        </div>
-      </div>
-
-      <!-- フィールドグリッド（幅に応じて自動折返し） -->
-      <div class="dfields">
-        <div class="dfield span2">
-          <div class="dfield-l">取引先</div>
-          <div class="dfield-v" style="display:flex;align-items:center;gap:8px;">${clientLogoHtml(_detailProductdate.client, 'dfield-logo')}<span>${_detailProductdate.client || '-'}</span></div>
-        </div>
-        <div class="dfield">
-          <div class="dfield-l">OT番号</div>
-          <div class="dfield-v mono" style="color:${categoryTextColor(_detailProductdate.product_category)};font-weight:800;">${_detailProductdate.ot_number || '-'}</div>
-        </div>
-        <div class="dfield">
-          <div class="dfield-l">客先図番</div>
-          <div class="dfield-v mono">${_detailProductdate.customer_drawing_no || '-'}</div>
-        </div>
-        <div class="dfield">
-          <div class="dfield-l">現行価格</div>
-          <div class="dfield-v money">${_detailProductdate.current_price != null ? '¥ ' + Number(_detailProductdate.current_price).toLocaleString() : '-'}</div>
-        </div>
-        <div class="dfield">
-          <div class="dfield-l">最新見積日</div>
-          <div class="dfield-v">${_detailProductdate.latest_quote_date || '-'}</div>
-        </div>
-        <div class="dfield">
-          <div class="dfield-l">承認返却日</div>
-          <div class="dfield-v">${_detailProductdate.approval_return_date || '-'}</div>
-        </div>
-        <div class="dfield">
-          <div class="dfield-l">納入先</div>
-          <div class="dfield-v">${_detailProductdate.delivery_destination || '-'}</div>
-        </div>
-        ${_detailProductdate.remarks ? `
-        <div class="dfield span2" style="background:#fffbeb;">
-          <div class="dfield-l" style="color:#d97706;">備考</div>
-          <div class="dfield-v" style="color:#b45309;">${_detailProductdate.remarks}</div>
-        </div>` : ''}
-      </div>
-
-      <!-- 関連URL -->
-      <div class="durl-pills">
-        <span style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:0.06em;">関連URL</span>
-        ${_detailProductdate.approved_url ? `<a class="durl-pill" href="${_detailProductdate.approved_url}" target="_blank" style="background:#7c3aed;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>承認図</a>` : ''}
-        ${_detailProductdate.drawing_url ? `<a class="durl-pill" href="${_detailProductdate.drawing_url}" target="_blank" style="background:#1d4ed8;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>図面</a>` : ''}
-        ${_detailProductdate.old_drawing_url ? `<a class="durl-pill" href="${_detailProductdate.old_drawing_url}" target="_blank" style="background:#64748b;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>旧図面</a>` : ''}
-        ${_detailProductdate.component_url ? `<a class="durl-pill" href="${_detailProductdate.component_url}" target="_blank" style="background:#059669;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>構成パーツ</a>` : ''}
-        ${!_detailProductdate.approved_url && !_detailProductdate.drawing_url && !_detailProductdate.old_drawing_url && !_detailProductdate.component_url ? '<span style="font-size:11px;color:#cbd5e1;">なし</span>' : ''}
-      </div>
-    </div>` : `
-    <div class="dsection">
-      <div class="dsection-head"><span class="dsection-title gray">製品マスタ情報</span></div>
-      <div style="background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;padding:16px;font-size:12px;color:#94a3b8;text-align:center;">
-        図番「${p.drawingno || '-'}」に対応する製品マスタが見つかりません
-      </div>
-    </div>`}
-
-    <!-- 受注情報（orders） -->
-    <div class="dsection">
-      <div class="dsection-head">
-        <span class="dsection-title blue">受注情報</span>
+    <!-- ① 受注情報（主役） -->
+    <section class="dm-card">
+      <div class="dm-card-head">
+        <span class="dm-card-title">受注情報</span>
         <span id="changelog-btn-area"></span>
       </div>
+      <div class="dm-hero">
+        <div class="dm-hero-name">${pd ? esc(pd.product_name || '-') : '<span class="dm-muted">製品マスタ未登録</span>'}</div>
+        <div class="dm-hero-tags">${pd ? categoryBadgeHtml(pd.product_category) + secondCategoryBadgeHtml(pd.second_category, pd.part_number, pd.part_number_url) : ''}</div>
+      </div>
+      <div class="dm-grid">
+        ${f('受注番号', dash(p.orderno), 'mono strong')}
+        ${f('OT番号', pd ? dash(pd.ot_number) : dash(null), 'mono strong', 1, 'color:' + categoryTextColor(pd && pd.product_category))}
+        ${f('図番', dash(p.drawingno), 'mono')}
+        ${f('製番', dash(p.productno), 'mono violet')}
+        ${f('原番', dash(p.originalno), 'mono')}
+        ${f('受注日', dash(p.orderdate))}
+        ${f('数量', p.quantity != null ? `<b>${esc(p.quantity)}</b>${p.unit ? ' <small>' + esc(p.unit) + '</small>' : ''}` : dash(null), 'big')}
+        ${f('単価', p.price != null ? '¥' + Number(p.price).toLocaleString() : dash(null), 'num')}
+        ${f('希望納期', p.deliverydate ? esc(p.deliverydate) + (near ? ' <span class="dm-warn-tag">間近</span>' : '') : dash(null), near ? 'warn' : '')}
+        ${f('納期（子データ）', childDeliveryDatesHtml)}
+        ${f('出荷場所', dash(p.delivery_destination))}
+        ${f('注文書原本', sourceHtml, '', 1)}
+      </div>
+    </section>
 
-      <!-- ヒーロー: 受注番号 + ステータス -->
-      <div class="dhero order">
-        <div class="dhero-row">
-          <div style="min-width:0;flex:1;">
-            <div class="dhero-label">受注番号</div>
-            <div class="dhero-value">${p.orderno || '-'}</div>
-          </div>
-          <div class="dhero-badges">${deliveryStatusHtml}</div>
-        </div>
+    <!-- ② 子データ（シリアル一覧） -->
+    <section class="dm-card">
+      <div class="dm-card-head">
+        <span class="dm-card-title">子データ <span class="dm-count">${totalCount}件</span></span>
+        <span class="dm-head-tags">${deliveryStatusHtml}</span>
+        <span class="dm-progress" title="検査シート登録済み ${shippedCount} / ${totalCount}">
+          <span class="dm-progress-bar"><span class="dm-progress-fill ${progress === 100 ? 'done' : ''}" style="width:${progress}%;"></span></span>
+          <span class="dm-progress-txt">完了 <b>${shippedCount}</b>/${totalCount}（${progress}%）</span>
+        </span>
+        <button class="dm-btn sm success" onclick="addChildRow()" title="子データ（シリアル）を1件追加します">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>追加
+        </button>
       </div>
-
-      <div class="dfields">
-        <div class="dfield">
-          <div class="dfield-l">製番</div>
-          <div class="dfield-v mono" style="color:#7c3aed;font-weight:800;">${p.productno || '-'}</div>
-        </div>
-        <div class="dfield">
-          <div class="dfield-l">原番</div>
-          <div class="dfield-v mono">${p.originalno || '-'}</div>
-        </div>
-        <div class="dfield">
-          <div class="dfield-l">受注日</div>
-          <div class="dfield-v">${p.orderdate || '-'}</div>
-        </div>
-        <div class="dfield">
-          <div class="dfield-l">数量</div>
-          <div class="dfield-v accent" style="font-size:14px;">${p.quantity != null ? p.quantity : '-'}${p.unit ? ' ' + p.unit : ''}</div>
-        </div>
-        <div class="dfield">
-          <div class="dfield-l">単価</div>
-          <div class="dfield-v money">${p.price != null ? '¥ ' + Number(p.price).toLocaleString() : '-'}</div>
-        </div>
-        <div class="dfield">
-          <div class="dfield-l">出荷場所</div>
-          <div class="dfield-v">${p.delivery_destination || '-'}</div>
-        </div>
-        <div class="dfield">
-          <div class="dfield-l">希望納期</div>
-          <div class="dfield-v ${isNearDeadline(p.deliverydate)?'warn':''}">${p.deliverydate || '-'}${isNearDeadline(p.deliverydate)?' ⚠️':''}</div>
-        </div>
-        <div class="dfield">
-          <div class="dfield-l">納期</div>
-          <div class="dfield-v">${childDeliveryDatesHtml}</div>
-        </div>
-        <div class="dfield">
-          <div class="dfield-l">注文書原本</div>
-          <div class="dfield-v">${p.source_file_url
-            ? (/\.pdf(\?|$)/i.test(p.source_file_url)
-              ? `<a href="javascript:void(0)" onclick="openPdfEditor('${String(p.source_file_url).replace(/'/g,"\\'")}','${String(p.source_file_name||'注文書').replace(/'/g,"\\'")}',${p.id})" style="display:inline-flex;align-items:center;gap:5px;color:#1d4ed8;font-weight:600;text-decoration:none;font-size:11px;cursor:pointer;">
-                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                 ${p.source_file_name || '注文書を開く'}<span style="font-size:10px;color:#6b7280;font-weight:500;">（編集）</span></a>`
-              : `<a href="${p.source_file_url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;color:#1d4ed8;font-weight:600;text-decoration:none;font-size:11px;">
-                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                 ${p.source_file_name || '注文書を開く'}</a>`)
-            : '<span style="color:#9ca3af;">-</span>'}</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 進捗バー -->
-    <div class="dsection">
-      <div class="dprogress-wrap">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:4px;">
-          <span style="font-size:12px;font-weight:700;color:#334155;">製作進捗</span>
-          <span style="font-size:12px;color:#64748b;font-variant-numeric:tabular-nums;"><strong style="color:${progress===100?'#059669':'#1d4ed8'};font-size:14px;">${shippedCount}</strong> / ${totalCount} 件完了（${progress}%）</span>
-        </div>
-        <div class="dprogress-bar">
-          <div class="dprogress-fill ${progress===100?'done':''}" style="width:${progress}%;"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 子データ -->
-    <div class="dsection">
-      <div class="dsection-head">
-        <span class="dsection-title green">子データ（シリアル一覧） — ${totalCount}件</span>
-      </div>
-      <div class="child-summary" style="flex-wrap:wrap;">
-        <div class="child-summary-item">製品番号: <strong>${p.productno || '-'}</strong></div>
-        <div class="child-summary-item">シール枚数: <strong>${totalCount}枚</strong></div>
-        <div class="child-summary-item">検査シート数: <strong>${shippedCount}枚</strong>
-          <button onclick="addChildRow()" title="子データ（シリアル）を1件追加します" style="display:inline-flex;align-items:center;gap:3px;margin-left:8px;padding:2px 9px;font-size:11px;font-weight:700;background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;border-radius:5px;cursor:pointer;vertical-align:middle;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>子データ追加
-          </button>
-        </div>
-      </div>
-      <div class="child-table-wrap" style="overflow-x:auto;">
+      <div class="child-table-wrap">
         <table class="child-table">
           <thead>
             <tr>
-              <th>#</th>
+              <th style="width:36px;">#</th>
               <th>シールNo</th>
               <th>納期</th>
               <th>製品名</th>
               <th>OT番号</th>
-              <th>進捗</th>
+              <th style="width:1%;">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -14066,7 +14438,26 @@ function renderDetailModal(p, children) {
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
+
+    <!-- ③ 製品マスタ情報（参考） -->
+    <section class="dm-card sub">
+      <div class="dm-card-head">
+        <span class="dm-card-title">製品マスタ情報</span>
+        ${urlPills ? `<span class="dm-urls">${urlPills}</span>` : ''}
+      </div>
+      ${pd ? `
+      <div class="dm-grid">
+        ${f('取引先', `<span class="dm-client-inline">${clientLogoHtml(pd.client, 'dfield-logo')}<span>${dash(pd.client)}</span></span>`, '', 2)}
+        ${f('客先図番', dash(pd.customer_drawing_no), 'mono')}
+        ${f('現行価格', pd.current_price != null ? '¥' + Number(pd.current_price).toLocaleString() : dash(null), 'num')}
+        ${f('最新見積日', dash(pd.latest_quote_date))}
+        ${f('承認返却日', dash(pd.approval_return_date))}
+        ${f('納入先', dash(pd.delivery_destination))}
+        ${pd.remarks ? f('備考', esc(pd.remarks), 'note', 2) : ''}
+      </div>` : `
+      <div class="dm-empty">図番「${esc(p.drawingno || '-')}」に対応する製品マスタが見つかりません</div>`}
+    </section>
   `;
 
   // 編集モードのコンテンツも生成
@@ -14079,7 +14470,7 @@ function renderEditContent(p, children) {
   let pdSection = '';
   if (pd) {
     pdSection = '<div class="edit-section" style="border-left:3px solid #0891b2;">'
-      + '<div class="edit-section-title" style="color:#0891b2;">製品マスタ編集（productdate）</div>'
+      + '<div class="edit-section-title" style="color:#0891b2;">製品マスタの編集 <span style="font-size:11px;font-weight:600;color:#b45309;">※同じ図番の全受注に反映されます</span></div>'
       + '<div class="edit-grid">'
       + '<div class="edit-field"><label>取引先</label><input class="edit-input" id="pdedit-client" value="' + (pd.client || '') + '"></div>'
       + '<div class="edit-field"><label>品目区分</label><input class="edit-input" id="pdedit-product_category" value="' + (pd.product_category || '') + '"></div>'
@@ -14098,7 +14489,7 @@ function renderEditContent(p, children) {
       + '</div></div>';
   } else {
     pdSection = '<div class="edit-section" style="border-left:3px solid #d1d5db;">'
-      + '<div class="edit-section-title" style="color:#9ca3af;">製品マスタ（productdate）— 図番に対応するデータなし</div>'
+      + '<div class="edit-section-title" style="color:#9ca3af;">製品マスタ — 図番に対応するデータなし</div>'
       + '</div>';
   }
 
@@ -14111,9 +14502,9 @@ function renderEditContent(p, children) {
       + '</div>';
   }).join('');
 
-  document.getElementById('detail-edit-content').innerHTML = pdSection
-    + '<div class="edit-section">'
-    + '<div class="edit-section-title">受注情報編集（orders）</div>'
+  document.getElementById('detail-edit-content').innerHTML =
+    '<div class="edit-section">'
+    + '<div class="edit-section-title">受注情報の編集</div>'
     + '<div class="edit-grid">'
     + '<div class="edit-field"><label>製品番号</label><input class="edit-input" readonly value="' + (p.productno || '') + '"></div>'
     + '<div class="edit-field"><label>受注番号</label><input class="edit-input" readonly value="' + (p.orderno || '') + '"></div>'
@@ -14126,7 +14517,7 @@ function renderEditContent(p, children) {
     + '<div class="edit-field"><label>出荷日</label><input class="edit-input" id="edit-shippingdate" type="date" value="' + (p.shippingdate || '') + '"></div>'
     + '</div></div>'
     + '<div class="edit-section child-edit">'
-    + '<div class="edit-section-title child">子データ編集（シリアル一覧）— ' + children.length + '件</div>'
+    + '<div class="edit-section-title child">子データの編集 — ' + children.length + '件</div>'
     + '<div style="display:grid;grid-template-columns:40px 120px 1fr 1fr;gap:10px;padding:6px 0 8px;border-bottom:1px solid #d1fae5;margin-bottom:4px;">'
     + '<div style="font-size:10px;font-weight:700;color:#059669;text-align:center;">#</div>'
     + '<div style="font-size:10px;font-weight:700;color:#059669;">シールNo</div>'
@@ -14136,6 +14527,7 @@ function renderEditContent(p, children) {
     + '<div class="child-edit-scroll">' + childRows + '</div>'
     + '</div>'
     + '<div id="edit-save-feedback" class="save-feedback"></div>'
+    + pdSection
     + '<div class="edit-actions">'
     + '<button class="btn-cancel-edit" onclick="toggleEditMode()">キャンセル</button>'
     + '<button class="btn-save-edit" id="btn-save-edit" onclick="saveAllEdits()">'
@@ -14212,13 +14604,32 @@ async function saveAllEdits() {
       shippingdate: document.getElementById('edit-shippingdate').value || null,
       updated_at:   new Date().toISOString()
     };
+    // 数量が変わる場合：子データ（シールNo）の増減内容を先に確認
+    let childPlan = null;
+    if (parentPatch.quantity != null && (parseInt(p.quantity) || 0) !== parentPatch.quantity) {
+      childPlan = await planChildSync(p.id, parentPatch.drawingno || p.drawingno, p.quantity, parentPatch.quantity);
+      if (!childPlan.skip) {
+        const lines = [`数量 ${childPlan.oldQty} → ${childPlan.newQty} に変更します。`];
+        if (childPlan.add) lines.push(`子データを ${childPlan.add}件 追加します${childPlan.category === 'カバー' ? '（シール番号を新規採番）' : ''}。`);
+        if (childPlan.del.length) lines.push(`子データを ${childPlan.del.length}件 削除します（シールNo: ${childPlan.del.map(c => c.sealno || '-').join(', ')}）。`);
+        if (childPlan.blocked) lines.push(`⚠️ ${childPlan.blocked}件はレーザー完了・積載済みのため削除できません（手動で調整してください）。`);
+        if (!confirm(lines.join('\n') + '\n\nよろしいですか？')) {
+          btn.disabled = false;
+          throw new Error('保存をキャンセルしました');
+        }
+      }
+    }
     const pr = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${p.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY,
         'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=representation' },
       body: JSON.stringify(parentPatch)
     });
-    if (!pr.ok) { const e = await pr.json(); throw new Error(e.message || '親更新失敗'); }
+    if (!pr.ok) {
+      const e = await pr.json().catch(() => ({}));
+      if (e.code === '23505') throw new Error('同じ受注番号＋図番の受注が既に登録されているため、この図番には変更できません');
+      throw new Error(e.message || '親更新失敗');
+    }
 
     // --- 子データ更新 ---
     for (const c of _detailChildren) {
@@ -14231,6 +14642,12 @@ async function saveAllEdits() {
         body: JSON.stringify({ delivery: delivery || null, inspectionsheet: inspection, updated_at: new Date().toISOString() })
       });
       if (!cr.ok) throw new Error(`子データ更新失敗 (sealno: ${c.sealno})`);
+    }
+
+    // 数量変更に合わせて子データを増減
+    if (childPlan && !childPlan.skip) {
+      const cres = await applyChildSync(childPlan);
+      if (cres.error) throw new Error('受注は保存しましたが、' + cres.error);
     }
 
     // 成功：データ再取得して表示更新
@@ -14530,7 +14947,7 @@ function printWorkOrder() {
 
 // 納期未登録バッジ（子データに納期未設定がある親に表示）
 function deliveryBadgeHtml() {
-  return '<span title="納期未登録の子データあり" style="display:inline-block;vertical-align:middle;background:linear-gradient(180deg,#d1d5db 0%,#9ca3af 45%,#6b7280 100%);color:#fff;font-size:11px;font-weight:700;line-height:1;padding:4px 10px;border-radius:999px;box-shadow:inset 0 1px 1px rgba(255,255,255,0.6),inset 0 -2px 3px rgba(0,0,0,0.18),0 1px 2px rgba(0,0,0,0.28);text-shadow:0 1px 1px rgba(0,0,0,0.25);">未納期</span>';
+  return '<span class="ob-dl unset" title="納期未登録の子データあり">未納期</span>';
 }
 
 // 登録から12時間以内かどうか判定（created_at 基準）
@@ -14544,23 +14961,19 @@ function isNewOrder(createdAt) {
 
 // NEWバッジ（登録から12時間以内の受注に表示・赤いリボン風）
 function newBadgeHtml(createdAt) {
-  if (!isNewOrder(createdAt)) return '';
-  return '<span title="登録から12時間以内の新着" style="display:inline-block;vertical-align:middle;background:linear-gradient(180deg,#f87171 0%,#ef4444 45%,#b91c1c 100%);color:#fff;font-size:10px;font-weight:800;letter-spacing:0.04em;line-height:1;padding:3px 7px;border-radius:4px;box-shadow:inset 0 1px 1px rgba(255,255,255,0.5),0 1px 2px rgba(0,0,0,0.3);text-shadow:0 1px 1px rgba(0,0,0,0.3);">NEW</span>';
+  return '';  // NEW表示は廃止
 }
 
 // 納期確定バッジ（希望納期が入力済みの親に表示・緑）
 function deliveryConfirmedBadgeHtml() {
-  return '<span title="納期確定" style="display:inline-block;vertical-align:middle;background:linear-gradient(180deg,#86efac 0%,#22c55e 45%,#16a34a 100%);color:#fff;font-size:11px;font-weight:700;line-height:1;padding:4px 10px;border-radius:999px;box-shadow:inset 0 1px 1px rgba(255,255,255,0.6),inset 0 -2px 3px rgba(0,0,0,0.18),0 1px 2px rgba(0,0,0,0.28);text-shadow:0 1px 1px rgba(0,0,0,0.25);">納期確定</span>';
+  return '<span class="ob-dl ok" title="納期確定">納期確定</span>';
 }
 
 // 品目区分バッジ（カバー＝水色／それ以外（メンテ扱い）＝紫）。受注一覧・受注詳細・製品詳細で共通利用。
 function categoryBadgeHtml(cat) {
   if (!cat) return '<span style="font-size:12px;color:#9ca3af;">-</span>';
-  const isCover = cat === 'カバー';
-  const grad = isCover
-    ? 'linear-gradient(180deg,#7dd3fc 0%,#0284c7 45%,#0369a1 100%)'
-    : 'linear-gradient(180deg,#c4b5fd 0%,#7c3aed 45%,#6d28d9 100%)';
-  return '<span style="display:inline-block;background:' + grad + ';color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;box-shadow:inset 0 1px 1px rgba(255,255,255,0.6),inset 0 -2px 3px rgba(0,0,0,0.18),0 1px 2px rgba(0,0,0,0.28);text-shadow:0 1px 1px rgba(0,0,0,0.25);white-space:nowrap;">' + cat + '</span>';
+  const cls = cat === 'カバー' ? 'cat-cover' : 'cat-other';
+  return '<span class="cat-badge ' + cls + '">' + String(cat).replace(/[<>&]/g, '') + '</span>';
 }
 
 // 品目区分に応じたテキストカラー（OT番号などに使用）
@@ -14576,16 +14989,10 @@ function secondCategoryBadgeHtml(secondCat, partNo, partNoUrl) {
   if (!secondCat) return '';
   const title = String(partNo || '').replace(/"/g, '&quot;');
   const inner = secondCat;
-  const badgeStyle = 'display:inline-flex;align-items:center;justify-content:center;'
-    + 'width:22px;height:22px;min-width:22px;border-radius:50%;margin-left:5px;vertical-align:middle;'
-    + 'background:linear-gradient(180deg,#e5e7eb 0%,#9ca3af 45%,#6b7280 100%);color:#fff;'
-    + 'font-size:10px;font-weight:800;line-height:1;letter-spacing:0.02em;'
-    + 'box-shadow:inset 0 1px 1px rgba(255,255,255,0.7),inset 0 -2px 3px rgba(0,0,0,0.25),0 1px 2px rgba(0,0,0,0.3);'
-    + 'text-shadow:0 1px 1px rgba(0,0,0,0.3);';
   if (partNoUrl) {
-    return '<a href="' + partNoUrl + '" target="_blank" rel="noopener" title="' + title + '（クリックで参照先を開く）" onclick="event.stopPropagation()" style="' + badgeStyle + 'text-decoration:none;cursor:pointer;">' + inner + '</a>';
+    return '<a class="cat-sub link" href="' + partNoUrl + '" target="_blank" rel="noopener" title="' + title + '（クリックで参照先を開く）" onclick="event.stopPropagation()">' + inner + '</a>';
   }
-  return '<span title="' + title + '" style="' + badgeStyle + 'cursor:default;">' + inner + '</span>';
+  return '<span class="cat-sub" title="' + title + '">' + inner + '</span>';
 }
 
 // 注文書の原本ファイル（Storage）を開くアイコン → PDF編集画面を開く
@@ -14600,8 +15007,8 @@ function sourceFileIconHtml(r) {
     return `<a href="${r.source_file_url}" target="_blank" rel="noopener"
        onclick="event.stopPropagation();"
        title="注文書の原本を開く: ${name}"
-       style="display:inline-flex;width:18px;height:18px;align-items:center;justify-content:center;flex-shrink:0;color:#1d4ed8;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;">
+       style="display:inline-flex;width:14px;height:14px;align-items:center;justify-content:center;flex-shrink:0;color:#1d4ed8;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
         <polyline points="14 2 14 8 20 8"/>
       </svg></a>`;
@@ -14609,8 +15016,8 @@ function sourceFileIconHtml(r) {
   return `<a href="javascript:void(0)"
      onclick="event.stopPropagation();openPdfEditor('${url}','${name}',${r.id});"
      title="注文書の原本を編集: ${name}"
-     style="display:inline-flex;width:18px;height:18px;align-items:center;justify-content:center;flex-shrink:0;color:#1d4ed8;cursor:pointer;">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;">
+     style="display:inline-flex;width:14px;height:14px;align-items:center;justify-content:center;flex-shrink:0;color:#1d4ed8;cursor:pointer;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;">
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
       <polyline points="14 2 14 8 20 8"/>
     </svg></a>`;
@@ -15538,7 +15945,7 @@ function memoIconHtml(r) {
   let svg;
   if (o && p) {
     // 両方: 左半分青・右半分オレンジのグラデーション
-    svg = `<svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg">
+    svg = `<svg viewBox="0 0 24 24" width="14" height="14" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="mg" x1="0" x2="1" y1="0" y2="0">
           <stop offset="50%" stop-color="#2563eb"/>
@@ -15550,13 +15957,13 @@ function memoIconHtml(r) {
     </svg>`;
   } else if (o) {
     // 連絡事項メモのみ: 青
-    svg = `<svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg">
+    svg = `<svg viewBox="0 0 24 24" width="14" height="14" xmlns="http://www.w3.org/2000/svg">
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="#2563eb" stroke="none"/>
       <path d="M8 10h8M8 13h5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
     </svg>`;
   } else {
     // 製品マスタメモのみ: オレンジ
-    svg = `<svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg">
+    svg = `<svg viewBox="0 0 24 24" width="14" height="14" xmlns="http://www.w3.org/2000/svg">
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="#d97706" stroke="none"/>
       <path d="M8 10h8M8 13h5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
     </svg>`;
@@ -15765,6 +16172,16 @@ async function submitManualOrder() {
   };
 
   try {
+    // 二重登録防止：同じ「受注番号＋図番」が登録済みなら登録しない
+    if (data.orderno) {
+      const ex = await fetchExistingOrdersFor([data]);
+      const hit = ex.byKey.get(ordKey(data.orderno, data.drawingno));
+      if (hit) {
+        errEl.textContent = `受注番号「${data.orderno}」・図番「${drawingno}」は登録済みです（id:${hit.id}）。内容を変更する場合は受注一覧から編集してください。`;
+        errEl.style.display = 'block';
+        return;
+      }
+    }
     const res = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
       method: 'POST',
       headers: {
@@ -15773,7 +16190,11 @@ async function submitManualOrder() {
       },
       body: JSON.stringify(data)
     });
-    if (!res.ok) { const e = await res.text(); throw new Error(e); }
+    if (!res.ok) {
+      const e = await res.text();
+      if (e.includes('23505')) throw new Error('同じ受注番号＋図番が既に登録されています');
+      throw new Error(e);
+    }
 
     closeManualOrderForm();
     await loadOrders();
@@ -15817,33 +16238,29 @@ function buildChildRows(children) {
     c._productName = productName;
     c._otNumber = otNumber;
     const statusBtn = (c.id != null)
-      ? '<button onclick="openChildRoute(' + c.id + ')" ' +
-        'style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;font-size:11px;font-weight:600;background:#ecfeff;color:#0891b2;border:1px solid #a5f3fc;border-radius:5px;cursor:pointer;">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>進捗ステータス</button>'
-      : '<span style="font-size:11px;color:#cbd5e1;">－</span>';
+      ? '<button class="ct-btn" onclick="openChildRoute(' + c.id + ')" title="工程ごとの進捗ステータスを開く">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>進捗</button>'
+      : '<span class="dm-muted">－</span>';
     const deleteBtn = (c.id != null)
-      ? '<button onclick="deleteChildRow(' + c.id + ')" title="この子データを削除" ' +
-        'style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin-left:4px;padding:0;font-size:12px;font-weight:700;line-height:1;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:5px;cursor:pointer;">✖</button>'
+      ? '<button class="ct-del" onclick="deleteChildRow(' + c.id + ')" title="この子データを削除">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>'
       : '';
-    // 納期セル：未設定は赤ボタン、設定済みは日付ボタン（押すと再設定）
+    // 納期セル：未設定はグレーのタグ、設定済みは日付（どちらもクリックで登録・再設定）
     let deliveryCell;
     if (c.id == null) {
-      deliveryCell = '<span style="color:#9ca3af;font-size:12px;">' + (c.delivery || '未設定') + '</span>';
+      deliveryCell = '<span class="dm-muted">' + (c.delivery || '未設定') + '</span>';
     } else if (c.delivery) {
-      deliveryCell = '<button onclick="openDeliveryDialog(' + c.id + ')" ' +
-        'style="padding:3px 10px;font-size:12px;font-weight:600;background:#fff;color:#111827;border:1px solid #d1d5db;border-radius:5px;cursor:pointer;" title="納期を再設定">' +
-        c.delivery + '</button>';
+      deliveryCell = '<button class="ct-date" onclick="openDeliveryDialog(' + c.id + ')" title="クリックで納期を再設定">' + c.delivery + '</button>';
     } else {
-      deliveryCell = '<button onclick="openDeliveryDialog(' + c.id + ')" ' +
-        'style="padding:3px 12px;font-size:11px;font-weight:700;background:#6b7280;color:#fff;border:none;border-radius:5px;cursor:pointer;" title="納期を登録">未設定</button>';
+      deliveryCell = '<button class="ct-date unset" onclick="openDeliveryDialog(' + c.id + ')" title="クリックで納期を登録">＋ 納期登録</button>';
     }
     return '<tr>'
       + '<td class="seq-num">' + (i + 1) + '</td>'
       + '<td class="sealno-cell">' + (c.sealno || '-') + '</td>'
       + '<td>' + deliveryCell + '</td>'
-      + '<td style="font-size:11px;color:#374151;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + productName + '">' + productName + '</td>'
-      + '<td style="font-size:11px;color:#7c3aed;font-family:monospace;">' + otNumber + '</td>'
-      + '<td style="white-space:nowrap;">' + statusBtn + deleteBtn + '</td>'
+      + '<td class="ct-name" title="' + productName + '">' + productName + '</td>'
+      + '<td class="ct-ot">' + otNumber + '</td>'
+      + '<td class="ct-ops">' + statusBtn + deleteBtn + '</td>'
       + '</tr>';
   }).join('');
 }
@@ -15921,23 +16338,9 @@ function toggleWorkOrder() {
   const panel = document.getElementById('detail-work-order');
   const btn = document.getElementById('work-order-toggle-btn');
   if (!panel) return;
-
-  const isHidden = panel.style.display === 'none';
-  if (isHidden) {
-    // 表示に戻す
-    panel.style.display = '';
-    btn.style.background = '#f0fdf4';
-    btn.style.color = '#059669';
-    btn.style.borderColor = '#bbf7d0';
-    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><rect x="3" y="3" width="7" height="18"/><rect x="14" y="3" width="7" height="18"/></svg> 指示書`;
-  } else {
-    // 非表示
-    panel.style.display = 'none';
-    btn.style.background = '#f1f5f9';
-    btn.style.color = '#94a3b8';
-    btn.style.borderColor = '#e2e8f0';
-    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><rect x="3" y="3" width="7" height="18" opacity="0.3"/><rect x="14" y="3" width="7" height="18"/></svg> 指示書`;
-  }
+  const show = panel.style.display === 'none';
+  panel.style.display = show ? '' : 'none';
+  if (btn) btn.classList.toggle('on', show);
 }
 
 // ==================== 変更履歴 ====================
@@ -15955,8 +16358,9 @@ async function checkOrderChangelog(orderno, orderId) {
       area.innerHTML = ''; // 重複防止のためリセット
       if (list.length > 0) {
         const btn = document.createElement('button');
-        btn.innerHTML = '🕐 変更前を見る';
-        btn.style.cssText = 'font-size:10px;padding:3px 10px;background:#fef3c7;color:#92400e;border:1px solid #fde68a;border-radius:5px;cursor:pointer;font-weight:600;';
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>変更履歴';
+        btn.className = 'dm-btn sm amber';
+        btn.title = '変更前の内容を見る';
         btn.onclick = function() { showOrderChangelog(orderno, orderId); };
         area.appendChild(btn);
       }
@@ -18207,24 +18611,25 @@ async function saveRoute() {
   <div class="detail-modal" id="detail-modal">
     <div class="detail-modal-header">
       <div class="detail-modal-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/></svg>
+        <span class="dm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/></svg></span>
         <span id="detail-modal-title-text">受注詳細</span>
+        <span class="dm-head-meta" id="detail-head-meta"></span>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <button id="work-order-toggle-btn" onclick="toggleWorkOrder()" title="作業指示書の表示/非表示"
-          style="display:flex;align-items:center;gap:4px;padding:5px 10px;font-size:11px;font-weight:600;background:#f0fdf4;color:#059669;border:1px solid #bbf7d0;border-radius:6px;cursor:pointer;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><rect x="3" y="3" width="7" height="18"/><rect x="14" y="3" width="7" height="18"/></svg>
+      <div class="dm-actions">
+        <button id="work-order-toggle-btn" class="dm-btn toggle on" onclick="toggleWorkOrder()" title="左の作業指示書パネルの表示/非表示">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18"/><rect x="14" y="3" width="7" height="18"/></svg>
           指示書
         </button>
-        <button onclick="confirmCancelOrder()" style="display:flex;align-items:center;gap:4px;padding:5px 10px;font-size:11px;font-weight:600;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;cursor:pointer;" title="注文を取消して削除">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-          注文取消
-        </button>
-        <button class="detail-edit-btn" id="detail-edit-toggle" onclick="toggleEditMode()">
+        <button class="dm-btn primary detail-edit-btn" id="detail-edit-toggle" onclick="toggleEditMode()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           編集
         </button>
-        <button class="detail-modal-close" onclick="closeDetail()">
+        <span class="dm-sep"></span>
+        <button class="dm-btn danger" onclick="confirmCancelOrder()" title="この受注を取消します">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          注文取消
+        </button>
+        <button class="detail-modal-close" onclick="closeDetail()" title="閉じる（Esc）">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
