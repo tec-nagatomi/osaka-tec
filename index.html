@@ -2502,11 +2502,11 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               CSV出力
             </button>
-            <button class="refresh-btn" onclick="exportEditableExcel()" title="表示中の受注を子データ1件=1行でExcel出力します（製番・納期・シールNoを編集して取り込めます）" style="background:#ecfdf5;border-color:#a7f3d0;color:#059669;">
+            <button class="refresh-btn" onclick="openExcelExportChooser()" title="表示中の受注をExcel出力します（従来データ／新基準データを選択）" style="background:#ecfdf5;border-color:#a7f3d0;color:#059669;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Excel出力
             </button>
-            <button class="refresh-btn" onclick="document.getElementById('editable-excel-file').click()" title="Excel出力したファイルを編集して取り込むと、製番・納期・シールNoを反映します" style="background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8;">
+            <button class="refresh-btn" onclick="document.getElementById('editable-excel-file').click()" title="Excel出力したファイルを編集して取り込むと、伝票番号・注文日・客先図番・原番・受注番号・シール番号を反映します（取引先・品名・OT番号は製品マスタ側で修正）" style="background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               Excel取込
             </button>
@@ -10540,6 +10540,9 @@ async function handleFiles(files) {
       : 'データを抽出できませんでした。画像PDFの場合はテキスト抽出不可です（YP4-N等）。テキスト付きPDFをご使用ください。');
     return;
   }
+  // 納入先の長い名称を短縮（例: ヤマザキマザックマニュファクチャリング(株)　美濃加茂製作所 → 美濃加茂製作所）
+  for (const r of extractedRows) r.delivery_destination = shortenDeliveryDest(r.delivery_destination);
+
   // マザック汎用品番（Z93〜）の製品照合
   const genericInfo = await resolveMazakGenericRows(extractedRows);
   let msg = extractedRows.length + '件のデータを抽出しました';
@@ -10655,6 +10658,17 @@ async function resolveMazakGenericRows(rows) {
     delete r._gDnos; delete r._gOts;
   }
   return info;
+}
+
+// 納入先名の短縮ルール（取り込み時に適用）。短縮したい名称が増えたらここに追加する
+const DELIVERY_DEST_SHORT = [
+  [/^ヤマザキマザック\s*マニュファクチャリング[\s\S]*美濃加茂製作所$/, '美濃加茂製作所'],
+];
+function shortenDeliveryDest(v) {
+  if (v == null) return v;
+  const s = String(v).trim();
+  for (const [re, short] of DELIVERY_DEST_SHORT) if (re.test(s)) return short;
+  return v;
 }
 
 // 登録対象として有効な受注行か（図番またはOT番号が必須。注番が見出し語や日付だけの行は除外）
@@ -11624,7 +11638,7 @@ function parseExcelNewOrder(data, ci) {
   // 「工場」の略称 → 納入先の正式名称（既存の受注データと表記を合わせる）
   const MAZAK_FACTORY_MAP = [
     [/大口/,           'ヤマザキマザック(株)　大口製作所'],
-    [/美濃/,           'ヤマザキマザックマニュファクチャリング(株)　美濃加茂製作所'],
+    [/美濃/,           '美濃加茂製作所'],
     [/いなべ/,         'ヤマザキマザック　マニュファクチャリング(株)　いなべ製作所'],
     [/ワールドパーツ/, 'ワールドパーツセンター'],
   ];
@@ -13913,9 +13927,111 @@ function exportOrdersCSV() {
 }
 
 // ==================== 親子データ Excel入出力（製番・納期・シールNo） ====================
-// 表示中の受注を「子データ1件=1行」でExcel出力する。各行に親id・子idを持たせ、
-// 取り込み時にそのidで確実に対象レコードを特定する。編集対象は製番・納期・シールNoの3項目。
-const EDITABLE_XLSX_HEADER = ['親id', '子id', '受注番号', '図番', '品名', '製番', '納期', 'シールNo'];
+// ---- Excel出力：従来データ／新基準データの選択ポップアップ ----
+function openExcelExportChooser() {
+  if (!filteredOrders || !filteredOrders.length) { alert('エクスポートするデータがありません。'); return; }
+  closeExcelExportChooser();
+  const ov = document.createElement('div');
+  ov.id = 'xls-export-chooser';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:5000;display:flex;align-items:center;justify-content:center;';
+  ov.onclick = (e) => { if (e.target === ov) closeExcelExportChooser(); };
+  const btn = (bg, bd, fg) => `display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:100%;text-align:left;padding:14px 16px;border-radius:10px;border:1px solid ${bd};background:${bg};color:${fg};cursor:pointer;font-family:inherit;`;
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:12px;width:420px;max-width:calc(100vw - 32px);box-shadow:0 20px 50px rgba(0,0,0,.25);overflow:hidden;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #e5e7eb;">
+        <div style="font-size:15px;font-weight:700;color:#111827;">Excel出力</div>
+        <button onclick="closeExcelExportChooser()" style="border:none;background:none;font-size:20px;line-height:1;color:#6b7280;cursor:pointer;">×</button>
+      </div>
+      <div style="padding:16px 18px;display:flex;flex-direction:column;gap:10px;">
+        <div style="font-size:12px;color:#6b7280;">表示中の受注 ${filteredOrders.length}件をダウンロードします。形式を選んでください。</div>
+        <button onclick="closeExcelExportChooser();exportLegacyWorkOrderExcel()" style="${btn('#f8fafc','#cbd5e1','#1e293b')}">
+          <span style="font-size:14px;font-weight:700;">従来データ</span>
+          <span style="font-size:11px;color:#64748b;">作業指示書の内容（受注1件=1行）</span>
+        </button>
+        <button onclick="closeExcelExportChooser();exportEditableExcel()" style="${btn('#ecfdf5','#a7f3d0','#065f46')}">
+          <span style="font-size:14px;font-weight:700;">新基準データ</span>
+          <span style="font-size:11px;color:#047857;">子データ1件=1行・親ID/子ID付き（編集して「Excel取込」できます）</span>
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+}
+function closeExcelExportChooser() {
+  const ov = document.getElementById('xls-export-chooser');
+  if (ov) ov.remove();
+}
+
+// 表示中の受注の子データをまとめて取得（order_id in (...) を150件ずつ分割）→ Map(order_id → [子データ])
+async function fetchChildrenByOrder(orderIds) {
+  const map = new Map();
+  for (let i = 0; i < orderIds.length; i += 150) {
+    const chunk = orderIds.slice(i, i + 150);
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/orders_child?order_id=in.(${chunk.join(',')})&select=id,order_id,sealno,delivery&order=id.asc`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }
+    );
+    if (!res.ok) continue;
+    for (const c of await res.json()) {
+      if (!map.has(c.order_id)) map.set(c.order_id, []);
+      map.get(c.order_id).push(c);
+    }
+  }
+  return map;
+}
+
+// 作業指示書と同じシール番号表記（1件: そのまま / 2件: A, B / 3件以上: 最小 ～ 最大）
+function sealRangeText(children) {
+  const nos = (children || []).map(c => c.sealno).filter(Boolean)
+    .sort((a, b) => { const na = parseInt(a), nb = parseInt(b); return isNaN(na) || isNaN(nb) ? String(a).localeCompare(String(b)) : na - nb; });
+  if (nos.length === 0) return '';
+  if (nos.length === 1) return nos[0];
+  if (nos.length === 2) return `${nos[0]}, ${nos[1]}`;
+  return `${nos[0]} ～ ${nos[nos.length - 1]}`;
+}
+
+// ---- 従来データ：作業指示書に表示している内容を受注1件=1行で出力 ----
+// 列: 伝票番号, 注文日, (空), (空), 取引先, 品名, 客先図番, OT番号, (空), 注文番号, 希望納期, (空), 数量, 単位, (空), シール番号
+async function exportLegacyWorkOrderExcel() {
+  const data = filteredOrders;
+  if (!data || !data.length) { alert('エクスポートするデータがありません。'); return; }
+  if (typeof XLSX === 'undefined') { alert('Excelライブラリの読み込みに失敗しています。ページを再読込してください。'); return; }
+  let childByOrder;
+  try { childByOrder = await fetchChildrenByOrder(data.map(o => o.id).filter(v => v != null)); }
+  catch (e) { alert('子データの取得に失敗しました: ' + e.message); return; }
+
+  const pdOf = (dno) => dno ? ((typeof allProductdate !== 'undefined' ? allProductdate : []).find(p => p.customer_drawing_no === dno) || null) : null;
+  const header = ['伝票番号', '注文日', '', '', '取引先', '品名', '客先図番', 'OT番号', '', '注文番号', '希望納期', '', '数量', '単位', '', 'シール番号'];
+  const body = data.map(o => {
+    const pd = (o.pd_client && o.pd_product_name) ? null : pdOf(o.drawingno);
+    // 作業指示書（renderWorkOrder）と同じ取り方
+    const client = o.pd_client || pd?.client || (typeof clientFromOrderSource === 'function' ? clientFromOrderSource(o) : '') || '';
+    const productName = o.pd_product_name || pd?.product_name || o.drawingno || '';
+    const ot = o.pd_ot_number || pd?.ot_number || '';
+    return [
+      o.productno || '', o.orderdate || '', '', '',
+      client, productName, o.drawingno || '', ot, '',
+      o.orderno || '', o.deliverydate || '', '',
+      o.quantity != null ? Number(o.quantity) : '', o.unit || '', '',
+      sealRangeText(childByOrder.get(o.id)),
+    ];
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet([header, ...body]);
+  ws['!cols'] = [{ wch: 12 }, { wch: 11 }, { wch: 3 }, { wch: 3 }, { wch: 26 }, { wch: 32 }, { wch: 18 }, { wch: 15 }, { wch: 3 },
+                 { wch: 16 }, { wch: 11 }, { wch: 3 }, { wch: 6 }, { wch: 6 }, { wch: 3 }, { wch: 20 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '従来データ');
+  const t = new Date();
+  const ts = `${t.getFullYear()}${String(t.getMonth()+1).padStart(2,'0')}${String(t.getDate()).padStart(2,'0')}`;
+  try { XLSX.writeFile(wb, `受注一覧_従来_${ts}.xlsx`); }
+  catch (e) { alert('Excel出力に失敗しました: ' + e.message); }
+}
+
+// 表示中の受注を「子データ1件=1行」でExcel出力する。各行に親ID・子IDを持たせ、
+// 取り込み時にそのIDで確実に対象レコードを特定する。伝票番号・注文日・客先図番・原番・受注番号・シール番号を編集して取り込める
+// （取引先・品名・OT番号は製品マスタ由来の表示用で、取り込んでも受注データには反映しない）。
+// 列順: 伝票番号(製番), 注文日, 取引先, 品名, 客先図番, OT番号, 原番, 受注番号, シール番号, 親ID, 子ID
+const EDITABLE_XLSX_HEADER = ['伝票番号', '注文日', '取引先', '品名', '客先図番', 'OT番号', '原番', '受注番号', 'シール番号', '親ID', '子ID'];
 const EDITABLE_XLSX_SHEET = '受注編集';
 
 async function exportEditableExcel() {
@@ -13941,23 +14057,35 @@ async function exportEditableExcel() {
     }
   } catch(e) { alert('子データの取得に失敗しました: ' + e.message); return; }
 
-  // 製品名は図番→productdateで解決（既存のマップがあれば利用）
-  const nameOf = (dno) => {
-    if (!dno) return '';
-    const pd = (typeof allProductdate !== 'undefined' ? allProductdate : []).find(p => p.customer_drawing_no === dno);
-    return pd ? (pd.product_name || '') : '';
+  // 取引先・品名・OT番号は一覧表示用に製品マスタから結合済みの値（pd_*）を使う。
+  // 未結合の場合のみ図番→productdateで補完する
+  const pdOf = (dno) => {
+    if (!dno) return null;
+    return (typeof allProductdate !== 'undefined' ? allProductdate : []).find(p => p.customer_drawing_no === dno) || null;
+  };
+  const rowHead = (o) => {
+    const pd = (o.pd_client && o.pd_product_name && o.pd_ot_number) ? null : pdOf(o.drawingno);
+    return [
+      o.productno || '',
+      o.orderdate || '',
+      o.pd_client || pd?.client || (typeof clientFromOrderSource === 'function' ? clientFromOrderSource(o) : '') || '',
+      o.pd_product_name || pd?.product_name || '',
+      o.drawingno || '',
+      o.pd_ot_number || pd?.ot_number || '',
+      o.originalno || '',
+      o.orderno || '',
+    ];
   };
 
   const body = [];
   for (const o of data) {
     const children = childByOrder.get(o.id) || [];
     if (children.length === 0) {
-      // 子が無い受注も1行出す（子idは空。取り込むと新規子データとして追加される）
-      body.push([o.id, '', o.orderno || '', o.drawingno || '', nameOf(o.drawingno), o.productno || '', '', '']);
+      // 子が無い受注も1行出す（子IDは空。シール番号を入れて取り込むと新規子データとして追加される）
+      body.push([...rowHead(o), '', o.id, '']);
     } else {
       for (const c of children) {
-        body.push([o.id, c.id, o.orderno || '', o.drawingno || '', nameOf(o.drawingno),
-                   o.productno || '', c.delivery || '', c.sealno || '']);
+        body.push([...rowHead(o), c.sealno || '', o.id, c.id]);
       }
     }
   }
@@ -13965,20 +14093,20 @@ async function exportEditableExcel() {
   const today = new Date();
   const stamp = `${today.getFullYear()}/${String(today.getMonth()+1).padStart(2,'0')}/${String(today.getDate()).padStart(2,'0')}`;
   const aoa = [
-    ['受注編集シート（製番・納期・シールNoを編集して取込できます）'],
-    [`出力日: ${stamp}`, '', '※ 親id・子idの列は変更しないでください', '', '', `件数: ${body.length}行`],
+    ['受注編集シート（伝票番号・注文日・客先図番・原番・受注番号・シール番号を編集して取込できます。取引先・品名・OT番号は製品マスタの値で、取込では変更されません）'],
+    [`出力日: ${stamp}`, '', '※ 親ID・子IDの列は変更しないでください', '', '', '', '', `件数: ${body.length}行`],
     [],
     EDITABLE_XLSX_HEADER,
     ...body,
   ];
   const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols'] = [{ wch: 8 }, { wch: 8 }, { wch: 15 }, { wch: 18 }, { wch: 32 }, { wch: 14 }, { wch: 12 }, { wch: 13 }];
+  ws['!cols'] = [{ wch: 12 }, { wch: 11 }, { wch: 26 }, { wch: 32 }, { wch: 18 }, { wch: 15 }, { wch: 24 }, { wch: 16 }, { wch: 11 }, { wch: 8 }, { wch: 8 }];
   ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: EDITABLE_XLSX_HEADER.length - 1 } }];
   ws['!freeze'] = { xSplit: 0, ySplit: 4 };
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, EDITABLE_XLSX_SHEET);
   const ts = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
-  try { XLSX.writeFile(wb, `受注編集_${ts}.xlsx`); }
+  try { XLSX.writeFile(wb, `受注一覧_新基準_${ts}.xlsx`); }
   catch(e) { alert('Excel出力に失敗しました: ' + e.message); }
 }
 
@@ -14002,92 +14130,215 @@ async function importEditableExcel(ev) {
   if (!file) return;
   if (typeof XLSX === 'undefined') { alert('Excelライブラリの読み込みに失敗しています。ページを再読込してください。'); return; }
 
-  let rows;
+  // ---- 1) ファイル読込：見出し名で列を特定（旧形式［親id,子id,…,製番,納期,シールNo］にも対応）----
+  let rows, col;
   try {
     const buf = await file.arrayBuffer();
     const wb = XLSX.read(buf, { type: 'array', cellDates: false });
     const ws = wb.Sheets[EDITABLE_XLSX_SHEET] || wb.Sheets[wb.SheetNames[0]];
     const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-    // ヘッダー行（親id 子id ...）を探す
-    const hIdx = aoa.findIndex(r => String(r[0]).trim() === '親id' && String(r[1]).trim() === '子id');
+    const low = v => String(v ?? '').trim().toLowerCase();
+    const hIdx = aoa.findIndex(r => r.some(c => low(c) === '親id') && r.some(c => low(c) === '子id'));
     if (hIdx < 0) { alert('この形式のファイルは取り込めません。「Excel出力」で作成したファイルを編集して取り込んでください。'); return; }
+    const hdr = aoa[hIdx].map(low);
+    const find = (...names) => { for (const n of names) { const i = hdr.indexOf(n); if (i >= 0) return i; } return -1; };
+    col = {
+      pid:         find('親id'),
+      cid:         find('子id'),
+      // 受注データ（orders）に書き戻す列
+      productno:   find('伝票番号', '製番'),
+      orderdate:   find('注文日'),
+      drawingno:   find('客先図番', '図番'),
+      originalno:  find('原番'),
+      orderno:     find('受注番号'),
+      // 子データ（orders_child）に書き戻す列
+      sealno:      find('シール番号', 'シールno'),
+      delivery:    find('納期'),                   // 旧形式のみ
+      // 製品マスタ由来の列（受注データには保存されないため書き戻さない）
+      client:      find('取引先'),
+      productName: find('品名'),
+      otNumber:    find('ot番号'),
+    };
     rows = aoa.slice(hIdx + 1).filter(r => r.some(c => String(c).trim() !== ''));
   } catch(e) { alert('ファイルの読み込みに失敗しました: ' + e.message); return; }
-
   if (!rows.length) { alert('取り込む行がありません。'); return; }
 
-  // 列: [親id, 子id, 受注番号, 図番, 品名, 製番, 納期, シールNo]
-  const parentUpdates = new Map();   // order_id → productno（重複は最後の値）
-  const childUpdates = [];           // { id, delivery, sealno }
-  const childInserts = [];           // { order_id, delivery, sealno }
-  let skipped = 0;
+  const cell = (r, i) => (i >= 0 ? r[i] : undefined);
+  const txt  = (r, i) => String(cell(r, i) ?? '').trim();
+  const H  = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+  const HJ = { ...H, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+
+  // ---- 2) 現在のDB値を取得し、変更のあった項目だけを更新対象にする ----
+  const pids = [...new Set(rows.map(r => parseInt(cell(r, col.pid))).filter(v => v && !isNaN(v)))];
+  const cids = [...new Set(rows.map(r => parseInt(cell(r, col.cid))).filter(v => v && !isNaN(v)))];
+  const curOrders = new Map(), curChildren = new Map();
+  try {
+    for (let i = 0; i < pids.length; i += 150) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=in.(${pids.slice(i, i + 150).join(',')})&select=id,productno,orderdate,drawingno,originalno,orderno`, { headers: H });
+      if (!res.ok) throw new Error('受注データ取得 HTTP ' + res.status);
+      for (const o of await res.json()) curOrders.set(o.id, o);
+    }
+    for (let i = 0; i < cids.length; i += 150) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders_child?id=in.(${cids.slice(i, i + 150).join(',')})&select=id,order_id,sealno,delivery`, { headers: H });
+      if (!res.ok) throw new Error('子データ取得 HTTP ' + res.status);
+      for (const c of await res.json()) curChildren.set(c.id, c);
+    }
+  } catch(e) { alert('現在のデータの取得に失敗しました: ' + e.message); return; }
+
+  const ORDER_FIELDS = [
+    ['productno',  '伝票番号'],
+    ['orderdate',  '注文日'],
+    ['drawingno',  '客先図番'],
+    ['originalno', '原番'],
+    ['orderno',    '受注番号'],
+  ];
+  const normVal = (f, v) => {
+    if (f === 'orderdate') return normalizeDateCell(v);
+    const s = String(v ?? '').trim();
+    return s === '' ? null : s;
+  };
+  const same = (a, b) => (a ?? '') === (b ?? '');
+
+  // 親の変更: 同じ親を指す複数行のうち「DBと違う値」を採用。違う値が行ごとに食い違う場合は競合として更新しない
+  const parentEdits = new Map();   // pid → { field → Set(新しい値) }
+  const childUpdates = [], childInserts = [];
+  let skipped = 0, missing = 0;
+  const rowsByPid = new Map();
 
   for (const r of rows) {
-    const pid = parseInt(r[0]);
-    const cid = r[1] !== '' && r[1] != null ? parseInt(r[1]) : null;
-    const productno = String(r[5] ?? '').trim();
-    const delivery = normalizeDateCell(r[6]);
-    const sealno = String(r[7] ?? '').trim();
+    const pid = parseInt(cell(r, col.pid));
+    if (!pid || isNaN(pid)) { skipped++; continue; }
+    const cur = curOrders.get(pid);
+    if (!cur) { missing++; continue; }
+    if (!rowsByPid.has(pid)) rowsByPid.set(pid, []);
+    rowsByPid.get(pid).push(r);
 
-    if (!pid || isNaN(pid)) { skipped++; continue; }  // 親idが無い行はスキップ
-    // 製番は親に反映（同じ親を複数行が指す場合は上書き。空欄はnullで消去）
-    parentUpdates.set(pid, productno || null);
+    for (const [f] of ORDER_FIELDS) {
+      if (col[f] < 0) continue;
+      const v = normVal(f, cell(r, col[f]));
+      if (f === 'drawingno' && v === null) continue;   // 客先図番の空欄化は受け付けない
+      if (!same(v, cur[f])) {
+        if (!parentEdits.has(pid)) parentEdits.set(pid, {});
+        (parentEdits.get(pid)[f] ||= new Set()).add(v);
+      }
+    }
 
+    const cidRaw = cell(r, col.cid);
+    const cid = cidRaw !== '' && cidRaw != null ? parseInt(cidRaw) : null;
+    const sealno = txt(r, col.sealno);
+    const delivery = col.delivery >= 0 ? normalizeDateCell(cell(r, col.delivery)) : undefined;
     if (cid && !isNaN(cid)) {
-      childUpdates.push({ id: cid, delivery, sealno: sealno });  // sealnoはNOT NULL制約のため空文字を保持
-    } else {
-      // 子idが無い＝新規子データとして追加（シールNoか納期のどちらかが入っている場合のみ）
-      if (sealno || delivery) childInserts.push({ order_id: pid, delivery, sealno: sealno });
+      const cc = curChildren.get(cid);
+      if (!cc) { missing++; continue; }
+      const u = { id: cid };
+      if (col.sealno >= 0 && !same(sealno, cc.sealno)) u.sealno = sealno;          // NOT NULL制約のため空は空文字
+      if (col.delivery >= 0 && !same(delivery, cc.delivery)) u.delivery = delivery;
+      if (Object.keys(u).length > 1) childUpdates.push(u);
+    } else if (sealno || delivery) {
+      childInserts.push({ order_id: pid, delivery: delivery || null, sealno });
     }
   }
 
+  const parentUpdates = [];        // { id, patch }
+  const conflicts = [];
+  const fieldCount = {};
+  for (const [pid, edits] of parentEdits) {
+    const patch = {};
+    for (const [f, set] of Object.entries(edits)) {
+      if (set.size > 1) { conflicts.push(`親ID ${pid} の${ORDER_FIELDS.find(x => x[0] === f)[1]}: ${[...set].map(v => v ?? '(空)').join(' / ')}`); continue; }
+      patch[f] = [...set][0];
+      fieldCount[f] = (fieldCount[f] || 0) + 1;
+    }
+    if (Object.keys(patch).length) parentUpdates.push({ id: pid, patch });
+  }
+
+  // ---- 3) 製品マスタ由来の列（取引先・品名・OT番号）の変更を検出 → 受注データには反映しない ----
+  const finalDno = pid => { const u = parentUpdates.find(x => x.id === pid); return (u && u.patch.drawingno) || curOrders.get(pid).drawingno; };
+  const dnos = [...new Set([...rowsByPid.keys()].map(finalDno).filter(Boolean))];
+  const pdMap = new Map();
+  try {
+    for (let i = 0; i < dnos.length; i += 100) {
+      const chunk = dnos.slice(i, i + 100);
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${chunk.map(d => `"${d}"`).join(',')})&select=customer_drawing_no,client,product_name,ot_number`, { headers: H });
+      if (res.ok) for (const p of await res.json()) if (!pdMap.has(p.customer_drawing_no)) pdMap.set(p.customer_drawing_no, p);
+    }
+  } catch(e) { console.warn('[Excel取込] 製品マスタ取得失敗', e); }
+
+  const masterDiffs = [];          // 表示用
+  const newDnoUnregistered = [];
+  for (const u of parentUpdates) {
+    if (u.patch.drawingno && !pdMap.has(u.patch.drawingno)) newDnoUnregistered.push(`${curOrders.get(u.id).orderno || u.id}: ${u.patch.drawingno}`);
+  }
+  for (const [pid, rs] of rowsByPid) {
+    const dno = finalDno(pid);
+    const pd = pdMap.get(dno);
+    if (!pd) continue;             // マスタ未登録の図番は比較しない
+    const r = rs[0];
+    const chk = [['client', '取引先', pd.client], ['productName', '品名', pd.product_name], ['otNumber', 'OT番号', pd.ot_number]];
+    for (const [k, label, mv] of chk) {
+      if (col[k] < 0) continue;
+      const v = txt(r, col[k]);
+      // 客先図番を変えた行は、マスタ由来の列が旧図番の値のままなので比較しない
+      const dnoChanged = parentUpdates.some(x => x.id === pid && x.patch.drawingno);
+      if (!dnoChanged && v !== '' && !same(v, String(mv ?? '').trim())) masterDiffs.push(`${dno} の${label}: 「${mv ?? ''}」→「${v}」`);
+    }
+  }
+  const masterDiffUniq = [...new Set(masterDiffs)];
+
+  if (!parentUpdates.length && !childUpdates.length && !childInserts.length) {
+    alert(['変更された項目はありませんでした。',
+      masterDiffUniq.length ? `\n※ 製品マスタ由来の列（取引先・品名・OT番号）の変更 ${masterDiffUniq.length}件は、受注データには反映されません。製品マスタ側で修正してください。\n` + masterDiffUniq.slice(0, 8).join('\n') : '',
+    ].join('\n'));
+    return;
+  }
+
+  const L = (f) => ORDER_FIELDS.find(x => x[0] === f)[1];
   const msg = [
-    '取り込み内容を確認してください。',
+    '取り込み内容を確認してください。（DBと値が違う項目だけを更新します）',
     '',
-    `・製番を更新する受注: ${parentUpdates.size}件`,
-    `・納期／シールNoを更新する子データ: ${childUpdates.length}件`,
-    childInserts.length ? `・新規追加する子データ: ${childInserts.length}件` : '',
-    skipped ? `・親idが無くスキップする行: ${skipped}件` : '',
+    `■ 受注データの更新: ${parentUpdates.length}件`,
+    ...Object.entries(fieldCount).map(([f, n]) => `　・${L(f)}: ${n}件`),
+    `■ シール番号${col.delivery >= 0 ? '／納期' : ''}の更新: ${childUpdates.length}件`,
+    childInserts.length ? `■ 新規追加する子データ: ${childInserts.length}件` : '',
+    fieldCount.drawingno ? '\n⚠ 客先図番を変更すると、品名・取引先・OT番号は新しい図番の製品マスタの内容に切り替わります（シール番号の枚数は自動では変わりません）。' : '',
+    newDnoUnregistered.length ? `⚠ 製品マスタに無い客先図番 ${newDnoUnregistered.length}件:\n　` + newDnoUnregistered.slice(0, 5).join('\n　') : '',
+    conflicts.length ? `\n⚠ 同じ受注で値が食い違うため更新しない項目 ${conflicts.length}件:\n　` + conflicts.slice(0, 5).join('\n　') : '',
+    masterDiffUniq.length ? `\n※ 製品マスタ由来の列（取引先・品名・OT番号）の変更 ${masterDiffUniq.length}件は反映されません（製品マスタ側で修正してください）:\n　` + masterDiffUniq.slice(0, 5).join('\n　') : '',
+    skipped ? `・親IDが無くスキップする行: ${skipped}件` : '',
+    missing ? `・DBに存在しない親ID/子IDの行: ${missing}件（スキップ）` : '',
     '',
     '実行してよろしいですか？',
   ].filter(Boolean).join('\n');
   if (!confirm(msg)) return;
 
+  // ---- 4) 反映 ----
   if (typeof rtSuppress === 'function') rtSuppress();
-  const H = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
-  let okParent = 0, okChild = 0, okInsert = 0, errors = [];
-
+  let okParent = 0, okChild = 0, okInsert = 0; const errors = [];
   try {
-    // 親（製番）更新
-    for (const [id, productno] of parentUpdates) {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${id}`,
-        { method: 'PATCH', headers: H, body: JSON.stringify({ productno }) });
-      if (res.ok) okParent++; else errors.push(`受注id ${id}: ${(await res.text()).slice(0,80)}`);
+    for (const u of parentUpdates) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${u.id}`, { method: 'PATCH', headers: HJ, body: JSON.stringify(u.patch) });
+      if (res.ok) okParent++; else errors.push(`受注id ${u.id}: ${(await res.text()).slice(0, 80)}`);
     }
-    // 子（納期・シールNo）更新
     for (const c of childUpdates) {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders_child?id=eq.${c.id}`,
-        { method: 'PATCH', headers: H, body: JSON.stringify({ delivery: c.delivery, sealno: c.sealno }) });
-      if (res.ok) okChild++; else errors.push(`子id ${c.id}: ${(await res.text()).slice(0,80)}`);
+      const { id: _cid, ...patch } = c;
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders_child?id=eq.${c.id}`, { method: 'PATCH', headers: HJ, body: JSON.stringify(patch) });
+      if (res.ok) okChild++; else errors.push(`子id ${c.id}: ${(await res.text()).slice(0, 80)}`);
     }
-    // 子（新規追加）— まとめてPOST
     if (childInserts.length) {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders_child`,
-        { method: 'POST', headers: H, body: JSON.stringify(childInserts) });
-      if (res.ok) okInsert = childInserts.length; else errors.push(`新規子データ: ${(await res.text()).slice(0,120)}`);
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders_child`, { method: 'POST', headers: HJ, body: JSON.stringify(childInserts) });
+      if (res.ok) okInsert = childInserts.length; else errors.push(`新規子データ: ${(await res.text()).slice(0, 120)}`);
     }
   } catch(e) { errors.push(e.message); }
 
   await loadOrders();
 
-  const result = [
+  alert([
     '取り込みが完了しました。',
-    `・製番更新: ${okParent}件`,
+    `・受注データ更新: ${okParent}件`,
     `・子データ更新: ${okChild}件`,
     okInsert ? `・子データ追加: ${okInsert}件` : '',
-    errors.length ? `\n⚠ エラー ${errors.length}件:\n` + errors.slice(0,10).join('\n') : '',
-  ].filter(Boolean).join('\n');
-  alert(result);
+    errors.length ? `\n⚠ エラー ${errors.length}件:\n` + errors.slice(0, 10).join('\n') : '',
+  ].filter(Boolean).join('\n'));
 }
 
 function renderOrdersTable() {
