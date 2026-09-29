@@ -854,7 +854,8 @@
   .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
   .page-title { font-size: 18px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 10px; }
   .page-title svg { width: 22px; height: 22px; color: #1d4ed8; }
-  .orders-layout { display: grid; grid-template-columns: 380px 1fr; gap: 20px; align-items: start; height: calc(100vh - 190px); }
+  /* 受注一覧は画面が小さくても最低14行分の表示領域を確保する（足りない場合はページ全体をスクロール） */
+  .orders-layout { display: grid; grid-template-columns: 380px 1fr; gap: 20px; align-items: start; height: max(calc(100vh - 190px), 770px); }
 
   /* Drop zone */
   .import-card { background: #fff; border-radius: 10px; border: 1px solid #e5e7eb; padding: 20px; }
@@ -1291,6 +1292,9 @@
   .work-order-no { font-size: 10px; color: #6b7280; text-align: right; margin-bottom: 6px; }
   .orders-table-wrap { overflow-x: auto; }
   .orders-layout .orders-table-wrap { overflow-y: auto; flex: 1; min-height: 0; }
+  /* 受注一覧の行を詰めて表示件数を増やす（行高 約42px → 約31px） */
+  .orders-layout .orders-table th { padding: 7px 12px; }
+  .orders-layout .orders-table td { padding: 3px 12px; line-height: 1.35; }
   .orders-table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .orders-table th { background: #f9fafb; padding: 10px 14px; text-align: left; font-weight: 600; color: #6b7280; border-bottom: 1px solid #e5e7eb; font-size: 11px; white-space: nowrap; cursor: pointer; user-select: none; position: sticky; top: 0; z-index: 2; }
   .orders-table th:hover { background: #f3f4f6; }
@@ -1923,6 +1927,88 @@
     table.ttbl td.lbl{background:#d5d9de !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     .th-onleft .onbox,.th-onbox .onbox{background:#e8f4fb !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   }
+
+  /* ==== 受注管理 レイアウト刷新（左サイドバー＋全幅一覧） ==== */
+  #page-orders .orders-page { padding: 10px 14px 10px 10px; }
+  #page-orders .orders-layout { grid-template-columns: 250px minmax(0,1fr); gap: 14px; height: max(calc(100vh - 122px), 640px); }
+  #page-orders .ord-side { display:flex; flex-direction:column; gap:12px; min-width:0; }
+  #page-orders .ord-side-title { display:flex; align-items:center; gap:10px; background:#f1f5f9; border-radius:8px; padding:14px 16px; font-size:22px; font-weight:800; color:#111827; letter-spacing:.04em; flex-shrink:0; }
+  #page-orders .ord-side-title svg { width:24px; height:24px; color:#1d4ed8; flex-shrink:0; }
+  #page-orders .import-card { padding:10px; border-radius:8px; }
+  #page-orders .import-title { font-size:12px; margin-bottom:8px; }
+  #page-orders .import-title svg { width:14px; height:14px; }
+  #page-orders .drop-zone { padding:22px 8px; margin-bottom:8px; }
+  #page-orders .drop-zone svg { width:30px; height:30px; margin-bottom:8px; }
+  #page-orders .drop-zone-title { font-size:11px; }
+  #page-orders .drop-zone-sub { font-size:10px; margin-bottom:8px; }
+  #page-orders .file-badge { font-size:9.5px; padding:2px 6px; }
+  #page-orders .status-box { font-size:11px; padding:8px 10px; margin-bottom:8px; }
+  #page-orders .preview-wrap { margin-top:8px; }
+  #page-orders .action-row { flex-wrap:wrap; }
+  #page-orders .calendar-card { padding:8px; border-radius:8px; }
+  #page-orders .calendar-header-row { flex-wrap:wrap; gap:4px; margin-bottom:6px; }
+  #page-orders .calendar-header-row > * { flex-shrink:0; }
+  #page-orders .cal-month-label { font-size:11px; white-space:nowrap; }
+  #page-orders .cal-nav-btn { width:22px; height:22px; font-size:12px; }
+  #page-orders .cal-today-btn, #page-orders .cal-inspect-btn { padding:2px 6px; font-size:10px; }
+  #page-orders #cal-base-shipping, #page-orders #cal-base-order { padding:2px 7px !important; font-size:10px !important; }
+  #page-orders .cal-grid { gap:1px; }
+  #page-orders .cal-dow { font-size:9px; padding:2px 0; }
+  #page-orders .cal-cell { min-height:36px; padding:2px; border-radius:4px; }
+  #page-orders .cal-date { font-size:8.5px; margin-bottom:2px; }
+  #page-orders .cal-count-btn { font-size:8.5px; padding:1px 0; letter-spacing:-.02em; }
+  #page-orders .cal-more { font-size:8px; }
+  /* 狭いサイドバーでも日付ポップオーバーが画面外にはみ出さないよう列位置で寄せ方を変える */
+  #page-orders .cal-grid > :nth-child(7n+1) .cal-popover,
+  #page-orders .cal-grid > :nth-child(7n+2) .cal-popover,
+  #page-orders .cal-grid > :nth-child(7n+3) .cal-popover { left:0; right:auto; transform:none; }
+  #page-orders .cal-grid > :nth-child(7n+5) .cal-popover,
+  #page-orders .cal-grid > :nth-child(7n+6) .cal-popover,
+  #page-orders .cal-grid > :nth-child(7n) .cal-popover { left:auto; right:0; transform:none; }
+
+  #page-orders .orders-list-card { border-radius:8px; }
+  #page-orders .ord-toolbar { padding:10px 12px; gap:12px; align-items:stretch; }
+  #page-orders .ord-toolbar-main { display:flex; flex-direction:column; gap:8px; min-width:0; flex:1; }
+  #page-orders .ord-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  #page-orders .orders-count { font-size:14px; padding:4px 12px; border-radius:14px; font-weight:600; }
+  #page-orders .ord-ctl { font-size:13px; padding:5px 8px; border:1px solid #d1d5db; border-radius:6px; background:#fff; color:#374151; height:32px; box-sizing:border-box; }
+  #page-orders select.ord-ctl { min-width:150px; max-width:190px; cursor:pointer; font-weight:600; }
+  #page-orders .ord-date { width:126px; }
+  #page-orders .ord-range { display:flex; align-items:center; gap:4px; }
+  #page-orders .ord-lbl { font-size:12px; color:#6b7280; font-weight:600; }
+  #page-orders .ord-tilde { font-size:12px; color:#9ca3af; }
+  #page-orders .ord-toolbar .refresh-btn { font-size:14px; padding:5px 14px; height:34px; box-sizing:border-box; font-weight:600; border-radius:7px; }
+  #page-orders .ord-toolbar .refresh-btn svg { width:15px !important; height:15px !important; }
+  #page-orders .ord-toolbar .ord-clear { font-size:15px; }
+  #page-orders .ord-toolbar .delivery-seg-btn { font-size:14px; padding:6px 16px; }
+  #page-orders #unregistered-banner { align-items:center; gap:8px; background:#fef3c7; border:1px solid #fde68a; color:#92400e; border-radius:8px; padding:8px 12px; font-size:12px; font-weight:600; cursor:pointer; max-width:270px; flex-shrink:0; line-height:1.45; }
+  #page-orders #unregistered-banner-text { flex:1; }
+  #page-orders .ord-banner-link { font-weight:700; text-decoration:underline; white-space:nowrap; flex-shrink:0; }
+  #page-orders .orders-search { padding:8px 12px; }
+  #page-orders .search-input { font-size:14px; padding:9px 14px; }
+  #page-orders .client-filter-bar { padding:8px 12px; }
+  #page-orders .pagination { padding:8px 16px; }
+  @media (max-width: 1500px) {
+    #page-orders .orders-layout { grid-template-columns: 230px minmax(0,1fr); gap:10px; }
+    #page-orders .ord-side-title { font-size:19px; padding:10px 12px; }
+    #page-orders .ord-toolbar { gap:8px; padding:8px 10px; }
+    #page-orders .ord-row { gap:5px; }
+    #page-orders .ord-ctl { font-size:12px; height:30px; padding:4px 6px; }
+    #page-orders select.ord-ctl { min-width:110px; max-width:140px; }
+    #page-orders .ord-date { width:112px; }
+    #page-orders .ord-toolbar .refresh-btn { font-size:12.5px; padding:4px 9px; height:30px; }
+    #page-orders .ord-toolbar .ord-clear { font-size:13px; }
+    #page-orders .ord-toolbar .delivery-seg-btn { font-size:12.5px; padding:5px 10px; }
+    #page-orders .orders-count { font-size:12.5px; padding:3px 9px; }
+    #page-orders #unregistered-banner { max-width:210px; font-size:11px; padding:6px 8px; }
+  }
+  @media (max-width: 1100px) {
+    #page-orders .orders-layout { grid-template-columns: 1fr; height:auto; }
+    #page-orders .ord-side { overflow:visible; }
+    #page-orders .orders-layout > .orders-list-card { height: max(calc(100vh - 122px), 640px); }
+    #page-orders .ord-toolbar { flex-wrap:wrap; }
+    #page-orders #unregistered-banner { max-width:none; width:100%; }
+  }
 </style>
 </head>
 <body>
@@ -2132,16 +2218,13 @@
 <!-- ==================== ORDERS PAGE ==================== -->
 <div id="page-orders" class="page">
   <div class="orders-page">
-    <div class="page-header">
-      <div class="page-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
-        受注管理
-      </div>
-    </div>
-
     <div class="orders-layout">
-      <!-- Left: Import -->
-      <div>
+      <!-- Left: タイトル + インポート + カレンダー -->
+      <div class="ord-side">
+        <div class="ord-side-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+          受注管理
+        </div>
         <div class="import-card">
           <div class="import-title" style="display:flex;align-items:center;justify-content:space-between;">
             <div style="display:flex;align-items:center;gap:6px;">
@@ -2194,7 +2277,7 @@
           </div>
         </div>
         <!-- Calendar -->
-        <div class="calendar-card" id="calendar-card" style="margin-top:14px;">
+        <div class="calendar-card" id="calendar-card">
           <div class="calendar-header-row">
             <button class="cal-nav-btn" onclick="calPrevMonth()">‹</button>
             <span class="cal-month-label" id="cal-month-label"></span>
@@ -2215,41 +2298,35 @@
         </div>
       </div>
       <div class="orders-list-card">
-        <div class="orders-list-header">
-          <div class="orders-list-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-            受注一覧 (osakatec_DB) <span class="click-hint" style="margin-left:8px;display:inline-flex;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>&nbsp;クリックで詳細</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <div class="orders-list-header ord-toolbar">
+          <div class="ord-toolbar-main">
+            <div class="ord-row">
             <span class="orders-count" id="orders-count">読込中...</span>
             <!-- 取引先フィルター -->
-            <select id="filter-client-select" onchange="applyListFilters()"
-              style="font-size:11px;padding:4px 8px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;color:#374151;cursor:pointer;max-width:120px;">
+            <select id="filter-client-select" class="ord-ctl" onchange="applyListFilters()">
               <option value="">全取引先</option>
             </select>
             <!-- 出荷日フィルター -->
-            <div style="display:flex;align-items:center;gap:3px;">
-              <span style="font-size:10px;color:#6b7280;font-weight:600;">出荷日</span>
-              <input type="date" id="filter-shipping-from" onchange="applyListFilters()"
-                style="font-size:10px;padding:3px 5px;border:1px solid #e5e7eb;border-radius:5px;width:110px;">
-              <span style="font-size:10px;color:#9ca3af;">〜</span>
-              <input type="date" id="filter-shipping-to" onchange="applyListFilters()"
-                style="font-size:10px;padding:3px 5px;border:1px solid #e5e7eb;border-radius:5px;width:110px;">
+            <div class="ord-range">
+              <span class="ord-lbl">出荷日</span>
+              <input type="date" id="filter-shipping-from" class="ord-ctl ord-date" onchange="applyListFilters()">
+              <span class="ord-tilde">〜</span>
+              <input type="date" id="filter-shipping-to" class="ord-ctl ord-date" onchange="applyListFilters()">
             </div>
             <!-- 受注日フィルター -->
-            <div style="display:flex;align-items:center;gap:3px;">
-              <span style="font-size:10px;color:#6b7280;font-weight:600;">受注日</span>
-              <input type="date" id="filter-order-from" onchange="applyListFilters()"
-                style="font-size:10px;padding:3px 5px;border:1px solid #e5e7eb;border-radius:5px;width:110px;">
-              <span style="font-size:10px;color:#9ca3af;">〜</span>
-              <input type="date" id="filter-order-to" onchange="applyListFilters()"
-                style="font-size:10px;padding:3px 5px;border:1px solid #e5e7eb;border-radius:5px;width:110px;">
+            <div class="ord-range">
+              <span class="ord-lbl">受注日</span>
+              <input type="date" id="filter-order-from" class="ord-ctl ord-date" onchange="applyListFilters()">
+              <span class="ord-tilde">〜</span>
+              <input type="date" id="filter-order-to" class="ord-ctl ord-date" onchange="applyListFilters()">
             </div>
             <!-- フィルタークリア -->
-            <button onclick="clearListFilters()" class="refresh-btn" style="background:#fff7ed;border-color:#fed7aa;color:#c2410c;">
+            <button onclick="clearListFilters()" class="refresh-btn ord-clear" style="background:#fff7ed;border-color:#fed7aa;color:#c2410c;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               クリア
             </button>
+            </div>
+            <div class="ord-row">
             <button class="refresh-btn" id="today-filter-btn" onclick="toggleTodayFilter()" title="登録から12時間以内（NEW）の受注のみ表示" style="background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               NEW
@@ -2277,12 +2354,13 @@
               <button type="button" class="delivery-seg-btn seg-maintenance" data-category="メンテ" onclick="setCategoryFilter('メンテ')" title="カバー以外の品目をすべて表示">メンテ</button>
               <button type="button" class="delivery-seg-btn seg-all active" data-category="" onclick="setCategoryFilter('')" title="すべての品目区分を表示">すべて</button>
             </div>
+            </div>
           </div>
-        </div>
-        <div id="unregistered-banner" style="display:none;align-items:center;gap:8px;background:#fef3c7;border:1px solid #fde68a;color:#92400e;border-radius:8px;padding:8px 14px;margin:0 16px 8px;font-size:12px;font-weight:600;cursor:pointer;" onclick="toggleUnregisteredFilter()">
+        <div id="unregistered-banner" style="display:none;" onclick="toggleUnregisteredFilter()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <span id="unregistered-banner-text"></span>
-          <span style="margin-left:auto;font-weight:700;text-decoration:underline;">クリックで絞り込み</span>
+          <span class="ord-banner-link">クリックで<br>絞り込み</span>
+        </div>
         </div>
         <div class="orders-search">
           <input class="search-input" id="search-input" type="text" placeholder="受注番号・図番・取引先・受注日・出荷日で検索..." oninput="filterOrders()">
@@ -10295,11 +10373,121 @@ async function handleFiles(files) {
       : 'データを抽出できませんでした。画像PDFの場合はテキスト抽出不可です（YP4-N等）。テキスト付きPDFをご使用ください。');
     return;
   }
+  // マザック汎用品番（Z93〜）の製品照合
+  const genericInfo = await resolveMazakGenericRows(extractedRows);
   let msg = extractedRows.length + '件のデータを抽出しました';
+  if (genericInfo.total) msg += `（汎用品番Z93: ${genericInfo.matched}/${genericInfo.total}件を製品マスタと照合）`;
   if (skippedCount) msg += `（図番の無い行 ${skippedCount}件は除外）`;
   if (unreadableFiles.length) msg += ` ※形式を判別できず除外: ${unreadableFiles.join('、')}`;
   showStatus('success', msg, 100);
   renderPreview();
+}
+
+// ---- ヤマザキマザック汎用品番（Z93〜）の製品照合 ----
+// Z93の品番は修理・購入品・役務など様々な注文で共用されるため、次の優先順で製品マスタ(productdate)を探し、
+// 見つかった客先図番に差し替える（見つからなければZ93のまま＝製品マスタ未登録扱い）。
+//   ① オーダーNo.そのものが客先図番として登録されている（搬送台など個別登録した製品）
+//   ② 型式・品名の文字列と同じ値が客先図番に登録されている
+//      （例: 客先図番「後側用　搬送台　Z33QR005582用」← 型式「後側用　搬送台　Z33QR005582用」。
+//        全角/半角・空白の違いは無視。完全一致が無ければ、自由記述の客先図番が型式・品名に含まれるかも確認）
+//   ③ 型式・品名に書かれた図番（例: Z33QR012351）。「〜用」と付くもの（付属品の対象図番）は除外
+//   ④ 型式・品名に書かれたOT番号（例: OT-084598-1）でOT番号を照合（完全一致 → 前方一致が1件だけの場合）
+async function resolveMazakGenericRows(rows) {
+  const targets = rows.filter(r => r._genericNo);
+  const info = { total: targets.length, matched: 0 };
+  if (!targets.length) return info;
+  const H = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+  // 全角/半角（英数字・カタカナ・記号）の違いと空白を無視して比較するための正規化
+  const norm = v => String(v || '').normalize('NFKC').replace(/\s+/g, '').toUpperCase();
+
+  // 型式欄からヒントを抽出
+  for (const r of targets) {
+    const rawHint = `${r._genericHint || ''} ${r._genericName || ''}`;
+    const hint = norm(rawHint);
+    // 図番は空白区切りを保ったまま抽出（空白を詰めると後続の「OT」まで図番に取り込まれるため）
+    const hintSp = String(rawHint).replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/[\s　]+/g, ' ').toUpperCase();
+    const dnos = [];
+    const reD = /(Z\d{2}[A-Z]{2}\d{5,}[A-Z0-9]*)\s*(用)?/g;
+    let m;
+    while ((m = reD.exec(hintSp))) { if (!m[2] && !/^Z93/.test(m[1])) dnos.push(m[1]); }
+    const ots = [];
+    const reO = /OT-?(\d{5,6}(?:-\d{1,2})?)(用)?/g;
+    while ((m = reO.exec(hint))) { if (!m[2]) ots.push('OT-' + m[1]); }
+    r._gDnos = dnos; r._gOts = ots;
+  }
+
+  // 客先図番の存在確認（オーダーNo.＋型式内図番）をまとめて1回で
+  const keys = [...new Set(targets.flatMap(r => [r.orderno, ...r._gDnos]).filter(Boolean))];
+  const existDno = new Set();
+  try {
+    for (let i = 0; i < keys.length; i += 100) {
+      const chunk = keys.slice(i, i + 100);
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${chunk.map(d => `"${d}"`).join(',')})&select=customer_drawing_no`, { headers: H });
+      if (res.ok) for (const p of await res.json()) existDno.add(p.customer_drawing_no);
+    }
+  } catch (e) { console.warn('[Z93照合] 図番確認失敗', e); }
+
+  // OT番号の候補をまとめて取得
+  const otCores = [...new Set(targets.flatMap(r => r._gOts.map(o => o.replace(/^OT-/, '').split('-')[0])))];
+  let otList = [];
+  if (otCores.length) {
+    try {
+      const orExpr = otCores.map(c => `ot_number.like.*${c}*`).join(',');
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/productdate?or=(${orExpr})&select=customer_drawing_no,ot_number`, { headers: H });
+      if (res.ok) otList = (await res.json()).map(p => ({ dno: p.customer_drawing_no, ot: norm(p.ot_number) }));
+    } catch (e) { console.warn('[Z93照合] OT番号取得失敗', e); }
+  }
+  // ② 用: マザックの製品マスタ（客先図番・OT番号）を一括取得して文字列照合
+  let mzList = [];
+  try {
+    const PAGE = 1000;
+    for (let off = 0; ; off += PAGE) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/productdate?client=like.*${encodeURIComponent('マザック')}*&select=customer_drawing_no&limit=${PAGE}&offset=${off}`, { headers: H });
+      if (!res.ok) break;
+      const list = await res.json();
+      mzList = mzList.concat(list.filter(p => p.customer_drawing_no).map(p => ({ dno: p.customer_drawing_no, key: norm(p.customer_drawing_no) })));
+      if (list.length < PAGE) break;
+    }
+  } catch (e) { console.warn('[Z93照合] マザック製品マスタ取得失敗', e); }
+  const isStdDno = k => /^[A-Z0-9-]+$/.test(k);   // 通常の英数字だけの図番
+  const findByText = (r) => {
+    const texts = [r._genericHint, r._genericName].map(norm).filter(t => t && t !== '-');
+    // 完全一致
+    for (const t of texts) { const hit = mzList.find(p => p.key === t); if (hit) return hit.dno; }
+    // 自由記述で登録された客先図番（英数字以外を含む・6文字以上）が型式/品名に含まれる → 最長一致
+    let best = null;
+    for (const p of mzList) {
+      if (isStdDno(p.key) || p.key.length < 6) continue;
+      if (texts.some(t => t.includes(p.key)) && (!best || p.key.length > best.key.length)) best = p;
+    }
+    return best ? best.dno : '';
+  };
+
+  const findByOt = (ot) => {
+    const exact = otList.filter(p => p.ot === ot);
+    if (exact.length) return exact[0].dno;
+    // 前方一致（直後が数字・ハイフン以外。例: OT-081590-5 → "OT-081590-5(2/3)"）
+    const pre = otList.filter(p => p.ot.startsWith(ot) && !/^[\d-]/.test(p.ot.slice(ot.length)) && !/用/.test(p.ot));
+    const uniq = [...new Set(pre.map(p => p.dno))];
+    return uniq.length === 1 ? uniq[0] : '';
+  };
+
+  for (const r of targets) {
+    let dno = '', via = '';
+    if (r.orderno && existDno.has(r.orderno)) { dno = r.orderno; via = 'オーダーNo.'; }
+    if (!dno) { const d = findByText(r); if (d) { dno = d; via = '型式/品名の一致'; } }
+    if (!dno) { const d = r._gDnos.find(x => existDno.has(x)); if (d) { dno = d; via = '型式/品名の図番'; } }
+    if (!dno) { for (const o of r._gOts) { const d = findByOt(o); if (d) { dno = d; via = '型式/品名のOT番号'; break; } } }
+    if (dno) {
+      console.log(`[Z93照合] ${r.orderno} ${r._genericNo} → ${dno}（${via}）`);
+      r.drawingno = dno; r._genericVia = via; info.matched++;
+    } else {
+      console.warn(`[Z93照合] ${r.orderno} ${r._genericNo} は製品マスタと照合できませんでした（型式: ${r._genericHint} / 品名: ${r._genericName}）`);
+      r._genericVia = '';
+    }
+    delete r._gDnos; delete r._gOts;
+  }
+  return info;
 }
 
 // 登録対象として有効な受注行か（図番またはOT番号が必須。注番が見出し語や日付だけの行は除外）
@@ -11259,6 +11447,7 @@ function parseExcelNewOrder(data, ci) {
     orderno:      ci['オーダーNo.'],
     drawingno:    ci['品番'],
     modelno:      ci['型式'],
+    itemname:     ci['品名'],
     quantity:     ci['発注数'],
     price:        ci['税抜単価'],
     deliverydate: ci['納期'],
@@ -11285,15 +11474,23 @@ function parseExcelNewOrder(data, ci) {
     const orderno = String(row[colMap.orderno] || '').trim();
     const drawingno = String(row[colMap.drawingno] || '').trim();
     if (!orderno && !drawingno) continue;
+    const modelText = colMap.modelno != null ? String(row[colMap.modelno] || '').trim() : '';
+    // ヤマザキマザックの汎用品番（Z93始まり：修理・購入品・役務など様々な注文で共用）は
+    // 製品マスタのキーにできないため、型式欄の図番/OT番号やオーダーNo.から製品を照合する
+    // （照合は handleFiles → resolveMazakGenericRows で実施。元の品番と型式は原番欄に残す）
+    const isGeneric = /^Z93/i.test(drawingno);
     rows.push({
       orderdate:            excelDateToStr(row[colMap.orderdate]),
       orderno,
       drawingno,
-      _modelNo:             colMap.modelno != null ? String(row[colMap.modelno] || '').trim() : '',
+      _modelNo:             isGeneric ? '' : modelText,
+      _genericNo:           isGeneric ? drawingno : '',
+      _genericHint:         isGeneric ? modelText : '',
+      _genericName:         isGeneric && colMap.itemname != null ? String(row[colMap.itemname] || '').trim() : '',
       quantity:             parseInt(row[colMap.quantity]) || 0,
       unit:                 '',
       price:                parseFloat(row[colMap.price]) || 0,
-      originalno:           '',
+      originalno:           isGeneric ? `${drawingno} ${modelText}`.trim() : '',
       deliverydate:         excelDateToStr(row[colMap.deliverydate]),
       delivery_destination: destOf(row),
       shippingdate:         null,
@@ -11341,7 +11538,9 @@ function renderPreview() {
     <tr style="${r._isChange ? 'background:#fef9c3;' : ''}">
       <td>${r._isChange ? '<span style="font-size:9px;background:#f59e0b;color:#fff;border-radius:3px;padding:1px 4px;margin-right:3px;">変更</span>' : ''}${r.orderdate}</td>
       <td class="mono">${r.orderno}</td>
-      <td class="mono">${r.drawingno || (r._otNumber ? `<span title="図番なし。OT番号で製品を照合します" style="color:#7c3aed;">${r._otNumber}<span style="font-size:9px;color:#a78bfa;">(OT参照)</span></span>` : '')}</td>
+      <td class="mono">${r._genericNo ? (r._genericVia
+          ? `${r.drawingno}<div style="font-size:9px;color:#7c3aed;">${r._genericNo}→${r._genericVia}で照合</div>`
+          : `<span style="color:#b45309;" title="型式: ${String(r._genericHint||'').replace(/"/g,'&quot;')}">${r.drawingno}<div style="font-size:9px;">汎用品番・マスタ未照合</div></span>`) : ''}${r._genericNo ? '' : (r.drawingno || (r._otNumber ? `<span title="図番なし。OT番号で製品を照合します" style="color:#7c3aed;">${r._otNumber}<span style="font-size:9px;color:#a78bfa;">(OT参照)</span></span>` : ''))}</td>
       <td style="text-align:right">${r.quantity}</td>
       <td>${r.unit||''}</td>
       <td style="text-align:right">${r.price.toLocaleString()}</td>
@@ -11359,165 +11558,390 @@ function renderPreview() {
   }
 }
 
-async function saveToSupabase() {
-  if (!extractedRows.length) return;
-  rtSuppress();  // 自分の受注登録／変更保存による再読込を抑制（変更差分ダイアログ経由も含む）
-
-  const changeRows = extractedRows.filter(r => r._isChange);
-  const newRows    = extractedRows.filter(r => !r._isChange);
-
-  // 変更行がある場合は差分確認ポップアップを先に表示
-  if (changeRows.length > 0) {
-    await showChangeDiffDialog(changeRows, newRows);
-    return;
-  }
-
-  // 変更行なし → 通常の新規保存
-  await doSaveNewRows(newRows);
+// ==================== 数量変更に合わせた子データ（シールNo）の自動増減 ====================
+// 受注の数量が変わったとき、差分（新数量−旧数量）× 1個あたりの子データ数 だけ子データを増減する。
+//  ・カバー：1個あたり＝productdate_child の数量合計（未登録なら1）。追加分はシール番号を新規採番
+//  ・カバー以外（品目区分あり）：1個あたり1件、シール番号なし（空文字）
+//  ・製品マスタ未登録：子データを作らない運用のため増減しない
+// 減らす場合は、シール番号の大きい順に「未使用」の子データ（レーザー未完了・パレット/便に未積載）だけを削除する。
+async function allocSealNos(count) {
+  const H = { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/generate_sealnos`, { method: 'POST', headers: H, body: JSON.stringify({ count }) });
+    if (r.ok) { const v = await r.json(); if (typeof v === 'number' && v > 0) return v; }
+  } catch (e) { console.warn('[allocSealNos] RPC例外', e); }
+  try {
+    const m = await fetch(`${SUPABASE_URL}/rest/v1/orders_child?select=sealno&sealno=neq.&order=sealno.desc&limit=1`, { headers: H });
+    if (m.ok) { const rows = await m.json(); const mx = rows.length ? parseInt(rows[0].sealno) : 400000; if (!isNaN(mx)) return mx + 1; }
+  } catch (e) { console.warn('[allocSealNos] フォールバック例外', e); }
+  return null;
 }
 
-async function showChangeDiffDialog(changeRows, newRows) {
-  // 既存ordersからorderno一致するデータを取得
-  const orderNos = changeRows.map(r => r.orderno).filter(Boolean);
-  let existingMap = new Map();
-  try {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/orders?orderno=in.(${orderNos.map(n => `"${n}"`).join(',')})&select=*`,
-      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }
-    );
-    if (res.ok) {
-      const list = await res.json();
-      list.forEach(o => existingMap.set(o.orderno, o));
-    }
-  } catch(e) { console.warn('[diff] 既存データ取得失敗', e); }
+async function planChildSync(orderId, drawingno, oldQty, newQty) {
+  const H = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+  const o = parseInt(oldQty) || 0, n = parseInt(newQty) || 0;
+  const plan = { orderId, drawingno, oldQty: o, newQty: n, perUnit: 0, category: null, add: 0, del: [], blocked: 0, children: [], skip: '' };
+  if (o === n) { plan.skip = '数量変更なし'; return plan; }
+  if (!drawingno) { plan.skip = '図番なし'; return plan; }
+  const pdRes = await fetch(`${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=eq.${encodeURIComponent(drawingno)}&select=designid,product_category&limit=1`, { headers: H });
+  const pd = pdRes.ok ? (await pdRes.json())[0] : null;
+  if (!pd || !pd.product_category) { plan.skip = '製品マスタ未登録のため子データは増減しません'; return plan; }
+  plan.category = pd.product_category;
+  if (pd.product_category === 'カバー') {
+    const cRes = await fetch(`${SUPABASE_URL}/rest/v1/productdate_child?parent_designid=eq.${pd.designid}&select=quantity`, { headers: H });
+    const list = cRes.ok ? await cRes.json() : [];
+    plan.perUnit = list.length ? list.reduce((s, c) => s + (c.quantity || 1), 0) : 1;
+  } else {
+    plan.perUnit = 1;
+  }
+  const chRes = await fetch(`${SUPABASE_URL}/rest/v1/orders_child?order_id=eq.${orderId}&select=id,sealno,delivery,laser_done&order=id.asc`, { headers: H });
+  plan.children = chRes.ok ? await chRes.json() : [];
+  const delta = (n - o) * plan.perUnit;
+  if (delta > 0) { plan.add = delta; return plan; }
 
-  // 差分テーブルHTML生成
-  const diffRows = changeRows.map(r => {
-    const old = existingMap.get(r.orderno);
-    const fields = [
-      { label: '受注日',   key: 'orderdate' },
-      { label: '数量',     key: 'quantity' },
-      { label: '単価',     key: 'price' },
-      { label: '希望納期', key: 'deliverydate' },
-      { label: '図番',     key: 'drawingno' },
-    ];
-    const diffs = fields.filter(f => old && String(old[f.key]) !== String(r[f.key]));
-    return { r, old, diffs };
+  // 減らす：使用中（レーザー完了・パレット/便に積載済み）は削除しない
+  const need = Math.min(-delta, plan.children.length);
+  const ids = plan.children.map(c => c.id);
+  const used = new Set(plan.children.filter(c => c.laser_done).map(c => c.id));
+  if (ids.length) {
+    for (const tbl of ['pallet_items', 'shipment_items']) {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/${tbl}?child_id=in.(${ids.join(',')})&select=child_id`, { headers: H });
+      if (r.ok) (await r.json()).forEach(x => used.add(x.child_id));
+    }
+  }
+  const sealNum = c => { const v = parseInt(c.sealno); return isNaN(v) ? -1 : v; };
+  const cands = plan.children.filter(c => !used.has(c.id))
+    .sort((a, b) => (sealNum(b) - sealNum(a)) || (b.id - a.id));
+  plan.del = cands.slice(0, need);
+  plan.blocked = need - plan.del.length;
+  return plan;
+}
+
+async function applyChildSync(plan) {
+  const H = { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+  const result = { added: 0, removed: 0, blocked: plan.blocked || 0, error: '' };
+  if (plan.skip) return result;
+  try {
+    if (plan.add > 0) {
+      // 既存の子データが全て同じ納期なら、追加分にも同じ納期を引き継ぐ
+      const ds = [...new Set(plan.children.map(c => c.delivery || ''))];
+      const delivery = ds.length === 1 && ds[0] ? ds[0] : null;
+      const rows = [];
+      if (plan.category === 'カバー') {
+        const start = await allocSealNos(plan.add);
+        if (start == null) throw new Error('シール番号の採番に失敗しました');
+        for (let i = 0; i < plan.add; i++) rows.push({ order_id: plan.orderId, sealno: String(start + i), delivery, inspectionsheet: null });
+      } else {
+        for (let i = 0; i < plan.add; i++) rows.push({ order_id: plan.orderId, sealno: '', delivery, inspectionsheet: null });
+      }
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders_child`, { method: 'POST', headers: { ...H, 'Prefer': 'return=representation' }, body: JSON.stringify(rows) });
+      if (!res.ok) throw new Error('子データ追加失敗: ' + (await res.text()).slice(0, 120));
+      const inserted = await res.json();
+      result.added = inserted.length;
+      try {
+        await createChildRoutesFromBase(inserted, inserted.map(() => ({ _drawingno: plan.drawingno })), [], []);
+      } catch (e) { console.warn('[childSync] 固有ルート生成失敗', e); }
+    }
+    if (plan.del.length) {
+      const ids = plan.del.map(c => c.id).join(',');
+      await fetch(`${SUPABASE_URL}/rest/v1/orders_child_route?child_id=in.(${ids})`, { method: 'DELETE', headers: H });
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orders_child?id=in.(${ids})`, { method: 'DELETE', headers: { ...H, 'Prefer': 'return=representation' } });
+      if (!res.ok) throw new Error('子データ削除失敗: ' + (await res.text()).slice(0, 120));
+      result.removed = (await res.json()).length;
+    }
+  } catch (e) {
+    result.error = e.message;
+  }
+  return result;
+}
+
+function childSyncSummary(label, plan, res) {
+  if (plan.skip) return plan.skip === '数量変更なし' ? '' : `${label}: ${plan.skip}`;
+  const parts = [];
+  if (res.added) parts.push(`子データ ${res.added}件追加`);
+  if (res.removed) parts.push(`子データ ${res.removed}件削除`);
+  if (res.blocked) parts.push(`⚠️ 使用中（レーザー完了・積載済み）のため ${res.blocked}件は削除できませんでした`);
+  if (res.error) parts.push(`⚠️ ${res.error}`);
+  return parts.length ? `${label}: ${parts.join('、')}` : '';
+}
+
+// ==================== 受注保存（重複防止・上書き確認付き） ====================
+// 受注の一意キーは「受注番号＋図番」。DB側にも UNIQUE (orderno, drawingno) 制約を設定済み。
+// （CGDD〜 のように1つの受注番号に複数図番がぶら下がる注文があるため、受注番号単独では一意にしない）
+function ordNorm(v) { return String(v == null ? '' : v).trim(); }
+function ordKey(orderno, drawingno) { return ordNorm(orderno) + '\u0001' + ordNorm(drawingno); }
+
+// 保存対象行の受注番号で既存ordersを取得し、キー別・受注番号別のMapを返す
+async function fetchExistingOrdersFor(rows) {
+  const byKey = new Map();      // 受注番号+図番 → 既存行
+  const byOrderNo = new Map();  // 受注番号 → [既存行]
+  const nos = [...new Set(rows.map(r => ordNorm(r.orderno)).filter(Boolean))];
+  for (let i = 0; i < nos.length; i += 80) {
+    const chunk = nos.slice(i, i + 80);
+    const inList = chunk.map(n => `"${encodeURIComponent(n.replace(/"/g, '\\"'))}"`).join(',');
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?orderno=in.(${inList})&select=*`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } });
+    if (!res.ok) throw new Error('既存受注の確認に失敗しました (HTTP ' + res.status + ')');
+    for (const o of await res.json()) {
+      byKey.set(ordKey(o.orderno, o.drawingno), o);
+      const no = ordNorm(o.orderno);
+      if (!byOrderNo.has(no)) byOrderNo.set(no, []);
+      byOrderNo.get(no).push(o);
+    }
+  }
+  return { byKey, byOrderNo };
+}
+
+// 保存用に補助フィールド（_で始まるキー）を除去し、空の日付をnullにする
+function ordSanitizeRow(r) {
+  const row = {};
+  Object.keys(r).forEach(k => { if (!k.startsWith('_')) row[k] = r[k]; });
+  ['orderdate','deliverydate','shippingdate'].forEach(f => { if (!row[f]) row[f] = null; });
+  return row;
+}
+
+async function saveToSupabase() {
+  if (!extractedRows.length) return;
+  rtSuppress();  // 自分の受注登録／変更保存による再読込を抑制（確認ダイアログ経由も含む）
+  const btn = document.getElementById('save-btn');
+  try {
+    // 1) 取込データ内の重複（同じ注文書を2回ドロップ等）を除去
+    const seen = new Set();
+    const rows = [];
+    let inBatchDup = 0;
+    for (const r of extractedRows) {
+      const k = ordKey(r.orderno, r.drawingno);
+      if (ordNorm(r.orderno) && seen.has(k)) { inBatchDup++; continue; }
+      seen.add(k);
+      rows.push(r);
+    }
+
+    // 2) 登録済みかどうかを確認
+    showStatus('processing', '登録済みデータを確認中...', 30);
+    const existing = await fetchExistingOrdersFor(rows);
+
+    // 既存と一致する行（受注番号+図番）＋ 変更注文の行 → 上書き確認の対象
+    const conflictRows = [];
+    const newRows = [];
+    for (const r of rows) {
+      let old = ordNorm(r.orderno) ? existing.byKey.get(ordKey(r.orderno, r.drawingno)) : null;
+      // 変更注文で図番自体が変わった場合：同じ受注番号の既存が1件だけならそれを変更前とみなす
+      if (!old && r._isChange) {
+        const cands = existing.byOrderNo.get(ordNorm(r.orderno)) || [];
+        if (cands.length === 1) old = cands[0];
+      }
+      if (old || r._isChange) conflictRows.push({ r, old: old || null });
+      else newRows.push(r);
+    }
+
+    if (conflictRows.length > 0) {
+      showStatus('warning', `登録済みの受注が ${conflictRows.filter(c => c.old).length}件 あります。上書きするか確認してください。`, 40);
+      showChangeDiffDialog(conflictRows, newRows, inBatchDup);
+      return;
+    }
+
+    // 重複なし → 通常の新規保存
+    await doSaveNewRows(newRows);
+    if (inBatchDup > 0) console.log(`[save] 取込データ内の重複 ${inBatchDup}件を除外`);
+  } catch (e) {
+    showStatus('error', '保存エラー: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = 'Supabaseに保存'; }
+  }
+}
+
+const ORD_DIFF_FIELDS = [
+  { label: '受注日',   key: 'orderdate' },
+  { label: '図番',     key: 'drawingno' },
+  { label: '数量',     key: 'quantity' },
+  { label: '単位',     key: 'unit' },
+  { label: '単価',     key: 'price' },
+  { label: '希望納期', key: 'deliverydate' },
+  { label: '出荷日',   key: 'shippingdate' },
+  { label: '原番',     key: 'originalno' },
+  { label: '納入先',   key: 'delivery_destination' },
+];
+function ordCmpVal(v) {
+  if (v == null || v === '') return '';
+  const s = String(v).trim();
+  if (/^-?\d+(\.\d+)?$/.test(s)) return String(Number(s));  // 10 と 10.0 を同一視
+  return s;
+}
+
+function showChangeDiffDialog(conflictRows, newRows, inBatchDup = 0) {
+  document.getElementById('change-diff-overlay')?.remove();
+  const items = conflictRows.map(({ r, old }) => {
+    // 取込データに無い（未抽出の）項目は比較しない
+    const fields = ORD_DIFF_FIELDS.filter(f => r[f.key] !== undefined);
+    const diffs = old ? fields.filter(f => ordCmpVal(old[f.key]) !== ordCmpVal(r[f.key])) : [];
+    // 既定: 変更注文 or 差分あり → 上書きON ／ 差分なしの再取込 → スキップ
+    const defaultOn = !!old && (r._isChange || diffs.length > 0);
+    return { r, old, fields, diffs, defaultOn };
   });
+  const dupCount = items.filter(it => it.old).length;
+  const noMatch  = items.filter(it => !it.old).length;
+
+  const cardHtml = (it, idx) => {
+    const { r, old, fields, diffs } = it;
+    const tag = r._isChange
+      ? '<span style="font-size:10px;background:#f59e0b;color:#fff;border-radius:4px;padding:1px 6px;">変更注文</span>'
+      : '<span style="font-size:10px;background:#1d4ed8;color:#fff;border-radius:4px;padding:1px 6px;">登録済み</span>';
+    const head = `
+      <div style="display:flex;align-items:center;gap:8px;background:${old ? '#fef3c7' : '#f0fdf4'};padding:8px 12px;font-size:12px;font-weight:700;color:#92400e;">
+        ${old ? `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:#111827;">
+            <input type="checkbox" class="cdd-chk" data-idx="${idx}" ${it.defaultOn ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;">
+            上書きする</label>` : ''}
+        ${tag}
+        <span>受注番号: ${esc(r.orderno || '-')} ／ 図番: ${esc(r.drawingno || '-')}</span>
+        ${old && r.quantity !== undefined && ordCmpVal(old.quantity) !== ordCmpVal(r.quantity)
+          ? `<span style="font-size:10px;background:#ede9fe;color:#6d28d9;border-radius:4px;padding:1px 6px;" title="数量の差分だけ子データ（シールNo）を追加・削除します。削除はシール番号の大きい未使用分から行い、レーザー完了・積載済みは削除しません。">数量 ${esc(old.quantity)}→${esc(r.quantity)}：子データ自動増減</span>` : ''}
+        <span style="margin-left:auto;font-weight:600;color:${old ? (diffs.length ? '#b45309' : '#6b7280') : '#059669'};">
+          ${old ? (diffs.length ? `差分 ${diffs.length}項目` : '差分なし（同じ内容）') : '既存なし → 新規として追加'}
+        </span>
+      </div>`;
+    if (!old) return `<div style="margin-bottom:10px;border:1px solid #bbf7d0;border-radius:8px;overflow:hidden;">${head}</div>`;
+    const showFields = diffs.length ? fields : fields.slice(0, 4);
+    return `
+      <div style="margin-bottom:10px;border:1px solid #fde68a;border-radius:8px;overflow:hidden;">
+        ${head}
+        <table style="width:100%;border-collapse:collapse;font-size:11px;">
+          <tr style="background:#f9fafb;">
+            <th style="padding:5px 10px;text-align:left;color:#6b7280;width:80px;">項目</th>
+            <th style="padding:5px 10px;text-align:left;color:#6b7280;">登録済み（id:${old.id}）</th>
+            <th style="padding:5px 10px;text-align:left;color:#6b7280;">今回の取込</th>
+          </tr>
+          ${showFields.map(f => {
+            const ov = old[f.key] == null || old[f.key] === '' ? '-' : String(old[f.key]);
+            const nv = r[f.key] == null || r[f.key] === '' ? '-' : String(r[f.key]);
+            const ch = ordCmpVal(old[f.key]) !== ordCmpVal(r[f.key]);
+            return `<tr style="${ch ? 'background:#fef9c3;' : ''}">
+              <td style="padding:4px 10px;border-top:1px solid #f3f4f6;font-weight:600;">${f.label}</td>
+              <td style="padding:4px 10px;border-top:1px solid #f3f4f6;color:${ch ? '#dc2626' : '#374151'};">${esc(ov)}</td>
+              <td style="padding:4px 10px;border-top:1px solid #f3f4f6;color:${ch ? '#059669' : '#374151'};font-weight:${ch ? 700 : 400};">${esc(nv)}</td>
+            </tr>`;
+          }).join('')}
+        </table>
+      </div>`;
+  };
 
   const overlay = document.createElement('div');
   overlay.id = 'change-diff-overlay';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
   overlay.innerHTML = `
-    <div style="background:#fff;border-radius:14px;width:100%;max-width:800px;max-height:90vh;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,0.25);display:flex;flex-direction:column;">
+    <div style="background:#fff;border-radius:14px;width:100%;max-width:860px;max-height:90vh;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,0.25);display:flex;flex-direction:column;">
       <div style="background:linear-gradient(135deg,#d97706,#b45309);padding:16px 20px;color:#fff;">
-        <div style="font-size:15px;font-weight:700;">⚠️ 変更注文の確認</div>
-        <div style="font-size:11px;opacity:0.85;margin-top:3px;">以下の受注データを上書きします。内容を確認してください。</div>
+        <div style="font-size:15px;font-weight:700;">⚠️ 登録済みの受注があります（${dupCount}件）</div>
+        <div style="font-size:11px;opacity:0.9;margin-top:3px;">同じ「受注番号＋図番」の受注は二重登録できません。上書きする行にチェックを入れてください。チェックしない行は保存しません（スキップ）。</div>
       </div>
-      <div style="overflow-y:auto;padding:16px;flex:1;">
-        ${diffRows.map(({r, old, diffs}) => `
-          <div style="margin-bottom:14px;border:1px solid #fde68a;border-radius:8px;overflow:hidden;">
-            <div style="background:#fef3c7;padding:8px 12px;font-size:11px;font-weight:700;color:#92400e;">
-              受注番号: ${r.orderno} / 図番: ${r.drawingno}
-              ${old ? '' : '<span style="color:#dc2626;margin-left:8px;">⚠️ 既存データなし（新規として追加）</span>'}
-            </div>
-            <table style="width:100%;border-collapse:collapse;font-size:11px;">
-              <tr style="background:#f9fafb;">
-                <th style="padding:6px 10px;text-align:left;color:#6b7280;width:80px;">項目</th>
-                <th style="padding:6px 10px;text-align:left;color:#6b7280;">変更前</th>
-                <th style="padding:6px 10px;text-align:left;color:#6b7280;">変更後</th>
-              </tr>
-              ${old ? [
-                { label: '受注日', key: 'orderdate' },
-                { label: '数量',   key: 'quantity' },
-                { label: '単価',   key: 'price' },
-                { label: '希望納期', key: 'deliverydate' },
-                { label: '図番',   key: 'drawingno' },
-              ].map(f => {
-                const oldVal = old ? String(old[f.key] ?? '-') : '-';
-                const newVal = String(r[f.key] ?? '-');
-                const changed = oldVal !== newVal;
-                return `<tr style="${changed ? 'background:#fef9c3;' : ''}">
-                  <td style="padding:5px 10px;border-top:1px solid #f3f4f6;font-weight:600;">${f.label}</td>
-                  <td style="padding:5px 10px;border-top:1px solid #f3f4f6;color:${changed?'#dc2626':'#374151'};">${oldVal}</td>
-                  <td style="padding:5px 10px;border-top:1px solid #f3f4f6;color:${changed?'#059669':'#374151'};font-weight:${changed?'700':'400'};">${newVal}</td>
-                </tr>`;
-              }).join('') : `<tr><td colspan="3" style="padding:8px 10px;color:#6b7280;">既存データが見つかりません。新規として追加します。</td></tr>`}
-            </table>
-          </div>`).join('')}
-        ${newRows.length > 0 ? `<div style="margin-top:8px;font-size:11px;color:#6b7280;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:8px 12px;">✅ 新規追加: ${newRows.length}件（変更なし）</div>` : ''}
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid #f3f4f6;font-size:12px;">
+        <button type="button" onclick="document.querySelectorAll('#change-diff-overlay .cdd-chk').forEach(c=>c.checked=true);cddUpdateCount()"
+          style="padding:5px 12px;border-radius:6px;border:1px solid #fcd34d;background:#fffbeb;color:#b45309;font-weight:700;cursor:pointer;">すべて上書き</button>
+        <button type="button" onclick="document.querySelectorAll('#change-diff-overlay .cdd-chk').forEach(c=>c.checked=false);cddUpdateCount()"
+          style="padding:5px 12px;border-radius:6px;border:1px solid #d1d5db;background:#fff;color:#374151;font-weight:700;cursor:pointer;">すべてスキップ</button>
+        <span style="margin-left:auto;color:#6b7280;">
+          新規追加 <b style="color:#059669;">${newRows.length + noMatch}件</b>
+          ${inBatchDup ? ` ／ 取込データ内の重複 <b>${inBatchDup}件</b> は除外済み` : ''}
+        </span>
       </div>
-      <div style="padding:14px 20px;border-top:1px solid #f3f4f6;display:flex;justify-content:flex-end;gap:8px;background:#f9fafb;">
-        <button onclick="document.getElementById('change-diff-overlay').remove()"
+      <div style="overflow-y:auto;padding:14px 16px;flex:1;">
+        ${items.map(cardHtml).join('')}
+      </div>
+      <div style="padding:14px 20px;border-top:1px solid #f3f4f6;display:flex;align-items:center;justify-content:flex-end;gap:8px;background:#f9fafb;">
+        <span id="cdd-count" style="margin-right:auto;font-size:12px;color:#374151;"></span>
+        <button onclick="document.getElementById('change-diff-overlay').remove();showStatus('warning','保存をキャンセルしました',0);"
           style="padding:8px 20px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;color:#374151;font-size:12px;font-weight:600;cursor:pointer;">キャンセル</button>
         <button onclick="executeChangeSave()"
-          style="padding:8px 20px;border-radius:8px;border:none;background:#d97706;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">この内容で保存する</button>
+          style="padding:8px 20px;border-radius:8px;border:none;background:#d97706;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">この内容で保存する</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
+  overlay.querySelectorAll('.cdd-chk').forEach(c => c.addEventListener('change', cddUpdateCount));
 
   // 保存実行時に使うデータを保持
-  window._pendingChangeRows = changeRows;
-  window._pendingChangeExisting = existingMap;
+  window._pendingConflictItems = items;
   window._pendingNewRows = newRows;
+  cddUpdateCount();
+}
+
+function cddUpdateCount() {
+  const el = document.getElementById('cdd-count');
+  if (!el) return;
+  const all = document.querySelectorAll('#change-diff-overlay .cdd-chk');
+  const on = [...all].filter(c => c.checked).length;
+  el.innerHTML = `上書き <b style="color:#b45309;">${on}件</b> ／ スキップ <b>${all.length - on}件</b>`;
 }
 
 async function executeChangeSave() {
-  document.getElementById('change-diff-overlay')?.remove();
-  const changeRows = window._pendingChangeRows || [];
-  const existingMap = window._pendingChangeExisting || new Map();
+  const overlay = document.getElementById('change-diff-overlay');
+  const checked = new Set([...(overlay?.querySelectorAll('.cdd-chk') || [])].filter(c => c.checked).map(c => Number(c.dataset.idx)));
+  overlay?.remove();
+  const items = window._pendingConflictItems || [];
   const newRows = window._pendingNewRows || [];
   const btn = document.getElementById('save-btn');
   btn.disabled = true; btn.textContent = '保存中...';
-  showStatus('processing', '変更データを保存中...', 40);
+  showStatus('processing', '保存中...', 40);
   const changed_by = currentUser?.loginname || currentUser?.userid || 'unknown';
+  const H = { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=minimal' };
   try {
-    // 1. 変更行を上書き（既存あり→変更前をchangelogに記録してPATCH）
-    //    既存なし（キャンセル後の再アップロード等）→ そのまま新規扱いにして、
-    //    子データ作成込みの doSaveNewRows() に回す（直接POSTすると子データが作られない不具合対策）
-    const noMatchRows = [];
-    for (const r of changeRows) {
-      const old = existingMap.get(r.orderno);
-      const { _isChange, _sealCount, _modelNo, ...data } = r;
-      const dateFields = ['orderdate','deliverydate','shippingdate'];
-      dateFields.forEach(f => { if (!data[f]) data[f] = null; });
-      if (old) {
-        // 変更前データをorders_changelogに記録
-        const logData = {
-          order_id:             old.id,
-          orderno:              old.orderno,
-          drawingno:            old.drawingno,
-          orderdate:            old.orderdate || null,
-          quantity:             old.quantity || null,
-          price:                old.price || null,
-          originalno:           old.originalno || null,
-          deliverydate:         old.deliverydate || null,
-          shippingdate:         old.shippingdate || null,
-          productno:            old.productno || null,
-          delivery_destination: old.delivery_destination || null,
-          unit:                 old.unit || null,
-          changed_by,
-        };
-        await fetch(`${SUPABASE_URL}/rest/v1/orders_changelog`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=minimal' },
-          body: JSON.stringify(logData)
-        });
-        // 既存データを上書き
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${old.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=minimal' },
-          body: JSON.stringify(data)
-        });
-        if (!res.ok) { const e = await res.json(); throw new Error('更新失敗: ' + (e.message||res.status)); }
-      } else {
-        // 既存なし→新規扱い（子データ作成のため doSaveNewRows に合流させる）
-        noMatchRows.push(r);
+    const overwriteItems = items.filter((it, idx) => it.old && checked.has(idx));
+    const skipCount = items.filter((it, idx) => it.old && !checked.has(idx)).length;
+    const noMatchRows = items.filter(it => !it.old).map(it => it.r);
+
+    // 上書き行の原本ファイルもStorageへ保存してURLを差し替える
+    const fileUrlMap = overwriteItems.length ? await uploadSourceFiles(overwriteItems.map(it => it.r)) : new Map();
+
+    // 1. 上書き（変更前をorders_changelogに記録してPATCH）。子データ（シール番号）はそのまま維持
+    const errors = [];
+    let overwritten = 0;
+    const childMsgs = [];
+    let childAdded = 0, childRemoved = 0, childWarn = false;
+    for (const { r, old } of overwriteItems) {
+      const data = ordSanitizeRow(r);
+      const info = r._sourceFile ? fileUrlMap.get(r._sourceFile) : null;
+      if (info) { data.source_file_url = info.url; data.source_file_name = info.name; }
+      delete data.id; delete data.created_at;
+      const logData = {
+        order_id: old.id, orderno: old.orderno, drawingno: old.drawingno,
+        orderdate: old.orderdate || null, quantity: old.quantity ?? null, price: old.price ?? null,
+        originalno: old.originalno || null, deliverydate: old.deliverydate || null, shippingdate: old.shippingdate || null,
+        productno: old.productno || null, delivery_destination: old.delivery_destination || null, unit: old.unit || null,
+        changed_by,
+      };
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/orders_changelog`, { method: 'POST', headers: H, body: JSON.stringify(logData) });
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${old.id}`, { method: 'PATCH', headers: H, body: JSON.stringify(data) });
+        if (!res.ok) {
+          const t = await res.text();
+          throw new Error(t.includes('23505') || t.includes('duplicate') ? '同じ受注番号＋図番が既に存在します' : t);
+        }
+        overwritten++;
+        // 数量が変わった場合は子データ（シールNo）を自動で増減
+        if (r.quantity !== undefined && ordCmpVal(old.quantity) !== ordCmpVal(r.quantity)) {
+          const plan = await planChildSync(old.id, data.drawingno || old.drawingno, old.quantity, r.quantity);
+          const cres = await applyChildSync(plan);
+          const line = childSyncSummary(`${r.orderno} / ${data.drawingno || old.drawingno}（数量 ${plan.oldQty}→${plan.newQty}）`, plan, cres);
+          if (line) childMsgs.push(line);
+          childAdded += cres.added; childRemoved += cres.removed;
+          if (cres.blocked || cres.error) childWarn = true;
+        }
+      } catch (e) {
+        errors.push(`${r.orderno} / ${r.drawingno}: ${e.message}`);
       }
     }
-    // 2. 新規行（既存不一致の「変更」行も含む）を追加。子データもここで自動生成される。
-    await doSaveNewRows([...newRows, ...noMatchRows], true);
-    showStatus('success', `✓ 変更${changeRows.length - noMatchRows.length}件上書き（変更前データ保存済み）・新規${newRows.length + noMatchRows.length}件追加しました`, 100);
+
+    // 2. 新規行（既存なしの変更注文も含む）を追加。子データもここで自動生成される
+    const saved = await doSaveNewRows([...newRows, ...noMatchRows], true) || [];
+    const lateSkip = saved._skipped || 0;
+
+    const childPart = (childAdded || childRemoved) ? `・子データ +${childAdded}／−${childRemoved}件` : '';
+    const msg = `✓ 上書き${overwritten}件（変更前データ保存済み）・新規${saved.length}件追加・スキップ${skipCount + lateSkip}件${childPart}`;
+    if (childWarn) alert('数量変更に伴う子データの増減で確認が必要な行があります:\n' + childMsgs.join('\n'));
+    else if (childMsgs.length) console.log('[childSync]\n' + childMsgs.join('\n'));
+    if (errors.length) {
+      showStatus('warning', msg + ` ／ ⚠️ 失敗${errors.length}件`, 100);
+      alert('一部の上書きに失敗しました:\n' + errors.join('\n'));
+    } else {
+      showStatus('success', msg, 100);
+    }
     btn.textContent = '保存完了';
     isSaving = true;  // 自分の保存通知での二重再読込を抑制
     setTimeout(() => { loadOrders(); loadCalendarEvents(); clearImport(); isSaving = false; }, 1500);
@@ -12133,6 +12557,36 @@ async function doSaveNewRows(rows, silent = false) {
     } catch(e) { console.warn('[doSaveNewRows] OT番号逆引き失敗', e); }
   }
 
+  // 【重複防止の最終チェック】図番の差し替え（型式フォールバック・OT逆引き）後のキーで
+  // 登録済み「受注番号＋図番」と取込データ内の重複を除外する（DBのUNIQUE制約に当たって全件失敗するのを防ぐ）
+  let skippedDup = [];
+  {
+    const existing = await fetchExistingOrdersFor(rows);
+    const seen = new Set();
+    const keep = [];
+    for (const r of rows) {
+      const k = ordKey(r.orderno, r.drawingno);
+      if (ordNorm(r.orderno) && (existing.byKey.has(k) || seen.has(k))) { skippedDup.push(r); continue; }
+      seen.add(k);
+      keep.push(r);
+    }
+    if (skippedDup.length) {
+      console.warn('[doSaveNewRows] 登録済みのためスキップ:', skippedDup.map(r => `${r.orderno}/${r.drawingno}`));
+      rows = keep;
+    }
+    if (!rows.length) {
+      if (!silent) {
+        showStatus('warning', `登録済みの受注のみだったため、新規保存はありません（スキップ ${skippedDup.length}件）`, 100);
+        btn.textContent = '保存完了';
+        isSaving = true;
+        setTimeout(() => { loadOrders(); clearImport(); isSaving = false; }, 1500);
+      }
+      const empty = [];
+      empty._skipped = skippedDup.length;
+      return empty;
+    }
+  }
+
   // 注文書の原本ファイルをStorageへアップロードし、URLを各行に付与
   const fileUrlMap = await uploadSourceFiles(rows);
 
@@ -12155,8 +12609,13 @@ async function doSaveNewRows(rows, silent = false) {
     headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=representation' },
     body: JSON.stringify(sanitized)
   });
-  if (!res.ok) { const e = await res.json(); throw new Error(e.message || 'HTTP '+res.status); }
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    if (e.code === '23505') throw new Error('同じ「受注番号＋図番」の受注が既に登録されています（二重登録防止）。画面を更新して再度取り込んでください。');
+    throw new Error(e.message || 'HTTP '+res.status);
+  }
   const saved = await res.json();
+  saved._skipped = skippedDup.length;
 
   // シール数の決定: product_categoryが「カバー」かつproductdate_childがある場合のみ
   // パーツはシール番号なしで子データのみ数量分作成する
@@ -12326,7 +12785,7 @@ async function doSaveNewRows(rows, silent = false) {
       ? ` ／ ⚠️ 製品マスタ未登録 ${unregisteredDrawingNos.length}件あり`
       : '';
     showStatus(unregisteredDrawingNos.length > 0 ? 'warning' : 'success',
-      `✓ ${saved.length}件を osakatec_DB/orders に保存しました ${childMsg}${warnMsg}`, 100);
+      `✓ ${saved.length}件を osakatec_DB/orders に保存しました ${childMsg}${skippedDup.length ? ` ／ 登録済みのためスキップ ${skippedDup.length}件` : ''}${warnMsg}`, 100);
     btn.textContent = '保存完了';
     isSaving = true;  // 自分の保存通知での二重再読込を抑制
     setTimeout(() => { loadOrders(); loadCalendarEvents(); clearImport(); isSaving = false; }, 1500);
@@ -12691,7 +13150,7 @@ window.addEventListener('beforeunload', () => { stopRealtime(); });
 // ---- Orders List ----
 let allOrders = [], filteredOrders = [], sortKey = 'orderdate', sortAsc = false;
 let currentPage = 1;
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 200;
 
     // Supabaseは1リクエストで最大1000行のため、全件取得にはページネーションが必要
     async function fetchAllRows(url) {
@@ -13089,7 +13548,24 @@ function clientLogoSrc(name) {
   if (!name) return null;
   const norm = String(name).replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).toLowerCase();
   const hit = CLIENT_LOGO_MAP.find(e => e.kw.some(k => norm.includes(k)));
-  return hit ? 'data:image/png;base64,' + hit.b64 : null;
+  return hit ? clientLogoUrl(hit) : null;
+}
+// ロゴ画像は1社につき1回だけBlob URLに変換して使い回す。
+// （従来は行ごとに約52KBのbase64文字列を埋め込んでおり、表示件数が多いほど描画が重くなっていた）
+const _clientLogoUrlCache = new Map();
+function clientLogoUrl(entry) {
+  let url = _clientLogoUrlCache.get(entry);
+  if (url) return url;
+  try {
+    const bin = atob(entry.b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    url = URL.createObjectURL(new Blob([bytes], { type: 'image/png' }));
+  } catch (e) {
+    url = 'data:image/png;base64,' + entry.b64;  // 変換できない環境では従来方式
+  }
+  _clientLogoUrlCache.set(entry, url);
+  return url;
 }
 function clientLogoHtml(name, cls) {
   const src = clientLogoSrc(name);
@@ -14087,13 +14563,32 @@ async function saveAllEdits() {
       shippingdate: document.getElementById('edit-shippingdate').value || null,
       updated_at:   new Date().toISOString()
     };
+    // 数量が変わる場合：子データ（シールNo）の増減内容を先に確認
+    let childPlan = null;
+    if (parentPatch.quantity != null && (parseInt(p.quantity) || 0) !== parentPatch.quantity) {
+      childPlan = await planChildSync(p.id, parentPatch.drawingno || p.drawingno, p.quantity, parentPatch.quantity);
+      if (!childPlan.skip) {
+        const lines = [`数量 ${childPlan.oldQty} → ${childPlan.newQty} に変更します。`];
+        if (childPlan.add) lines.push(`子データを ${childPlan.add}件 追加します${childPlan.category === 'カバー' ? '（シール番号を新規採番）' : ''}。`);
+        if (childPlan.del.length) lines.push(`子データを ${childPlan.del.length}件 削除します（シールNo: ${childPlan.del.map(c => c.sealno || '-').join(', ')}）。`);
+        if (childPlan.blocked) lines.push(`⚠️ ${childPlan.blocked}件はレーザー完了・積載済みのため削除できません（手動で調整してください）。`);
+        if (!confirm(lines.join('\n') + '\n\nよろしいですか？')) {
+          btn.disabled = false;
+          throw new Error('保存をキャンセルしました');
+        }
+      }
+    }
     const pr = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${p.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY,
         'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=representation' },
       body: JSON.stringify(parentPatch)
     });
-    if (!pr.ok) { const e = await pr.json(); throw new Error(e.message || '親更新失敗'); }
+    if (!pr.ok) {
+      const e = await pr.json().catch(() => ({}));
+      if (e.code === '23505') throw new Error('同じ受注番号＋図番の受注が既に登録されているため、この図番には変更できません');
+      throw new Error(e.message || '親更新失敗');
+    }
 
     // --- 子データ更新 ---
     for (const c of _detailChildren) {
@@ -14106,6 +14601,12 @@ async function saveAllEdits() {
         body: JSON.stringify({ delivery: delivery || null, inspectionsheet: inspection, updated_at: new Date().toISOString() })
       });
       if (!cr.ok) throw new Error(`子データ更新失敗 (sealno: ${c.sealno})`);
+    }
+
+    // 数量変更に合わせて子データを増減
+    if (childPlan && !childPlan.skip) {
+      const cres = await applyChildSync(childPlan);
+      if (cres.error) throw new Error('受注は保存しましたが、' + cres.error);
     }
 
     // 成功：データ再取得して表示更新
@@ -15618,6 +16119,16 @@ async function submitManualOrder() {
   };
 
   try {
+    // 二重登録防止：同じ「受注番号＋図番」が登録済みなら登録しない
+    if (data.orderno) {
+      const ex = await fetchExistingOrdersFor([data]);
+      const hit = ex.byKey.get(ordKey(data.orderno, data.drawingno));
+      if (hit) {
+        errEl.textContent = `受注番号「${data.orderno}」・図番「${drawingno}」は登録済みです（id:${hit.id}）。内容を変更する場合は受注一覧から編集してください。`;
+        errEl.style.display = 'block';
+        return;
+      }
+    }
     const res = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
       method: 'POST',
       headers: {
@@ -15626,7 +16137,11 @@ async function submitManualOrder() {
       },
       body: JSON.stringify(data)
     });
-    if (!res.ok) { const e = await res.text(); throw new Error(e); }
+    if (!res.ok) {
+      const e = await res.text();
+      if (e.includes('23505')) throw new Error('同じ受注番号＋図番が既に登録されています');
+      throw new Error(e);
+    }
 
     closeManualOrderForm();
     await loadOrders();
