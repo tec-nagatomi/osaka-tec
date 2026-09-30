@@ -748,6 +748,9 @@
   .pd-btn-new { padding:7px 14px; background:#0891b2; color:#fff; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:5px; }
   .pd-btn-new:hover { background:#0e7490; }
   .pd-table-wrap { overflow-x:auto; }
+  /* 1ページ1000件表示に対応：一覧を枠内スクロールにし、見出し行を固定 */
+  #page-productdate .pd-table-wrap { overflow:auto; max-height:calc(100vh - 300px); min-height:360px; }
+  #page-productdate .pd-table th { position:sticky; top:0; z-index:2; }
   .pd-table { width:100%; border-collapse:collapse; font-size:12px; }
   .pd-table th { background:#f8fafc; padding:8px 10px; text-align:left; font-weight:600; color:#475569; border-bottom:2px solid #e2e8f0; white-space:nowrap; cursor:pointer; user-select:none; }
   .pd-table th:hover { background:#f1f5f9; }
@@ -944,6 +947,80 @@
   .row-logo { height:15px; width:auto; max-width:32px; object-fit:contain; flex-shrink:0; vertical-align:middle; }
   .dfield-logo { height:20px; width:auto; max-width:60px; object-fit:contain; flex-shrink:0; }
   /* ===== 出荷管理 ===== */
+  /* 出荷管理 選択画面 */
+  .shipmenu-wrap { max-width:960px; margin:0 auto; padding:28px 16px; }
+  .shipmenu-head { display:flex; align-items:center; gap:10px; margin-bottom:20px; }
+  .shipmenu-head svg { width:24px; height:24px; color:#059669; }
+  .shipmenu-head h2 { margin:0; font-size:19px; font-weight:700; color:#111827; }
+  .shipmenu-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  .shipmenu-btn { position:relative; overflow:hidden; background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:30px 18px 24px;
+    cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center; transition:all .15s; font-family:inherit; }
+  .shipmenu-btn::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; background:var(--sm-c); }
+  .shipmenu-btn:hover { border-color:var(--sm-c); transform:translateY(-2px); box-shadow:0 8px 20px rgba(0,0,0,.08); }
+  .shipmenu-btn svg { width:44px; height:44px; color:var(--sm-c); }
+  .shipmenu-btn .sm-label { font-size:16px; font-weight:700; color:#111827; }
+  .shipmenu-btn .sm-sub { font-size:12px; color:#6b7280; line-height:1.6; }
+  .shipmenu-btn .sm-badge { position:absolute; top:12px; right:12px; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; background:#f3f4f6; color:#6b7280; border:1px solid #e5e7eb; }
+  .shipmenu-btn.work { --sm-c:#059669; }
+  .shipmenu-btn.history { --sm-c:#0284c7; }
+  .shipmenu-btn.sim { --sm-c:#c2790b; }
+  @media (max-width:800px) { .shipmenu-grid { grid-template-columns:1fr; } }
+  .ship-backbar { display:flex; align-items:center; gap:10px; padding:12px 16px 0; }
+  .ship-back-btn { background:#fff; border:1px solid #d1d5db; border-radius:8px; padding:5px 12px; font-size:12px; font-weight:600; color:#374151; cursor:pointer; font-family:inherit; }
+  .ship-back-btn:hover { background:#f3f4f6; border-color:#9ca3af; }
+  .ship-backbar-title { font-size:14px; font-weight:700; color:#111827; }
+  #page-schedule .ship-layout { height:calc(100vh - 164px); padding-top:8px; }
+  /* ===== 出荷作業（シールNo読み取り） ===== */
+  .sw-wrap { padding:10px 16px 16px; display:grid; grid-template-columns:460px 1fr; gap:14px; align-items:start; }
+  @media (max-width:1100px) { .sw-wrap { grid-template-columns:1fr; } }
+  .sw-card { background:#fff; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden; }
+  .sw-card-head { padding:10px 14px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+  .sw-card-title { font-size:13.5px; font-weight:700; color:#111827; }
+  .sw-card-body { padding:10px 14px 12px; }
+  .sw-lbl { font-size:11.5px; font-weight:700; color:#6b7280; margin-bottom:5px; display:block; }
+  .sw-scan { width:100%; box-sizing:border-box; font-size:26px; font-weight:700; letter-spacing:.12em; text-align:center;
+    font-family:'SF Mono','Consolas',monospace; padding:8px 10px; border:3px solid #d1d5db; border-radius:10px; outline:none; background:#f9fafb; }
+  .sw-scan:focus { border-color:#059669; background:#ecfdf5; box-shadow:0 0 0 4px rgba(5,150,105,.15); }
+  .sw-scan-state { margin-top:4px; font-size:12px; font-weight:700; text-align:center; }
+  .sw-scan-state.on { color:#059669; } .sw-scan-state.off { color:#dc2626; cursor:pointer; }
+  .sw-packer { width:100%; box-sizing:border-box; padding:8px 10px; font-size:14px; border:1px solid #d1d5db; border-radius:8px; }
+  /* 読み取り結果：離れた場所からでも読めるよう大きな文字・色帯で統一（画面の高さに合わせて縮む） */
+  .sw-result { --c:#9ca3af; --bg:#f9fafb; margin-top:10px; border-radius:10px; border:3px solid var(--c); background:var(--bg); overflow:hidden; }
+  .sw-result.ok   { --c:#059669; --bg:#f0fdf4; }
+  .sw-result.warn { --c:#d97706; --bg:#fffbeb; }
+  .sw-result.err  { --c:#dc2626; --bg:#fef2f2; }
+  .sw-result-band { background:var(--c); color:#fff; display:flex; align-items:center; justify-content:center; gap:8px;
+    padding:6px 10px; font-size:clamp(16px, 2.2vh, 21px); font-weight:800; letter-spacing:.04em; }
+  .sw-result-icon { width:1.4em; height:1.4em; border-radius:50%; background:rgba(255,255,255,.25); display:inline-flex;
+    align-items:center; justify-content:center; font-size:.9em; line-height:1; flex-shrink:0; }
+  .sw-result-seal { text-align:center; font-family:'SF Mono','Consolas',monospace; font-size:clamp(32px, 5vh, 50px); font-weight:800;
+    color:#111827; letter-spacing:.1em; line-height:1.1; padding:6px 8px; border-bottom:2px solid var(--c); }
+  .sw-result-grid { margin:0; padding:2px 14px 6px; }
+  .sw-result-row { display:grid; grid-template-columns:76px 1fr; align-items:baseline; gap:8px; padding:clamp(2px, .5vh, 5px) 0; border-bottom:1px solid rgba(0,0,0,.08); }
+  .sw-result-row:last-child { border-bottom:none; }
+  .sw-result-row dt { font-size:12px; font-weight:700; color:#6b7280; }
+  .sw-result-row dd { margin:0; font-size:clamp(14px, 1.9vh, 18px); font-weight:800; color:#111827; line-height:1.3; word-break:break-all;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sw-result-row.key dd { font-size:clamp(17px, 2.4vh, 23px); color:var(--c); }
+  .sw-result-msg { padding:10px 14px 12px; font-size:15px; font-weight:700; color:#374151; text-align:center; line-height:1.6; }
+  .sw-result-empty { color:#9ca3af; font-size:15px; font-weight:700; text-align:center; padding:36px 16px; line-height:1.8; }
+  .sw-table-wrap { max-height:calc(100vh - 230px); overflow:auto; }
+  .sw-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  .sw-table th { position:sticky; top:0; background:#f3f4f6; color:#374151; font-weight:700; text-align:left; padding:7px 8px; border-bottom:1px solid #d1d5db; white-space:nowrap; z-index:1; }
+  .sw-table td { padding:7px 8px; border-bottom:1px solid #f1f5f9; vertical-align:middle; }
+  .sw-table td { white-space:nowrap; }
+  .sw-table td.wrap { white-space:normal; min-width:110px; }
+  .sw-table tr.sw-new td { animation:swFlash 2s ease-out; }
+  @keyframes swFlash { from { background:#bbf7d0; } to { background:transparent; } }
+  .sw-seal { font-family:'SF Mono','Consolas',monospace; font-weight:800; color:#1d4ed8; font-size:13.5px; }
+  .sw-status { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; background:#dcfce7; color:#166534; white-space:nowrap; }
+  .sw-status.shipped { background:#e0e7ff; color:#3730a3; }
+  .sw-del { background:none; border:1px solid #fecaca; color:#dc2626; border-radius:6px; padding:2px 8px; font-size:11px; cursor:pointer; }
+  .sw-del:hover { background:#fef2f2; }
+  .sw-count { font-size:12px; font-weight:700; color:#059669; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:20px; padding:2px 10px; }
+  .sw-empty { text-align:center; color:#9ca3af; padding:40px 0; font-size:13px; }
+  .ship-placeholder { max-width:960px; margin:0 auto; padding:16px; }
+  .ship-placeholder-box { background:#fff; border:1px dashed #d1d5db; border-radius:12px; padding:60px 20px; text-align:center; color:#9ca3af; font-size:14px; }
   .ship-layout { display:grid; grid-template-columns:330px 430px 1fr; gap:14px; height:calc(100vh - 130px); padding:16px; align-items:start; }
   .ship-pool-card, .ship-frames-card, .ship-pallets-card { background:#fff; border:1px solid #e5e7eb; border-radius:10px; display:flex; flex-direction:column; height:100%; overflow:hidden; }
   .ship-pallet-list { flex:1; overflow-y:auto; padding:10px; min-height:0; display:flex; flex-direction:column; gap:10px; }
@@ -1219,7 +1296,7 @@
   .ship-frame.c-bclogi { border-color:#1d4ed8; }
   .ship-frame.c-bclogi .ship-frame-head, .ship-frame.c-bclogi .ship-frame-foot { background:#1e3a8a; border-color:#1d4ed8; }
   .ship-frame.c-bclogi .ship-frame-no { color:#fff; }
-  @media (max-width:1100px) { .ship-layout { grid-template-columns:1fr; height:auto; } }
+  @media (max-width:1100px) { .ship-layout, #page-schedule .ship-layout { grid-template-columns:1fr; height:auto; } }
   /* 出荷管理モーダル */
   #shipment-form-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:300; align-items:center; justify-content:center; padding:20px; }
   #shipment-form-overlay.open { display:flex; }
@@ -2284,7 +2361,7 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
     受注管理
   </div>
-  <div class="nav-item" data-page="schedule" onclick="showPage('schedule',this)">
+  <div class="nav-item" data-page="shipmenu" onclick="showPage('shipmenu',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
     出荷管理
   </div>
@@ -2329,7 +2406,7 @@
             <div class="func-btn-label">受注管理</div>
             <div class="func-btn-sub">注文書の登録・管理</div>
           </div>
-          <div class="func-btn schedule" onclick="showPage('schedule', document.querySelector('[data-page=schedule]'))">
+          <div class="func-btn schedule" onclick="showPage('shipmenu', document.querySelector('[data-page=shipmenu]'))">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             <div class="func-btn-label">出荷管理</div>
             <div class="func-btn-sub">納期・工程の管理</div>
@@ -2602,7 +2679,85 @@
 </div>
 
 <!-- ==================== OTHER PAGES ==================== -->
+<!-- ==================== 出荷管理 選択画面 ==================== -->
+<div id="page-shipmenu" class="page">
+  <div class="shipmenu-wrap">
+    <div class="shipmenu-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><h2>出荷管理</h2></div>
+    <div class="shipmenu-grid">
+      <button class="shipmenu-btn work" onclick="showPage('shipwork')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M1 3h15v13H1z"/><path stroke-linecap="round" stroke-linejoin="round" d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        <div class="sm-label">出荷作業</div>
+        <div class="sm-sub">シールNoを読み取り、<br>出荷準備OKとして登録します</div>
+      </button>
+      <button class="shipmenu-btn history" onclick="showPage('shiphistory')">
+        <span class="sm-badge">準備中</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><polyline stroke-linecap="round" stroke-linejoin="round" points="12 7 12 12 15.5 14"/></svg>
+        <div class="sm-label">出荷履歴</div>
+        <div class="sm-sub">過去の出荷実績を<br>検索・確認します</div>
+      </button>
+      <button class="shipmenu-btn sim" onclick="showPage('schedule')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline stroke-linecap="round" stroke-linejoin="round" points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        <div class="sm-label">荷積みシミュレーター</div>
+        <div class="sm-sub">出荷候補をパレット・出荷便へ<br>積み付けシミュレーションします</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 出荷作業（準備中） ==================== -->
+<div id="page-shipwork" class="page">
+  <div class="ship-backbar">
+    <button class="ship-back-btn" onclick="showPage('shipmenu')">← 出荷管理メニュー</button>
+    <span class="ship-backbar-title">出荷作業</span>
+  </div>
+  <div class="sw-wrap" onclick="swMaybeRefocus(event)">
+    <!-- 左: 読み取り -->
+    <div class="sw-card">
+      <div class="sw-card-head"><span class="sw-card-title">シールNo 読み取り</span></div>
+      <div class="sw-card-body">
+        <label class="sw-lbl" for="sw-packer">梱包作業者</label>
+        <input class="sw-packer" id="sw-packer" list="sw-packer-list" placeholder="作業者名" onchange="swSavePacker()">
+        <datalist id="sw-packer-list"></datalist>
+        <label class="sw-lbl" for="sw-scan" style="margin-top:8px;">シールNo（6桁で自動確定）</label>
+        <input class="sw-scan" id="sw-scan" autocomplete="off" inputmode="numeric" maxlength="20" placeholder="------"
+               onkeydown="swOnScanKey(event)" oninput="swOnScanInput(event)" oncompositionend="swOnScanInput(event)" onfocus="swScanState(true)" onblur="swScanState(false)">
+        <div class="sw-scan-state off" id="sw-scan-state" onclick="swFocus()">クリックして読み取りを再開</div>
+        <div class="sw-result" id="sw-result"><div class="sw-result-empty">シールNoを読み取ると<br>ここに結果が表示されます</div></div>
+      </div>
+    </div>
+    <!-- 右: 出荷準備OKリスト（T_出荷リスト相当） -->
+    <div class="sw-card">
+      <div class="sw-card-head">
+        <span class="sw-card-title">出荷準備OKリスト <span class="sw-count" id="sw-count">0件</span></span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="date" class="pd-search" id="sw-date" style="min-width:0;padding:4px 8px;" onchange="swLoadList()" title="準備OKにした日で絞り込み">
+          <button class="btn-sm" onclick="swSetToday()">今日</button>
+          <button class="btn-sm" onclick="swLoadList()">更新</button>
+        </div>
+      </div>
+      <div class="sw-table-wrap">
+        <table class="sw-table">
+          <thead><tr><th>No</th><th>シールNo</th><th>OT番号</th><th>お客様名</th><th>品名</th><th>客先図番</th><th>注文No</th><th>納期</th><th>梱包作業者</th><th>準備OK</th><th>状態</th><th></th></tr></thead>
+          <tbody id="sw-tbody"><tr><td colspan="12" class="sw-empty">読込中…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 出荷履歴（準備中） ==================== -->
+<div id="page-shiphistory" class="page">
+  <div class="ship-backbar">
+    <button class="ship-back-btn" onclick="showPage('shipmenu')">← 出荷管理メニュー</button>
+    <span class="ship-backbar-title">出荷履歴</span>
+  </div>
+  <div class="ship-placeholder"><div class="ship-placeholder-box">出荷履歴画面は準備中です</div></div>
+</div>
+
 <div id="page-schedule" class="page">
+  <div class="ship-backbar">
+    <button class="ship-back-btn" onclick="showPage('shipmenu')">← 出荷管理メニュー</button>
+    <span class="ship-backbar-title">荷積みシミュレーター</span>
+  </div>
   <div class="ship-layout">
     <!-- 左: 出荷候補（納期確定・未割当） -->
     <div class="ship-pool-card">
@@ -3193,6 +3348,7 @@
         <span style="flex:1;"></span>
         <span id="pu-admin-tools" style="display:none;gap:6px;">
           <button id="pu-backfill-btn" class="pu-btn ghost" style="display:none;" onclick="puBackfillCategories()" title="品名からジャンルを自動判定し、未登録の物品に一括登録します">ジャンル一括登録</button>
+          <button id="pu-compress-btn" class="pu-btn ghost" style="display:none;" onclick="puCompressAllImages()" title="登録済みの物品画像を縮小・圧縮し直してStorageの容量を減らします">画像を一括圧縮</button>
           <button class="pu-btn ghost" onclick="document.getElementById('pu-csv-file').click()">CSVインポート</button>
           <button class="pu-btn primary" onclick="puOpenItemModal(null)">＋ 物品追加</button>
         </span>
@@ -4071,6 +4227,245 @@ async function loadShipOtNumbers(rows) {
     }
     console.log(`[ship] OT番号を${shipOtMap.size}件 / 出荷場所を${shipDestMap.size}件 解決`);
   } catch(e) { console.warn('[ship] OT番号の取得に失敗', e); }
+}
+
+// ==================== 出荷作業（シールNo読み取り → 出荷準備OK） ====================
+// OCRスキャナーはキーボードとして数字＋Enter（またはTab）を送ってくる。
+// 読み取り欄にフォーカスを保ち、確定のたびに受注データを参照して ship_ready へ登録する。
+let swRows = [];
+let swQueue = Promise.resolve();   // 連続読み取りでも1件ずつ順番に処理する
+let swLastNewId = null;
+let swAudio = null;
+
+function swYmd(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function swSetToday() { document.getElementById('sw-date').value = swYmd(new Date()); swLoadList(); }
+
+async function loadShipWork() {
+  const dt = document.getElementById('sw-date');
+  if (dt && !dt.value) dt.value = swYmd(new Date());
+  const pk = document.getElementById('sw-packer');
+  if (pk && !pk.value) {
+    let saved = '';
+    try { saved = localStorage.getItem('sw_packer') || ''; } catch(e) {}
+    pk.value = saved || currentUser?.loginname || '';
+  }
+  swFocus();
+  await swLoadList();
+  swLoadPackerList();
+}
+
+function swSavePacker() {
+  try { localStorage.setItem('sw_packer', document.getElementById('sw-packer').value.trim()); } catch(e) {}
+  swFocus();
+}
+
+async function swLoadPackerList() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/ship_ready?select=packer&packer=not.is.null&order=ready_at.desc&limit=500`, { headers: sbHeaders() });
+    if (!res.ok) return;
+    const names = [...new Set((await res.json()).map(r => r.packer).filter(Boolean))];
+    if (currentUser?.loginname && !names.includes(currentUser.loginname)) names.push(currentUser.loginname);
+    document.getElementById('sw-packer-list').innerHTML = names.map(n => `<option value="${esc(n)}">`).join('');
+  } catch(e) {}
+}
+
+function swFocus() {
+  const el = document.getElementById('sw-scan');
+  if (el && document.getElementById('page-shipwork')?.classList.contains('active')) el.focus();
+}
+// 画面の空いている所をクリックしたら読み取り欄へ戻す（入力欄・ボタン操作は邪魔しない）
+function swMaybeRefocus(e) {
+  if (e.target.closest('input,select,button,textarea,a,datalist')) return;
+  swFocus();
+}
+function swScanState(on) {
+  const st = document.getElementById('sw-scan-state');
+  if (!st) return;
+  st.className = 'sw-scan-state ' + (on ? 'on' : 'off');
+  st.textContent = on ? '● 読み取り待機中' : 'クリックして読み取りを再開';
+}
+
+// 全角数字→半角、数字以外を除去
+function swNormalize(v) {
+  return String(v || '').replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/\D/g, '');
+}
+
+// 6桁の数字がそろった時点で自動確定（Enter不要）。
+// 日本語入力の変換中は確定を待ってから判定する。スキャナーが後からEnterを送っても空欄なので無視される。
+function swOnScanInput(e) {
+  if (e.isComposing && e.type !== 'compositionend') return;
+  const el = e.target;
+  if (swNormalize(el.value).length < 6) return;
+  const raw = el.value;
+  el.value = '';
+  swQueue = swQueue.then(() => swHandleScan(raw)).catch(err => console.error('[shipwork]', err));
+}
+
+function swOnScanKey(e) {
+  if (e.key !== 'Enter' && e.key !== 'Tab') return;
+  e.preventDefault();
+  if (e.isComposing) return;
+  const el = e.target;
+  const raw = el.value;
+  el.value = '';
+  if (!raw.trim()) return;
+  swQueue = swQueue.then(() => swHandleScan(raw)).catch(err => console.error('[shipwork]', err));
+}
+
+function swBeep(kind) {
+  try {
+    swAudio = swAudio || new (window.AudioContext || window.webkitAudioContext)();
+    const tones = kind === 'ok' ? [[1320, 0, .12]] : kind === 'warn' ? [[660, 0, .15], [660, .2, .15]] : [[300, 0, .22], [300, .3, .22]];
+    tones.forEach(([f, t, d]) => {
+      const o = swAudio.createOscillator(), g = swAudio.createGain();
+      o.type = 'square'; o.frequency.value = f; g.gain.value = .08;
+      o.connect(g); g.connect(swAudio.destination);
+      o.start(swAudio.currentTime + t); o.stop(swAudio.currentTime + t + d);
+    });
+  } catch(e) {}
+}
+
+function swShowResult(kind, head, seal, info, msg) {
+  const box = document.getElementById('sw-result');
+  box.className = 'sw-result ' + kind;
+  const icon = kind === 'ok' ? '✓' : kind === 'warn' ? '!' : '✕';
+  const rows = info ? [
+    ['OT番号', info.ot_number, 'key'], ['お客様名', info.client], ['品名', info.product_name],
+    ['客先図番', info.drawingno], ['注文No', info.orderno], ['納期', info.delivery],
+    ...(info.ready_at ? [['準備OK', swFmtTime(info.ready_at, true)]] : []),
+  ] : [];
+  box.innerHTML = `<div class="sw-result-band"><span class="sw-result-icon">${icon}</span>${esc(head)}</div>
+    <div class="sw-result-seal">${esc(seal || '－')}</div>
+    ${rows.length
+      ? `<dl class="sw-result-grid">${rows.map(([k, v, cls]) => `<div class="sw-result-row ${cls || ''}"><dt>${k}</dt><dd title="${esc(v || '')}">${esc(v || '－')}</dd></div>`).join('')}</dl>`
+      : `<div class="sw-result-msg">${esc(msg || '')}</div>`}`;
+  swBeep(kind);
+}
+
+function swFmtTime(ts, withDate) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  const hm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  return withDate ? `${d.getMonth() + 1}/${d.getDate()} ${hm}` : hm;
+}
+
+async function swGetJson(url) {
+  const res = await fetch(url, { headers: sbHeaders() });
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + (await res.text().catch(() => '')));
+  return res.json();
+}
+
+async function swHandleScan(raw) {
+  const seal = swNormalize(raw);
+  if (!/^\d{6}$/.test(seal)) {
+    swShowResult('err', '読み取りエラー', raw.trim(), null, '6桁のシールNoではありません。もう一度読み取ってください。');
+    return;
+  }
+  try {
+    // ① 受注データ（子）からシールNoを探す
+    const kids = await swGetJson(`${SUPABASE_URL}/rest/v1/orders_child?select=id,order_id,sealno,delivery&sealno=eq.${seal}&order=id.desc`);
+    if (!kids.length) { swShowResult('err', '見つかりません', seal, null, '受注データにこのシールNoがありません。シールを確認してください。'); return; }
+    const kid = kids[0];
+
+    // ② 既に出荷準備OKなら二重登録しない
+    const dup = await swGetJson(`${SUPABASE_URL}/rest/v1/ship_ready?select=*&child_id=eq.${kid.id}`);
+    if (dup.length) { swShowResult('warn', '登録済み（二重読み取り）', seal, dup[0]); swHighlight(dup[0].id); return; }
+
+    // ③ 受注・製品マスタから表示用の情報を集める
+    const ords = await swGetJson(`${SUPABASE_URL}/rest/v1/orders?select=id,orderno,drawingno,productno,delivery_destination&id=eq.${kid.order_id}`);
+    const ord = ords[0] || {};
+    let pd = {};
+    if (ord.drawingno) {
+      const pds = await swGetJson(`${SUPABASE_URL}/rest/v1/productdate?select=client,product_name&customer_drawing_no=eq.${encodeURIComponent(ord.drawingno)}&order=designid.desc&limit=1`);
+      pd = pds[0] || {};
+    }
+    await loadShipOtNumbers([{ child_id: kid.id, order_id: kid.order_id }]);
+
+    const rec = {
+      child_id: kid.id,
+      sealno: seal,
+      status: '出荷準備OK',
+      ot_number: shipOtOf(kid.id) || null,
+      client: pd.client || null,
+      product_name: pd.product_name || null,
+      drawingno: ord.drawingno || null,
+      orderno: ord.orderno || null,
+      delivery: kid.delivery || null,
+      destination: shipDestOf(kid.id) || ord.delivery_destination || null,
+      packer: document.getElementById('sw-packer').value.trim() || null,
+      ready_by: currentUser?.loginname || null,
+    };
+
+    // ④ 登録
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/ship_ready`, {
+      method: 'POST', headers: { ...sbHeaders(), 'Prefer': 'return=representation' }, body: JSON.stringify(rec)
+    });
+    if (res.status === 409) { swShowResult('warn', '登録済み（二重読み取り）', seal, rec); await swLoadList(); return; }
+    if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + (await res.text().catch(() => '')));
+    const saved = (await res.json())[0];
+    swLastNewId = saved?.id ?? null;
+    swShowResult('ok', '出荷準備OK', seal, saved || rec);
+    // 別日を表示していたら今日に戻して、登録結果が見えるようにする
+    const dt = document.getElementById('sw-date');
+    if (dt.value && dt.value !== swYmd(new Date())) dt.value = swYmd(new Date());
+    await swLoadList();
+  } catch(e) {
+    console.error('[shipwork] 登録失敗', e);
+    swShowResult('err', '通信エラー', seal, null, '登録できませんでした。ネットワークを確認して、もう一度読み取ってください。');
+  }
+}
+
+async function swLoadList() {
+  const tb = document.getElementById('sw-tbody');
+  const dv = document.getElementById('sw-date')?.value;
+  let url = `${SUPABASE_URL}/rest/v1/ship_ready?select=*&order=ready_at.desc`;
+  if (dv) {
+    const from = new Date(dv + 'T00:00:00'), to = new Date(from.getTime() + 86400000);
+    url += `&ready_at=gte.${encodeURIComponent(from.toISOString())}&ready_at=lt.${encodeURIComponent(to.toISOString())}`;
+  } else {
+    url += `&status=eq.${encodeURIComponent('出荷準備OK')}`;
+  }
+  try { swRows = await shipFetchAll(url); } catch(e) { swRows = []; }
+  document.getElementById('sw-count').textContent = swRows.length + '件';
+  if (!swRows.length) { tb.innerHTML = '<tr><td colspan="12" class="sw-empty">出荷準備OKの製品はまだありません</td></tr>'; return; }
+  const n = swRows.length;
+  tb.innerHTML = swRows.map((r, i) => `
+    <tr data-id="${r.id}" class="${r.id === swLastNewId ? 'sw-new' : ''}">
+      <td>${n - i}</td>
+      <td><span class="sw-seal">${esc(r.sealno)}</span></td>
+      <td>${esc(r.ot_number || '')}</td>
+      <td class="wrap">${esc(r.client || '')}</td>
+      <td class="wrap">${esc(r.product_name || '')}</td>
+      <td>${esc(r.drawingno || '')}</td>
+      <td>${esc(r.orderno || '')}</td>
+      <td>${esc(r.delivery || '')}</td>
+      <td>${esc(r.packer || '')}</td>
+      <td>${swFmtTime(r.ready_at, !dv)}</td>
+      <td><span class="sw-status ${r.status === '出荷済' ? 'shipped' : ''}">${esc(r.status)}</span></td>
+      <td>${r.status === '出荷準備OK' ? `<button class="sw-del" onclick="swCancel(${r.id})">取消</button>` : ''}</td>
+    </tr>`).join('');
+  swLastNewId = null;
+}
+
+function swHighlight(id) {
+  const tr = document.querySelector(`#sw-tbody tr[data-id="${id}"]`);
+  if (!tr) return;
+  tr.classList.remove('sw-new'); void tr.offsetWidth; tr.classList.add('sw-new');
+  tr.scrollIntoView({ block: 'nearest' });
+}
+
+async function swCancel(id) {
+  const r = swRows.find(x => x.id === id);
+  if (!r) return;
+  if (!confirm(`シールNo ${r.sealno} の出荷準備OKを取り消しますか？`)) { swFocus(); return; }
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/ship_ready?id=eq.${id}`, { method: 'DELETE', headers: sbHeaders() });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+  } catch(e) { alert('取消に失敗しました: ' + e.message); }
+  await swLoadList();
+  swFocus();
 }
 
 function shipOtOf(childId) { return shipOtMap.get(childId) || ''; }
@@ -7633,6 +8028,8 @@ async function loadPurchasePage() {
   // ジャンル一括登録は永冨のみ使用可能（他の物品管理者には出さない）
   const backfillBtn = document.getElementById('pu-backfill-btn');
   if (backfillBtn) backfillBtn.style.display = puIsAdmin() ? '' : 'none';
+  const compressBtn = document.getElementById('pu-compress-btn');
+  if (compressBtn) compressBtn.style.display = puIsAdmin() ? '' : 'none';
   const reqTabBtn = document.getElementById('pu-tab-requests');
   const orderHistTabBtn = document.getElementById('pu-tab-orderhistory');
   const canSeeReq = puCanSeeRequestsTab();
@@ -10239,6 +10636,92 @@ async function puDeleteItem(id) {
   puOnFilter();
 }
 
+// ---- 画像の縮小・圧縮 ----
+const PU_IMG_MAX_PX = 800;      // 長辺の最大ピクセル
+const PU_IMG_QUALITY = 0.82;    // WebP/JPEG の画質
+// Storage上のパス（例: item_12.png）を画像URLから取り出す
+function puImagePathOf(url) {
+  const m = String(url || '').match(/\/purchase-images\/([^?#]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
+}
+// 画像Blobを長辺800px以内に縮小してWebP（透過を保持）で返す。WebPを書き出せないブラウザは白背景のJPEG
+async function puCompressImageBlob(blob) {
+  let bmp;
+  try { bmp = await createImageBitmap(blob); }
+  catch (e) {
+    bmp = await new Promise((ok, ng) => { const im = new Image(); im.onload = () => ok(im); im.onerror = ng; im.src = URL.createObjectURL(blob); });
+  }
+  const w0 = bmp.width, h0 = bmp.height;
+  const scale = Math.min(1, PU_IMG_MAX_PX / Math.max(w0, h0));
+  const w = Math.max(1, Math.round(w0 * scale)), h = Math.max(1, Math.round(h0 * scale));
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const ctx = cv.getContext('2d');
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(bmp, 0, 0, w, h);
+  const toBlob = (type, q) => new Promise(r => cv.toBlob(r, type, q));
+  let out = await toBlob('image/webp', PU_IMG_QUALITY);
+  if (!out || out.type !== 'image/webp') {
+    const cv2 = document.createElement('canvas'); cv2.width = w; cv2.height = h;
+    const c2 = cv2.getContext('2d'); c2.fillStyle = '#fff'; c2.fillRect(0, 0, w, h); c2.drawImage(cv, 0, 0);
+    out = await new Promise(r => cv2.toBlob(r, 'image/jpeg', PU_IMG_QUALITY));
+  }
+  if (bmp.close) bmp.close();
+  return out;
+}
+
+// 登録済みの物品画像をまとめて縮小・圧縮し直す（永冨のみ）。
+// 同じ画像を複数の物品が共有しているため、Storage上の同じパスに上書き保存し、URLは変えない（キャッシュ避けの ?v= だけ更新）
+async function puCompressAllImages() {
+  const byPath = new Map();   // path → [item id...]
+  for (const it of _puItems) {
+    const pth = puImagePathOf(it.image_url);
+    if (!pth) continue;
+    if (!byPath.has(pth)) byPath.set(pth, []);
+    byPath.get(pth).push(it.id);
+  }
+  if (!byPath.size) { alert('画像が登録された物品がありません。'); return; }
+  if (!confirm(`登録済みの画像 ${byPath.size}ファイルを縮小・圧縮し直します（長辺800px・WebP）。\n元より小さくならない画像はそのままにします。\n数分かかることがあります。実行してよろしいですか？`)) return;
+
+  const btn = document.getElementById('pu-compress-btn');
+  const H = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+  let done = 0, changed = 0, skipped = 0, before = 0, after = 0;
+  const errors = [];
+  if (btn) btn.disabled = true;
+  try {
+    for (const [pth, ids] of byPath) {
+      done++;
+      if (btn) btn.textContent = `圧縮中... ${done}/${byPath.size}`;
+      try {
+        const r = await fetch(`${SUPABASE_URL}/storage/v1/object/public/${PU_IMG_BUCKET}/${encodeURI(pth)}?t=${Date.now()}`, { cache: 'no-store' });
+        if (!r.ok) throw new Error('取得失敗 ' + r.status);
+        const orig = await r.blob();
+        const small = await puCompressImageBlob(orig);
+        // 1割以上小さくならない場合は上書きしない（既に小さい画像）
+        if (!small || small.size >= orig.size * 0.9) { skipped++; continue; }
+        const up = await fetch(`${SUPABASE_URL}/storage/v1/object/${PU_IMG_BUCKET}/${encodeURI(pth)}`, {
+          method: 'POST', headers: { ...H, 'Content-Type': small.type, 'x-upsert': 'true' }, body: small });
+        if (!up.ok) throw new Error('保存失敗 ' + up.status + ' ' + (await up.text()).slice(0, 80));
+        const url = `${SUPABASE_URL}/storage/v1/object/public/${PU_IMG_BUCKET}/${pth}?v=` + Date.now();
+        const pr = await fetch(`${SUPABASE_URL}/rest/v1/purchase_items?id=in.(${ids.join(',')})`,
+          { method: 'PATCH', headers: { ...PU_H(), 'Prefer': 'return=minimal' }, body: JSON.stringify({ image_url: url }) });
+        if (!pr.ok) throw new Error('URL更新失敗 ' + (await pr.text()).slice(0, 80));
+        for (const id of ids) { const it = _puItems.find(i => i.id === id); if (it) it.image_url = url; }
+        before += orig.size; after += small.size; changed++;
+      } catch (e) { errors.push(`${pth}: ${e.message}`); }
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '画像を一括圧縮'; }
+  }
+  puRenderGrid();
+  const mb = v => (v / 1024 / 1024).toFixed(1) + 'MB';
+  alert([
+    '画像の一括圧縮が完了しました。',
+    `・圧縮した画像: ${changed}ファイル（${mb(before)} → ${mb(after)}、${mb(before - after)} 削減）`,
+    `・そのままの画像（既に小さい）: ${skipped}ファイル`,
+    errors.length ? `\n⚠ 失敗 ${errors.length}件:\n` + errors.slice(0, 8).join('\n') : '',
+  ].filter(Boolean).join('\n'));
+}
+
 // ---- 画像登録（カードの画像エリアをクリック） ----
 function puPickImage(id) {
   _puImgTargetId = id;
@@ -10251,16 +10734,20 @@ async function puImageSelected(e) {
   const id = _puImgTargetId;
   _puImgTargetId = null;
   if (!file || !id) return;
-  if (file.size > 5 * 1024 * 1024) { alert('画像は5MB以下にしてください'); return; }
-  const ext = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' }[file.type];
-  if (!ext) { alert('PNG / JPEG / WebP の画像を選んでください'); return; }
+  if (file.size > 30 * 1024 * 1024) { alert('画像は30MB以下にしてください'); return; }
+  if (!{ 'image/png': 1, 'image/jpeg': 1, 'image/webp': 1 }[file.type]) { alert('PNG / JPEG / WebP の画像を選んでください'); return; }
   try {
+    // 登録前に自動で縮小・圧縮（最大800px・WebP。WebP非対応ブラウザはJPEG）
+    const small = await puCompressImageBlob(file);
+    const upBlob = small && small.size < file.size ? small : file;
+    const ext = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' }[upBlob.type] || 'jpg';
     const path = 'item_' + id + '.' + ext;
+    const oldPath = puImagePathOf((_puItems.find(i => i.id === id) || {}).image_url);
     const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${PU_IMG_BUCKET}/${path}`, {
       method: 'POST',
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
-                 'Content-Type': file.type, 'x-upsert': 'true' },
-      body: file
+                 'Content-Type': upBlob.type, 'x-upsert': 'true' },
+      body: upBlob
     });
     if (!res.ok) throw new Error('アップロード失敗 (' + res.status + '): ' + await res.text());
     // キャッシュ避けのためURL末尾にバージョンを付ける
@@ -10271,8 +10758,13 @@ async function puImageSelected(e) {
     if (!res2.ok) throw new Error(await res2.text());
     const it = _puItems.find(i => i.id === id);
     if (it) it.image_url = url;
+    // 拡張子が変わって古いファイルが不要になった場合は削除（他の物品が同じ画像を使っていれば残す）
+    if (oldPath && oldPath !== path && !_puItems.some(i => puImagePathOf(i.image_url) === oldPath)) {
+      fetch(`${SUPABASE_URL}/storage/v1/object/${PU_IMG_BUCKET}/${oldPath}`,
+        { method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }).catch(() => {});
+    }
     puRenderGrid();
-    puToast('✅ 画像を登録しました', '#059669');
+    puToast(`✅ 画像を登録しました（${Math.round(upBlob.size / 1024)}KB）`, '#059669');
   } catch (err) { alert('画像の登録に失敗しました: ' + err.message); }
 }
 
@@ -10327,11 +10819,13 @@ function showPage(name, navEl) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
+  if (!navEl && ['shipmenu','shipwork','shiphistory','schedule'].includes(name)) navEl = document.querySelector('[data-page=shipmenu]');
   if (navEl) navEl.classList.add('active');
   if (name === 'orders') { loadOrders(); renderCalendar(); }
   if (name === 'productdate') loadProductdate();
   if (name === 'progress') renderFloors();
   if (name === 'schedule') loadShippingPage();
+  if (name === 'shipwork') loadShipWork();
   if (name === 'purchase') loadPurchasePage();
   if (name === 'outsourcing' && typeof window.osInitPage === 'function') window.osInitPage();
 }
@@ -10692,6 +11186,8 @@ function isValidOrderRow(r) {
   if (!dno && !ot) return false;
   const ono = String(r.orderno || '').trim();
   if (EXCEL_HEADER_WORDS.includes(ono) || EXCEL_HEADER_WORDS.includes(dno)) return false;
+  // 「TIME：」「P.O.No：」のような項目ラベル（末尾がコロン）は図番ではない
+  if (/[:：]$/.test(dno)) return false;
   if (/^\d{4}[\/\-.]\d{1,2}[\/\-.]\d{1,2}$/.test(ono) && !dno) return false;
   return true;
 }
@@ -11442,6 +11938,13 @@ async function parseExcel(file) {
     }
   }
 
+  // ---- フォーマットE2: LGM の人間用 PURCHASE ORDER シートのみ（proSheet が無い版）----
+  for (const sn of wb.SheetNames) {
+    const aoaPo = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: '' });
+    const rowsPo = parseExcelLGMPurchaseOrder(aoaPo);
+    if (rowsPo) return rowsPo;
+  }
+
   const ws = wb.Sheets[wb.SheetNames[0]];
   const rawData = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
   // 見出し行が1行目に無い注文書（例: ヤマザキマザックは1行目に日付、3行目が見出し）に対応するため、
@@ -11486,6 +11989,67 @@ function findExcelHeaderRow(data) {
     if (score > bestScore) { bestScore = score; best = r; }
   }
   return bestScore >= 2 ? best : 0;
+}
+
+// ---- フォーマットE2: LGM（寧夏小巨人机床有限公司）PURCHASE ORDER シート ----
+// 見出し: NO / Parts-No / Parts Name / Model / Q'TY / PRICE($) / AMOUNT($) / SHIP DATE / 阪神納入日程 / TRANSPORT / Remark
+// 上部に「P.O.No：」「TIME：」のラベルと値。既存のLGM受注と同じ割り当て:
+//   注文No=P.O.No / 受注日=TIME / 図番=Parts-No / 数量=Q'TY / 単価=PRICE / 希望納期=阪神納入日程
+//   原番="SHIP DATE TRANSPORT"（例: 2027/03/07 SHIP）/ 出荷場所=LGM(寧夏小巨人机床有限公司)
+// 該当しないシートは null を返す
+function parseExcelLGMPurchaseOrder(aoa) {
+  const norm = v => String(v ?? '').replace(/[\s\r\n]+/g, '').toUpperCase();
+  const hIdx = aoa.findIndex(r => r.some(c => norm(c) === 'PARTS-NO') && r.some(c => /^Q'?TY$/.test(norm(c))));
+  if (hIdx < 0) return null;
+  const hdr = aoa[hIdx].map(norm);
+  const col = (...names) => { for (const n of names) { const i = hdr.indexOf(n); if (i >= 0) return i; } return -1; };
+  const c = {
+    dno:   col('PARTS-NO'),
+    qty:   hdr.findIndex(h => /^Q'?TY$/.test(h)),
+    price: hdr.findIndex(h => /^PRICE/.test(h)),
+    ship:  col('SHIPDATE'),
+    hanshin: hdr.findIndex(h => h.includes('納入')),
+    trans: col('TRANSPORT'),
+  };
+  // ラベル（P.O.No： / TIME：）の右側にある最初の値を取る
+  const labelValue = (re) => {
+    for (let r = 0; r < hIdx; r++) {
+      const row = aoa[r];
+      const i = row.findIndex(v => re.test(norm(v)));
+      if (i >= 0) { for (let j = i + 1; j < row.length; j++) if (String(row[j]).trim() !== '') return row[j]; }
+    }
+    return '';
+  };
+  const toDate = (v) => {
+    if (v === '' || v == null) return '';
+    if (typeof v === 'number') return excelDateToStr(v);
+    const m = String(v).trim().match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/);
+    return m ? `${m[1]}/${m[2].padStart(2,'0')}/${m[3].padStart(2,'0')}` : String(v).trim();
+  };
+  const orderno = String(labelValue(/^P\.?O\.?NO[:：]?$/)).trim();
+  const orderdate = toDate(labelValue(/^(TIME|DATE)[:：]?$/));
+  const rows = [];
+  for (let r = hIdx + 1; r < aoa.length; r++) {
+    const row = aoa[r];
+    const dno = String(row[c.dno] ?? '').trim();
+    if (!dno) continue;                       // TOTAL行・署名欄などは図番が空
+    const num = v => parseFloat(String(v ?? '').replace(/[^0-9.\-]/g, '')) || 0;
+    const shipDate = c.ship >= 0 ? toDate(row[c.ship]) : '';
+    const trans = c.trans >= 0 ? String(row[c.trans] ?? '').trim() : '';
+    rows.push({
+      orderdate,
+      orderno,
+      drawingno:            dno,
+      quantity:             parseInt(num(row[c.qty])) || 1,
+      unit:                 '',
+      price:                c.price >= 0 ? num(row[c.price]) : 0,
+      originalno:           [shipDate, trans].filter(Boolean).join(' '),
+      deliverydate:         c.hanshin >= 0 ? toDate(row[c.hanshin]) : '',
+      delivery_destination: 'LGM(寧夏小巨人机床有限公司)',
+      shippingdate:         null,
+    });
+  }
+  return rows.length ? rows : null;
 }
 
 // ---- フォーマットE: LGM（寧夏小巨人机床有限公司）----
@@ -13663,6 +14227,32 @@ function toggleUnregisteredFilter() {
   filterOrders();
 }
 let currentUser = null;
+
+// ---- 製品マスタ変更履歴用：productdate への書き込み時に操作ユーザー名をヘッダーで送る ----
+// DB側トリガー(productdate_log_changes)が x-client-info の user=<base64> を読み取り、productdate_changelog に「誰が」を記録する。
+// （x-client-info は Supabase の CORS で許可されているヘッダー。日本語名はBase64(UTF-8)で送る）
+(function installProductdateLogHeader() {
+  if (window.__pdLogFetchInstalled) return;
+  window.__pdLogFetchInstalled = true;
+  const origFetch = window.fetch.bind(window);
+  const b64utf8 = (str) => { try { return btoa(unescape(encodeURIComponent(str))); } catch (e) { return ''; } };
+  window.fetch = function(input, init) {
+    try {
+      const url = typeof input === 'string' ? input : (input && input.url) || '';
+      const method = String((init && init.method) || (input && input.method) || 'GET').toUpperCase();
+      if (method !== 'GET' && /\/rest\/v1\/productdate(\?|$)/.test(url)) {
+        const name = (typeof currentUser !== 'undefined' && currentUser && (currentUser.loginname || currentUser.userid)) || '';
+        if (name) {
+          init = Object.assign({}, init || {});
+          const h = new Headers(init.headers || (input && input.headers) || {});
+          h.set('x-client-info', 'osakatec-app; user=' + b64utf8(name));
+          init.headers = h;
+        }
+      }
+    } catch (e) { /* ヘッダー付与に失敗しても通信自体は続行 */ }
+    return origFetch(input, init);
+  };
+})();
 let calBaseMode = 'shipping'; // 'shipping' or 'order'
 
 // ==================== カレンダー基準切り替え ====================
@@ -17303,7 +17893,7 @@ document.addEventListener('click', () => closeAllCalPopovers());
 let allProductdate = [];
 let filteredProductdate = [];
 let pdCurrentPage = 1;
-const PD_PAGE_SIZE = 20;
+const PD_PAGE_SIZE = 1000;   // 1ページの表示件数（以前は20件）
 let pdDetailCurrentId = null;
 // ==================== 寸法一括登録 ====================
 let dimImportRows = [];
@@ -17489,12 +18079,17 @@ function filterProductdate() {
   renderProductdateTable();
 }
 
+// 表示件数：取引先で絞り込んでいる時はページ分けせず全件表示（最大でもIZUSHIの約1,100件）、それ以外は1ページ PD_PAGE_SIZE 件
+function pdPageSize() {
+  return pdClientFilterValue ? Math.max(filteredProductdate.length, 1) : PD_PAGE_SIZE;
+}
+
 function renderProductdateTable() {
   const total = filteredProductdate.length;
-  const pages = Math.ceil(total / PD_PAGE_SIZE) || 1;
+  const pages = Math.ceil(total / pdPageSize()) || 1;
   if (pdCurrentPage > pages) pdCurrentPage = pages;
-  const start = (pdCurrentPage - 1) * PD_PAGE_SIZE;
-  const slice = filteredProductdate.slice(start, start + PD_PAGE_SIZE);
+  const start = (pdCurrentPage - 1) * pdPageSize();
+  const slice = filteredProductdate.slice(start, start + pdPageSize());
 
   if (!slice.length) {
     document.getElementById('pd-tbody').innerHTML =
@@ -17517,7 +18112,7 @@ function renderProductdateTable() {
     </tr>`).join('');
 
   document.getElementById('pd-page-info').textContent =
-    `${start+1}–${Math.min(start+PD_PAGE_SIZE, total)} / ${total}件`;
+    `${start+1}–${Math.min(start+pdPageSize(), total)} / ${total}件`;
   const pagBtns = document.getElementById('pd-page-btns');
   pagBtns.innerHTML = `
     <button class="page-btn" onclick="pdGotoPage(${pdCurrentPage-1})" ${pdCurrentPage===1?'disabled':''}>‹</button>
@@ -17530,10 +18125,12 @@ function renderProductdateTable() {
 }
 
 function pdGotoPage(p) {
-  const pages = Math.ceil(filteredProductdate.length / PD_PAGE_SIZE) || 1;
+  const pages = Math.ceil(filteredProductdate.length / pdPageSize()) || 1;
   if (p < 1 || p > pages) return;
   pdCurrentPage = p;
   renderProductdateTable();
+  const wrap = document.querySelector('#page-productdate .pd-table-wrap');
+  if (wrap) wrap.scrollTop = 0;   // ページ切替時は一覧の先頭へ
 }
 
 // ---- 詳細画面 ----
@@ -17626,6 +18223,15 @@ function openPdDetail(id) {
             <div id="pd-detail-route" style="font-size:12px;color:#9ca3af;">読み込み中...</div>
           </div>
         </div>
+
+        <!-- 変更履歴（productdate_changelog） -->
+        <div class="dsection" style="margin:14px 0 0;">
+          <div class="dsection-head">
+            <span class="dsection-title">変更履歴</span>
+            <span style="font-size:10px;color:#94a3b8;margin-left:6px;">直近5回分を保存（それより古い履歴は自動で削除）</span>
+          </div>
+          <div id="pd-detail-changelog" style="font-size:12px;color:#9ca3af;">読み込み中...</div>
+        </div>
       </div>
 
       <!-- 右: 製品マスタメモ -->
@@ -17634,10 +18240,62 @@ function openPdDetail(id) {
 
   // 進捗ステータス（基本ルート）を読み込んで表示
   renderDetailRoute(id);
+  // 変更履歴を読み込んで表示
+  loadPdChangelog(id);
   // 製品マスタメモパネルを描画（受注詳細と同じ機能を共有）
   renderPdDetailMemoPanel(rec);
 
   document.getElementById('pd-detail-overlay').classList.add('open');
+}
+
+// ---- 製品マスタの変更履歴（誰が・いつ・どの項目を・何から何に） ----
+const PD_FIELD_LABELS = {
+  ot_number: 'OT番号', customer_drawing_no: '客先図番', product_category: '品目区分', second_category: '第2区分',
+  part_number: '部品番号', part_number_url: '部品番号URL', client: '取引先', product_name: '品名', product_code: '製品コード',
+  latest_quote_date: '最新見積日', current_price: '現行価格', approval_return_date: '承認返却日',
+  delivery_destination: '納入先', remarks: '備考', approved_url: '承認図URL', drawing_url: '図面URL',
+  old_drawing_url: '旧図面URL', component_url: '構成パーツURL',
+  width_mm: '幅(mm)', depth_mm: '奥行(mm)', height_mm: '高さ(mm)', weight_kg: '重量(kg)', rotatable: '回転可',
+  stroke_mm: 'ストローク(mm)', sliding_resistance: '摺動抵抗', designid: 'ID',
+};
+async function loadPdChangelog(designid) {
+  const el = document.getElementById('pd-detail-changelog');
+  if (!el) return;
+  let logs = [];
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/productdate_changelog?designid=eq.${designid}&order=changed_at.desc,id.asc&limit=300`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    logs = await res.json();
+  } catch (e) { el.innerHTML = `<span style="color:#dc2626;">変更履歴の取得に失敗しました（${esc(e.message)}）</span>`; return; }
+  if (pdDetailCurrentId !== designid) return;   // 読み込み中に別の製品を開いた場合は描画しない
+  if (!logs.length) { el.innerHTML = '<span style="color:#9ca3af;">変更履歴はまだありません（記録開始: 2026/09/29）</span>'; return; }
+
+  // 同じ保存操作（同時刻・同じ人）ごとにまとめて表示
+  const groups = [];
+  for (const l of logs) {
+    const g = groups[groups.length - 1];
+    if (g && g.at === l.changed_at && g.by === (l.changed_by || '') && g.action === l.action) g.items.push(l);
+    else groups.push({ at: l.changed_at, by: l.changed_by || '', action: l.action, items: [l] });
+  }
+  const fmtTime = (t) => {
+    const d = new Date(t);
+    return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  };
+  const val = (v) => (v == null || v === '') ? '<span style="color:#9ca3af;">（空）</span>' : esc(String(v));
+  const badge = { '追加': '#059669', '変更': '#1d4ed8', '削除': '#dc2626' };
+  el.innerHTML = `<div style="max-height:260px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:8px;">` + groups.map(g => `
+    <div style="padding:8px 10px;border-bottom:1px solid #f1f5f9;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;color:#111827;">
+        <span style="font-size:10px;font-weight:700;color:#fff;background:${badge[g.action] || '#64748b'};border-radius:4px;padding:1px 6px;">${esc(g.action)}</span>
+        <span style="font-size:11px;">${fmtTime(g.at)}</span>
+        <span style="font-size:11px;font-weight:600;">${esc(g.by || '（不明）')}</span>
+      </div>
+      ${g.action === '変更'
+        ? g.items.map(l => `<div style="font-size:11.5px;color:#111827;padding-left:4px;line-height:1.6;word-break:break-all;">
+            <span style="display:inline-block;min-width:78px;color:#475569;">${esc(PD_FIELD_LABELS[l.field] || l.field || '')}</span>${val(l.old_value)} <span style="color:#94a3b8;">→</span> ${val(l.new_value)}</div>`).join('')
+        : `<div style="font-size:11.5px;color:#111827;padding-left:4px;word-break:break-all;">${val(g.action === '削除' ? g.items[0].old_value : g.items[0].new_value)}</div>`}
+    </div>`).join('') + `</div>`;
 }
 
 // 製品詳細モーダル内のメモパネル。受注詳細のメモ機能（loadPdMemos / postPdMemo）を共有する。
