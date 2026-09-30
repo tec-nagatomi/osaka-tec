@@ -970,55 +970,76 @@
   .ship-back-btn:hover { background:#f3f4f6; border-color:#9ca3af; }
   .ship-backbar-title { font-size:14px; font-weight:700; color:#111827; }
   #page-schedule .ship-layout { height:calc(100vh - 164px); padding-top:8px; }
-  /* ===== 出荷作業（シールNo読み取り） ===== */
-  .sw-wrap { padding:10px 16px 16px; display:grid; grid-template-columns:460px 1fr; gap:14px; align-items:start; }
-  @media (max-width:1100px) { .sw-wrap { grid-template-columns:1fr; } }
-  .sw-card { background:#fff; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden; }
-  .sw-card-head { padding:10px 14px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
-  .sw-card-title { font-size:13.5px; font-weight:700; color:#111827; }
-  .sw-card-body { padding:10px 14px 12px; }
-  .sw-lbl { font-size:11.5px; font-weight:700; color:#6b7280; margin-bottom:5px; display:block; }
-  .sw-scan { width:100%; box-sizing:border-box; font-size:26px; font-weight:700; letter-spacing:.12em; text-align:center;
-    font-family:'SF Mono','Consolas',monospace; padding:8px 10px; border:3px solid #d1d5db; border-radius:10px; outline:none; background:#f9fafb; }
-  .sw-scan:focus { border-color:#059669; background:#ecfdf5; box-shadow:0 0 0 4px rgba(5,150,105,.15); }
-  .sw-scan-state { margin-top:4px; font-size:12px; font-weight:700; text-align:center; }
-  .sw-scan-state.on { color:#059669; } .sw-scan-state.off { color:#dc2626; cursor:pointer; }
-  .sw-packer { width:100%; box-sizing:border-box; padding:8px 10px; font-size:14px; border:1px solid #d1d5db; border-radius:8px; }
-  /* 読み取り結果：離れた場所からでも読めるよう大きな文字・色帯で統一（画面の高さに合わせて縮む） */
-  .sw-result { --c:#9ca3af; --bg:#f9fafb; margin-top:10px; border-radius:10px; border:3px solid var(--c); background:var(--bg); overflow:hidden; }
-  .sw-result.ok   { --c:#059669; --bg:#f0fdf4; }
-  .sw-result.warn { --c:#d97706; --bg:#fffbeb; }
-  .sw-result.err  { --c:#dc2626; --bg:#fef2f2; }
-  .sw-result-band { background:var(--c); color:#fff; display:flex; align-items:center; justify-content:center; gap:8px;
-    padding:6px 10px; font-size:clamp(16px, 2.2vh, 21px); font-weight:800; letter-spacing:.04em; }
-  .sw-result-icon { width:1.4em; height:1.4em; border-radius:50%; background:rgba(255,255,255,.25); display:inline-flex;
-    align-items:center; justify-content:center; font-size:.9em; line-height:1; flex-shrink:0; }
-  .sw-result-seal { text-align:center; font-family:'SF Mono','Consolas',monospace; font-size:clamp(32px, 5vh, 50px); font-weight:800;
-    color:#111827; letter-spacing:.1em; line-height:1.1; padding:6px 8px; border-bottom:2px solid var(--c); }
-  .sw-result-grid { margin:0; padding:2px 14px 6px; }
-  .sw-result-row { display:grid; grid-template-columns:76px 1fr; align-items:baseline; gap:8px; padding:clamp(2px, .5vh, 5px) 0; border-bottom:1px solid rgba(0,0,0,.08); }
-  .sw-result-row:last-child { border-bottom:none; }
-  .sw-result-row dt { font-size:12px; font-weight:700; color:#6b7280; }
-  .sw-result-row dd { margin:0; font-size:clamp(14px, 1.9vh, 18px); font-weight:800; color:#111827; line-height:1.3; word-break:break-all;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .sw-result-row.key dd { font-size:clamp(17px, 2.4vh, 23px); color:var(--c); }
-  .sw-result-msg { padding:10px 14px 12px; font-size:15px; font-weight:700; color:#374151; text-align:center; line-height:1.6; }
-  .sw-result-empty { color:#9ca3af; font-size:15px; font-weight:700; text-align:center; padding:36px 16px; line-height:1.8; }
-  .sw-table-wrap { max-height:calc(100vh - 230px); overflow:auto; }
-  .sw-table { width:100%; border-collapse:collapse; font-size:12.5px; }
-  .sw-table th { position:sticky; top:0; background:#f3f4f6; color:#374151; font-weight:700; text-align:left; padding:7px 8px; border-bottom:1px solid #d1d5db; white-space:nowrap; z-index:1; }
-  .sw-table td { padding:7px 8px; border-bottom:1px solid #f1f5f9; vertical-align:middle; }
-  .sw-table td { white-space:nowrap; }
-  .sw-table td.wrap { white-space:normal; min-width:110px; }
-  .sw-table tr.sw-new td { animation:swFlash 2s ease-out; }
-  @keyframes swFlash { from { background:#bbf7d0; } to { background:transparent; } }
-  .sw-seal { font-family:'SF Mono','Consolas',monospace; font-weight:800; color:#1d4ed8; font-size:13.5px; }
-  .sw-status { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; background:#dcfce7; color:#166534; white-space:nowrap; }
+  /* ===== 出荷作業（シールNo読み取り）=====
+     2m離れた所から読めるよう、主要項目は大きな文字・高コントラストで表示する。
+     文字サイズは画面の高さ(vh)に合わせて伸縮し、1画面に収まるようにする。 */
+  #page-shipwork { --sw-h: calc(100vh - 150px); }
+  body.sw-kiosk #page-shipwork { --sw-h: calc(100vh - 62px); }
+  body.sw-kiosk .header, body.sw-kiosk .nav { display:none !important; }
+  .sw-wrap { padding:8px 16px 12px; display:grid; grid-template-columns:minmax(0,1fr) minmax(360px,32%); gap:14px; height:var(--sw-h); box-sizing:border-box; }
+  @media (max-width:1100px) { .sw-wrap { grid-template-columns:1fr; height:auto; } }
+  .sw-card { background:#fff; border:1px solid #d1d5db; border-radius:12px; overflow:hidden; display:flex; flex-direction:column; min-height:0; }
+  /* 上段：作業者と読み取り欄 */
+  .sw-topbar { display:flex; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid #e5e7eb; background:#f9fafb; flex-wrap:wrap; }
+  .sw-lbl { font-size:15px; font-weight:800; color:#374151; white-space:nowrap; }
+  .sw-packer { width:170px; box-sizing:border-box; padding:8px 10px; font-size:20px; font-weight:700; border:2px solid #d1d5db; border-radius:8px; }
+  .sw-scan { flex:1; min-width:180px; box-sizing:border-box; font-size:32px; font-weight:800; letter-spacing:.14em; text-align:center;
+    font-family:'SF Mono','Consolas',monospace; padding:4px 10px; border:3px solid #d1d5db; border-radius:10px; outline:none; background:#fff; }
+  .sw-scan:focus { border-color:#059669; background:#ecfdf5; box-shadow:0 0 0 4px rgba(5,150,105,.18); }
+  /* 読み取り停止中は大きな赤帯で知らせる */
+  .sw-paused { display:none; background:#dc2626; color:#fff; text-align:center; font-size:clamp(20px,3.2vh,32px); font-weight:800; padding:8px; cursor:pointer; letter-spacing:.05em; }
+  .sw-paused.show { display:block; animation:swBlink 1.2s ease-in-out infinite; }
+  @keyframes swBlink { 50% { opacity:.65; } }
+  /* 読み取り結果 */
+  .sw-result { --c:#6b7280; --bg:#f9fafb; flex:1; min-height:0; display:flex; flex-direction:column; background:var(--bg); border-top:6px solid var(--c); }
+  .sw-result.ok   { --c:#047857; --bg:#f0fdf4; }
+  .sw-result.warn { --c:#c2410c; --bg:#fff7ed; }
+  .sw-result.err  { --c:#b91c1c; --bg:#fef2f2; }
+  .sw-result-band { background:var(--c); color:#fff; display:flex; align-items:center; justify-content:center; gap:.4em;
+    padding:.18em .4em; font-size:clamp(28px, 5.4vh, 58px); font-weight:900; letter-spacing:.06em; line-height:1.15; }
+  .sw-result-icon { width:1.15em; height:1.15em; border-radius:50%; background:#fff; color:var(--c); display:inline-flex;
+    align-items:center; justify-content:center; font-size:.8em; line-height:1; flex-shrink:0; }
+  .sw-result-seal { text-align:center; font-family:'SF Mono','Consolas',monospace; font-size:clamp(64px, 15vh, 170px); font-weight:900;
+    color:#000; letter-spacing:.08em; line-height:1; padding:.06em 0 .04em; }
+  .sw-result-body { flex:1; min-height:0; display:flex; flex-direction:column; justify-content:space-evenly; padding:0 clamp(14px,2vw,32px) 8px; border-top:3px solid var(--c); }
+  .sw-f { display:flex; align-items:baseline; gap:.6em; min-width:0; }
+  .sw-f-lbl { flex-shrink:0; width:4.6em; font-size:clamp(16px, 2.6vh, 28px); font-weight:800; color:#374151; }
+  .sw-f-val { min-width:0; font-weight:900; color:#000; line-height:1.15; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sw-f.big .sw-f-val { font-size:clamp(34px, 7.4vh, 82px); letter-spacing:.02em; font-family:'Arial Black','Segoe UI',Arial,sans-serif; }
+  .sw-f.ot  .sw-f-val { color:var(--c); }
+  .sw-f-lbl { align-self:center; }
+  .sw-subs { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1.3fr) minmax(0,1fr); gap:10px; border-top:2px solid rgba(0,0,0,.12); padding-top:.5vh; }
+  .sw-sub-lbl { font-size:clamp(13px, 1.9vh, 20px); font-weight:800; color:#374151; }
+  .sw-sub-val { font-size:clamp(15px, 2.5vh, 28px); font-weight:900; color:#000; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sw-result-msg { white-space:pre-line; flex:1; display:flex; align-items:center; justify-content:center; text-align:center; padding:0 24px;
+    font-size:clamp(24px, 4.4vh, 46px); font-weight:900; color:var(--c); line-height:1.4; border-top:3px solid var(--c); }
+  .sw-result-empty { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.4em;
+    color:#4b5563; font-size:clamp(28px, 5.4vh, 58px); font-weight:900; text-align:center; line-height:1.4; }
+  .sw-result-empty small { font-size:.45em; font-weight:700; color:#6b7280; }
+  /* 右：出荷準備OKリスト（大きな文字のカード形式） */
+  .sw-list-head { padding:10px 14px; border-bottom:1px solid #e5e7eb; background:#f9fafb; }
+  .sw-list-title { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .sw-list-title b { font-size:clamp(18px, 2.6vh, 26px); font-weight:900; color:#111827; }
+  .sw-count { font-size:clamp(26px, 4.6vh, 48px); font-weight:900; color:#047857; line-height:1; }
+  .sw-count small { font-size:.45em; margin-left:2px; }
+  .sw-list-tools { display:flex; gap:6px; align-items:center; margin-top:8px; }
+  .sw-list { flex:1; min-height:0; overflow-y:auto; }
+  .sw-item { display:grid; grid-template-columns:auto 1fr auto; gap:2px 12px; align-items:center; padding:9px 14px; border-bottom:1px solid #e5e7eb; }
+  .sw-item.sw-new { animation:swFlash 2.4s ease-out; }
+  @keyframes swFlash { from { background:#86efac; } to { background:transparent; } }
+  .sw-item-no { grid-row:span 2; font-size:clamp(16px, 2.4vh, 24px); font-weight:900; color:#6b7280; min-width:1.8em; text-align:right; }
+  .sw-item-seal { font-family:'SF Mono','Consolas',monospace; font-size:clamp(24px, 3.9vh, 40px); font-weight:900; color:#1d4ed8; letter-spacing:.05em; line-height:1.1; }
+  .sw-item-ot { font-size:clamp(17px, 2.8vh, 28px); font-weight:900; color:#111827; margin-left:.5em; }
+  .sw-item-sep { color:#9ca3af; margin:0 .4em; }
+  .sw-item-name { grid-column:2; font-size:clamp(16px, 2.5vh, 26px); font-weight:800; color:#111827; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sw-item-side { grid-row:span 2; display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
+  .sw-item-time { font-size:clamp(14px, 2.1vh, 21px); font-weight:800; color:#374151; }
+  .sw-status { display:inline-block; font-size:12px; font-weight:800; padding:2px 8px; border-radius:20px; background:#dcfce7; color:#166534; white-space:nowrap; }
   .sw-status.shipped { background:#e0e7ff; color:#3730a3; }
-  .sw-del { background:none; border:1px solid #fecaca; color:#dc2626; border-radius:6px; padding:2px 8px; font-size:11px; cursor:pointer; }
+  .sw-del { background:#fff; border:1px solid #fca5a5; color:#dc2626; border-radius:6px; padding:3px 10px; font-size:13px; font-weight:700; cursor:pointer; }
   .sw-del:hover { background:#fef2f2; }
-  .sw-count { font-size:12px; font-weight:700; color:#059669; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:20px; padding:2px 10px; }
-  .sw-empty { text-align:center; color:#9ca3af; padding:40px 0; font-size:13px; }
+  .sw-empty { text-align:center; color:#6b7280; padding:40px 10px; font-size:clamp(16px, 2.4vh, 22px); font-weight:700; }
+  .sw-kiosk-btn { margin-left:auto; }
   .ship-placeholder { max-width:960px; margin:0 auto; padding:16px; }
   .ship-placeholder-box { background:#fff; border:1px dashed #d1d5db; border-radius:12px; padding:60px 20px; text-align:center; color:#9ca3af; font-size:14px; }
   .ship-layout { display:grid; grid-template-columns:330px 430px 1fr; gap:14px; height:calc(100vh - 130px); padding:16px; align-items:start; }
@@ -2703,43 +2724,41 @@
   </div>
 </div>
 
-<!-- ==================== 出荷作業（準備中） ==================== -->
+<!-- ==================== 出荷作業 ==================== -->
 <div id="page-shipwork" class="page">
   <div class="ship-backbar">
     <button class="ship-back-btn" onclick="showPage('shipmenu')">← 出荷管理メニュー</button>
     <span class="ship-backbar-title">出荷作業</span>
   </div>
   <div class="sw-wrap" onclick="swMaybeRefocus(event)">
-    <!-- 左: 読み取り -->
+    <!-- 左: 読み取りと結果（大表示） -->
     <div class="sw-card">
-      <div class="sw-card-head"><span class="sw-card-title">シールNo 読み取り</span></div>
-      <div class="sw-card-body">
+      <div class="sw-topbar">
         <label class="sw-lbl" for="sw-packer">梱包作業者</label>
         <input class="sw-packer" id="sw-packer" list="sw-packer-list" placeholder="作業者名" onchange="swSavePacker()">
         <datalist id="sw-packer-list"></datalist>
-        <label class="sw-lbl" for="sw-scan" style="margin-top:8px;">シールNo（6桁で自動確定）</label>
+        <label class="sw-lbl" for="sw-scan">シールNo</label>
         <input class="sw-scan" id="sw-scan" autocomplete="off" inputmode="numeric" maxlength="20" placeholder="------"
-               onkeydown="swOnScanKey(event)" oninput="swOnScanInput(event)" oncompositionend="swOnScanInput(event)" onfocus="swScanState(true)" onblur="swScanState(false)">
-        <div class="sw-scan-state off" id="sw-scan-state" onclick="swFocus()">クリックして読み取りを再開</div>
-        <div class="sw-result" id="sw-result"><div class="sw-result-empty">シールNoを読み取ると<br>ここに結果が表示されます</div></div>
+               onkeydown="swOnScanKey(event)" oninput="swOnScanInput(event)" oncompositionend="swOnScanInput(event)"
+               onfocus="swScanState(true)" onblur="swScanState(false)">
+      </div>
+      <div class="sw-paused show" id="sw-paused" onclick="swFocus()">読み取り停止中 ― 画面をクリックしてください</div>
+      <div class="sw-result" id="sw-result">
+        <div class="sw-result-empty">シールを読み取ってください<small>6桁のシールNoを読み取ると自動で登録します</small></div>
       </div>
     </div>
-    <!-- 右: 出荷準備OKリスト（T_出荷リスト相当） -->
+    <!-- 右: 出荷準備OKリスト -->
     <div class="sw-card">
-      <div class="sw-card-head">
-        <span class="sw-card-title">出荷準備OKリスト <span class="sw-count" id="sw-count">0件</span></span>
-        <div style="display:flex;gap:6px;align-items:center;">
+      <div class="sw-list-head">
+        <div class="sw-list-title"><b id="sw-list-label">本日の出荷準備OK</b><span class="sw-count" id="sw-count">0<small>件</small></span></div>
+        <div class="sw-list-tools">
           <input type="date" class="pd-search" id="sw-date" style="min-width:0;padding:4px 8px;" onchange="swLoadList()" title="準備OKにした日で絞り込み">
           <button class="btn-sm" onclick="swSetToday()">今日</button>
           <button class="btn-sm" onclick="swLoadList()">更新</button>
+          <button class="btn-sm sw-kiosk-btn" id="sw-kiosk-btn" onclick="swToggleKiosk()" title="ヘッダーを隠して画面いっぱいに表示します">⛶ 全画面</button>
         </div>
       </div>
-      <div class="sw-table-wrap">
-        <table class="sw-table">
-          <thead><tr><th>No</th><th>シールNo</th><th>OT番号</th><th>お客様名</th><th>品名</th><th>客先図番</th><th>注文No</th><th>納期</th><th>梱包作業者</th><th>準備OK</th><th>状態</th><th></th></tr></thead>
-          <tbody id="sw-tbody"><tr><td colspan="12" class="sw-empty">読込中…</td></tr></tbody>
-        </table>
-      </div>
+      <div class="sw-list" id="sw-list"><div class="sw-empty">読込中…</div></div>
     </div>
   </div>
 </div>
@@ -4281,11 +4300,25 @@ function swMaybeRefocus(e) {
   swFocus();
 }
 function swScanState(on) {
-  const st = document.getElementById('sw-scan-state');
-  if (!st) return;
-  st.className = 'sw-scan-state ' + (on ? 'on' : 'off');
-  st.textContent = on ? '● 読み取り待機中' : 'クリックして読み取りを再開';
+  const pz = document.getElementById('sw-paused');
+  if (pz) pz.classList.toggle('show', !on);
 }
+
+// 全画面表示（ヘッダー・メニューを隠し、ブラウザも全画面に）
+function swToggleKiosk(force) {
+  const on = force != null ? force : !document.body.classList.contains('sw-kiosk');
+  document.body.classList.toggle('sw-kiosk', on);
+  const b = document.getElementById('sw-kiosk-btn');
+  if (b) b.textContent = on ? '⛶ 全画面を解除' : '⛶ 全画面';
+  try {
+    if (on && !document.fullscreenElement) document.documentElement.requestFullscreen?.();
+    if (!on && document.fullscreenElement) document.exitFullscreen?.();
+  } catch(e) {}
+  swFocus();
+}
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && document.body.classList.contains('sw-kiosk')) swToggleKiosk(false);
+});
 
 // 全角数字→半角、数字以外を除去
 function swNormalize(v) {
@@ -4331,18 +4364,38 @@ function swShowResult(kind, head, seal, info, msg) {
   const box = document.getElementById('sw-result');
   box.className = 'sw-result ' + kind;
   const icon = kind === 'ok' ? '✓' : kind === 'warn' ? '!' : '✕';
-  const rows = info ? [
-    ['OT番号', info.ot_number, 'key'], ['お客様名', info.client], ['品名', info.product_name],
-    ['客先図番', info.drawingno], ['注文No', info.orderno], ['納期', info.delivery],
-    ...(info.ready_at ? [['準備OK', swFmtTime(info.ready_at, true)]] : []),
-  ] : [];
+  const v = x => esc(x || '－');
+  const body = info ? `
+    <div class="sw-result-body">
+      <div class="sw-f big ot"><span class="sw-f-lbl">OT番号</span><span class="sw-f-val">${v(info.ot_number)}</span></div>
+      <div class="sw-f big"><span class="sw-f-lbl">品名</span><span class="sw-f-val" title="${esc(info.product_name || '')}">${v(info.product_name)}</span></div>
+      <div class="sw-f big"><span class="sw-f-lbl">注文No</span><span class="sw-f-val">${v(info.orderno)}</span></div>
+      <div class="sw-subs">
+        <div><div class="sw-sub-lbl">客先図番</div><div class="sw-sub-val">${v(info.drawingno)}</div></div>
+        <div><div class="sw-sub-lbl">お客様名</div><div class="sw-sub-val">${v(info.client)}</div></div>
+        <div><div class="sw-sub-lbl">${info.ready_at && kind === 'warn' ? '準備OK日時' : '納期'}</div>
+             <div class="sw-sub-val">${info.ready_at && kind === 'warn' ? swFmtTime(info.ready_at, true) : v(info.delivery)}</div></div>
+      </div>
+    </div>` : `<div class="sw-result-msg">${esc(msg || '')}</div>`;
   box.innerHTML = `<div class="sw-result-band"><span class="sw-result-icon">${icon}</span>${esc(head)}</div>
-    <div class="sw-result-seal">${esc(seal || '－')}</div>
-    ${rows.length
-      ? `<dl class="sw-result-grid">${rows.map(([k, v, cls]) => `<div class="sw-result-row ${cls || ''}"><dt>${k}</dt><dd title="${esc(v || '')}">${esc(v || '－')}</dd></div>`).join('')}</dl>`
-      : `<div class="sw-result-msg">${esc(msg || '')}</div>`}`;
+    <div class="sw-result-seal">${esc(seal || '－')}</div>${body}`;
+  swFitBig();
   swBeep(kind);
 }
+
+// 大きい項目が1行に収まらない場合は、収まるまで文字を小さくする（最小で元の55%）
+function swFitBig() {
+  document.querySelectorAll('#sw-result .sw-f.big .sw-f-val').forEach(el => {
+    el.style.fontSize = '';
+    const base = parseFloat(getComputedStyle(el).fontSize);
+    let size = base;
+    while (el.scrollWidth > el.clientWidth + 1 && size > base * 0.55) {
+      size -= 2;
+      el.style.fontSize = size + 'px';
+    }
+  });
+}
+window.addEventListener('resize', () => { if (document.getElementById('page-shipwork')?.classList.contains('active')) swFitBig(); });
 
 function swFmtTime(ts, withDate) {
   if (!ts) return '';
@@ -4360,13 +4413,13 @@ async function swGetJson(url) {
 async function swHandleScan(raw) {
   const seal = swNormalize(raw);
   if (!/^\d{6}$/.test(seal)) {
-    swShowResult('err', '読み取りエラー', raw.trim(), null, '6桁のシールNoではありません。もう一度読み取ってください。');
+    swShowResult('err', '読み取りエラー', raw.trim(), null, '6桁ではありません\nもう一度読み取ってください');
     return;
   }
   try {
     // ① 受注データ（子）からシールNoを探す
     const kids = await swGetJson(`${SUPABASE_URL}/rest/v1/orders_child?select=id,order_id,sealno,delivery&sealno=eq.${seal}&order=id.desc`);
-    if (!kids.length) { swShowResult('err', '見つかりません', seal, null, '受注データにこのシールNoがありません。シールを確認してください。'); return; }
+    if (!kids.length) { swShowResult('err', '見つかりません', seal, null, '受注データにありません\nシールを確認してください'); return; }
     const kid = kids[0];
 
     // ② 既に出荷準備OKなら二重登録しない
@@ -4413,13 +4466,14 @@ async function swHandleScan(raw) {
     await swLoadList();
   } catch(e) {
     console.error('[shipwork] 登録失敗', e);
-    swShowResult('err', '通信エラー', seal, null, '登録できませんでした。ネットワークを確認して、もう一度読み取ってください。');
+    swShowResult('err', '通信エラー', seal, null, '登録できませんでした\nもう一度読み取ってください');
   }
 }
 
 async function swLoadList() {
-  const tb = document.getElementById('sw-tbody');
+  const box = document.getElementById('sw-list');
   const dv = document.getElementById('sw-date')?.value;
+  const today = swYmd(new Date());
   let url = `${SUPABASE_URL}/rest/v1/ship_ready?select=*&order=ready_at.desc`;
   if (dv) {
     const from = new Date(dv + 'T00:00:00'), to = new Date(from.getTime() + 86400000);
@@ -4428,32 +4482,32 @@ async function swLoadList() {
     url += `&status=eq.${encodeURIComponent('出荷準備OK')}`;
   }
   try { swRows = await shipFetchAll(url); } catch(e) { swRows = []; }
-  document.getElementById('sw-count').textContent = swRows.length + '件';
-  if (!swRows.length) { tb.innerHTML = '<tr><td colspan="12" class="sw-empty">出荷準備OKの製品はまだありません</td></tr>'; return; }
+  document.getElementById('sw-list-label').textContent =
+    !dv ? '未出荷の出荷準備OK' : dv === today ? '本日の出荷準備OK' : `${Number(dv.slice(5,7))}/${Number(dv.slice(8,10))} の出荷準備OK`;
+  document.getElementById('sw-count').innerHTML = `${swRows.length}<small>件</small>`;
+  if (!swRows.length) { box.innerHTML = '<div class="sw-empty">出荷準備OKの製品はまだありません</div>'; return; }
   const n = swRows.length;
-  tb.innerHTML = swRows.map((r, i) => `
-    <tr data-id="${r.id}" class="${r.id === swLastNewId ? 'sw-new' : ''}">
-      <td>${n - i}</td>
-      <td><span class="sw-seal">${esc(r.sealno)}</span></td>
-      <td>${esc(r.ot_number || '')}</td>
-      <td class="wrap">${esc(r.client || '')}</td>
-      <td class="wrap">${esc(r.product_name || '')}</td>
-      <td>${esc(r.drawingno || '')}</td>
-      <td>${esc(r.orderno || '')}</td>
-      <td>${esc(r.delivery || '')}</td>
-      <td>${esc(r.packer || '')}</td>
-      <td>${swFmtTime(r.ready_at, !dv)}</td>
-      <td><span class="sw-status ${r.status === '出荷済' ? 'shipped' : ''}">${esc(r.status)}</span></td>
-      <td>${r.status === '出荷準備OK' ? `<button class="sw-del" onclick="swCancel(${r.id})">取消</button>` : ''}</td>
-    </tr>`).join('');
+  box.innerHTML = swRows.map((r, i) => `
+    <div class="sw-item ${r.id === swLastNewId ? 'sw-new' : ''}" data-id="${r.id}"
+         title="${esc([r.product_name, r.client, r.packer && ('梱包: ' + r.packer)].filter(Boolean).join(' ／ '))}">
+      <div class="sw-item-no">${n - i}</div>
+      <div><span class="sw-item-seal">${esc(r.sealno)}</span><span class="sw-item-ot">${esc(r.ot_number || '')}</span></div>
+      <div class="sw-item-side">
+        <span class="sw-item-time">${swFmtTime(r.ready_at, !dv)}</span>
+        ${r.status === '出荷準備OK'
+          ? `<button class="sw-del" onclick="swCancel(${r.id})">取消</button>`
+          : `<span class="sw-status shipped">${esc(r.status)}</span>`}
+      </div>
+      <div class="sw-item-name"><span>${esc(r.drawingno || '－')}</span><span class="sw-item-sep">／</span><span>${esc(r.orderno || '－')}</span></div>
+    </div>`).join('');
   swLastNewId = null;
 }
 
 function swHighlight(id) {
-  const tr = document.querySelector(`#sw-tbody tr[data-id="${id}"]`);
-  if (!tr) return;
-  tr.classList.remove('sw-new'); void tr.offsetWidth; tr.classList.add('sw-new');
-  tr.scrollIntoView({ block: 'nearest' });
+  const el = document.querySelector(`#sw-list .sw-item[data-id="${id}"]`);
+  if (!el) return;
+  el.classList.remove('sw-new'); void el.offsetWidth; el.classList.add('sw-new');
+  el.scrollIntoView({ block: 'nearest' });
 }
 
 async function swCancel(id) {
