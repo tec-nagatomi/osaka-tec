@@ -1040,6 +1040,52 @@
   .sw-del:hover { background:#fef2f2; }
   .sw-empty { text-align:center; color:#6b7280; padding:40px 10px; font-size:clamp(16px, 2.4vh, 22px); font-weight:700; }
   .sw-kiosk-btn { margin-left:auto; }
+  /* ===== 出荷履歴 ===== */
+  .sh-wrap { padding:8px 16px 16px; }
+  .sh-card { background:#fff; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden; }
+  .sh-tools { display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; padding:10px 14px; border-bottom:1px solid #e5e7eb; background:#f9fafb; }
+  .sh-grp { display:flex; align-items:center; gap:5px; }
+  .sh-lbl { font-size:12px; font-weight:700; color:#6b7280; white-space:nowrap; }
+  .sh-tools input[type=date], .sh-tools select, .sh-tools input[type=search] { padding:5px 8px; font-size:12.5px; border:1px solid #d1d5db; border-radius:6px; background:#fff; }
+  .sh-tools input[type=search] { width:200px; }
+  .sh-excel { background:#047857 !important; color:#fff !important; border-color:#047857 !important; font-weight:700; }
+  .sh-excel:hover { background:#065f46 !important; }
+  #sh-client-bar .client-filter-btn.zero { opacity:.45; }
+  .sh-summary { display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:8px 14px; border-bottom:1px solid #e5e7eb; font-size:12px; }
+  .sh-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; background:#f3f4f6; border:1px solid #e5e7eb; color:#374151; font-weight:700; }
+  .sh-chip.total { background:#ecfdf5; border-color:#a7f3d0; color:#047857; font-size:13px; }
+  .sh-chip b { font-size:13px; }
+  .sh-table-wrap { max-height:calc(100vh - 340px); overflow:auto; }
+  .sh-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  .sh-table th { position:sticky; top:0; z-index:2; background:#f3f4f6; color:#374151; font-weight:700; text-align:left; padding:7px 8px; border-bottom:1px solid #d1d5db; white-space:nowrap; }
+  .sh-table td { padding:6px 8px; border-bottom:1px solid #f1f5f9; white-space:nowrap; }
+  .sh-table td.wrap { white-space:normal; min-width:120px; }
+  .sh-table tr:hover td { background:#f9fafb; }
+  .sh-day td { position:sticky; top:31px; z-index:1; background:#e0f2fe !important; color:#075985; font-weight:800; font-size:13px; padding:6px 10px; border-bottom:1px solid #bae6fd; }
+  .sh-day .sh-day-users { font-weight:600; font-size:11.5px; color:#0369a1; margin-left:10px; }
+  .sh-seal { font-family:'SF Mono','Consolas',monospace; font-weight:800; color:#1d4ed8; }
+  .sh-empty { text-align:center; color:#9ca3af; padding:50px 0; font-size:13px; }
+  /* ===== 権限 ===== */
+  #perm-ro-badge { position:fixed; left:14px; bottom:14px; z-index:1500; background:#1e3a8a; color:#fff; font-size:12.5px; font-weight:700;
+    padding:7px 14px; border-radius:20px; box-shadow:0 4px 14px rgba(0,0,0,.25); pointer-events:none; }
+  body.perm-ro #page-orders .import-card,
+  body.perm-ro [onclick^="document.getElementById('editable-excel-file')"],
+  body.perm-ro #pallet-autosim-btn, body.perm-ro #pallet-repack-btn, body.perm-ro #pallet-clearall-btn,
+  body.perm-ro [onclick^="createPallet"], body.perm-ro [onclick^="openShipmentForm"], body.perm-ro .ship-col-add,
+  body.perm-ro [onclick^="deletePallet"], body.perm-ro [onclick^="savePalletLayout"],
+  body.perm-ro .pd-btn-new, body.perm-ro [onclick^="openRouteEditor"], body.perm-ro [onclick^="openEditFromDetail"],
+  body.perm-ro #route-edit-toggle, body.perm-ro [onclick^="addCustomRouteStep"],
+  body.perm-ro .sw-del { display:none !important; }
+  .ua-legend { display:flex; flex-wrap:wrap; gap:6px 18px; font-size:11.5px; color:#4b5563; margin-bottom:10px; align-items:center; }
+  .ua-dot { display:inline-block; font-size:11px; font-weight:700; padding:1px 7px; border-radius:10px; margin-right:4px; }
+  .ua-th-c { text-align:center !important; font-size:11px !important; line-height:1.3; }
+  .ua-perm { text-align:center; }
+  .ua-lv { font-size:12px; font-weight:700; padding:3px 4px; border-radius:6px; border:1px solid #d1d5db; cursor:pointer; }
+  .ua-lv:disabled { cursor:not-allowed; opacity:.85; }
+  .lv-none { background:#f3f4f6; color:#6b7280; }
+  .lv-view { background:#dbeafe; color:#1e40af; border-color:#93c5fd; }
+  .lv-edit { background:#dcfce7; color:#166534; border-color:#86efac; }
+  .ua-admin-row td { background:#fffbeb; }
   .ship-placeholder { max-width:960px; margin:0 auto; padding:16px; }
   .ship-placeholder-box { background:#fff; border:1px dashed #d1d5db; border-radius:12px; padding:60px 20px; text-align:center; color:#9ca3af; font-size:14px; }
   .ship-layout { display:grid; grid-template-columns:330px 430px 1fr; gap:14px; height:calc(100vh - 130px); padding:16px; align-items:start; }
@@ -2350,22 +2396,31 @@
 
 <!-- ユーザー管理モーダル（永冨のみ） -->
 <div id="ua-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;align-items:center;justify-content:center;padding:20px;">
-  <div style="background:#fff;border-radius:14px;width:100%;max-width:980px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.25);">
-    <div style="background:linear-gradient(135deg,#1d4ed8,#1e40af);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1;">
-      <h3 style="margin:0;color:#fff;font-size:15px;font-weight:700;">👥 ユーザー管理</h3>
+  <div style="background:#fff;border-radius:14px;width:100%;max-width:1400px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.25);">
+    <div style="background:linear-gradient(135deg,#1d4ed8,#1e40af);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:3;">
+      <h3 style="margin:0;color:#fff;font-size:15px;font-weight:700;">👥 ユーザー管理（権限設定）</h3>
       <button onclick="closeUserAdmin()" style="border:none;background:rgba(255,255,255,.2);border-radius:6px;width:28px;height:28px;color:#fff;font-size:18px;cursor:pointer;line-height:1;">&times;</button>
     </div>
     <div style="padding:16px 20px;">
-      <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">権限を変更すると即座に保存されます。氏名・所属・所属工場は変更後「保存」を押してください。</div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+        <input type="search" id="ua-search" placeholder="ID・氏名・所属で検索" oninput="uaRenderUsers()" style="padding:5px 9px;font-size:12.5px;border:1px solid #d1d5db;border-radius:6px;width:200px;">
+        <div style="font-size:12px;color:#6b7280;">権限を変更すると即座に保存されます（変更は次回ログインから反映）。氏名・所属・所属工場は変更後「保存」を押してください。</div>
+      </div>
+      <div class="ua-legend">
+        <span><b>フルアクセス</b>：全画面の編集＋依頼一覧＋ユーザー管理（権限付与）</span>
+        <span><span class="ua-dot lv-none">なし</span>画面に入れない</span>
+        <span><span class="ua-dot lv-view">閲覧</span>見るだけ（発注管理は依頼も可）</span>
+        <span><span class="ua-dot lv-edit">編集</span>編集＆登録もできる</span>
+      </div>
       <div style="overflow-x:auto;">
         <table class="orders-table" style="width:100%;">
           <thead>
             <tr>
               <th>ログインID</th><th>氏名</th><th>所属</th><th>所属工場</th>
-              <th>フルアクセス</th><th>物品管理（並び替え含む）</th><th>依頼履歴</th><th></th>
+              <th class="ua-th-c">フル<br>アクセス</th><th class="ua-th-c">受注<br>管理</th><th class="ua-th-c">出荷<br>管理</th><th class="ua-th-c">進捗<br>管理</th><th class="ua-th-c">在庫<br>管理</th><th class="ua-th-c">製品<br>登録/変更</th><th class="ua-th-c">発注<br>管理</th><th class="ua-th-c">外注<br>管理</th><th class="ua-th-c">依頼一覧<br>発注履歴</th><th></th>
             </tr>
           </thead>
-          <tbody id="ua-tbody"><tr><td colspan="8" style="text-align:center;color:#9ca3af;">読込中…</td></tr></tbody>
+          <tbody id="ua-tbody"><tr><td colspan="14" style="text-align:center;color:#9ca3af;">読込中…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -2711,9 +2766,9 @@
         <div class="sm-sub">シールNoを読み取り、<br>出荷準備OKとして登録します</div>
       </button>
       <button class="shipmenu-btn history" onclick="showPage('shiphistory')">
-        <span class="sm-badge">準備中</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><polyline stroke-linecap="round" stroke-linejoin="round" points="12 7 12 12 15.5 14"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><polyline stroke-linecap="round" stroke-linejoin="round" points="12 7 12 12 15.5 14"/></svg>
         <div class="sm-label">出荷履歴</div>
-        <div class="sm-sub">過去の出荷実績を<br>検索・確認します</div>
+        <div class="sm-sub">出荷準備OKの記録を日付ごとに<br>確認・Excel出力します</div>
       </button>
       <button class="shipmenu-btn sim" onclick="showPage('schedule')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline stroke-linecap="round" stroke-linejoin="round" points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
@@ -2767,9 +2822,54 @@
 <div id="page-shiphistory" class="page">
   <div class="ship-backbar">
     <button class="ship-back-btn" onclick="showPage('shipmenu')">← 出荷管理メニュー</button>
-    <span class="ship-backbar-title">出荷履歴</span>
+    <span class="ship-backbar-title">出荷履歴（出荷準備OK）</span>
   </div>
-  <div class="ship-placeholder"><div class="ship-placeholder-box">出荷履歴画面は準備中です</div></div>
+  <div class="sh-wrap">
+    <div class="sh-card">
+      <div class="sh-tools">
+        <div class="sh-grp">
+          <span class="sh-lbl">期間</span>
+          <input type="date" id="sh-from" onchange="shOnRangeChange()">
+          <span>〜</span>
+          <input type="date" id="sh-to" onchange="shOnRangeChange()">
+        </div>
+        <div class="sh-grp">
+          <button class="btn-sm" onclick="shShiftDay(-1)" title="前の日">◀ 前日</button>
+          <button class="btn-sm" onclick="shSetRange('today')">今日</button>
+          <button class="btn-sm" onclick="shShiftDay(1)" title="次の日">翌日 ▶</button>
+          <button class="btn-sm" onclick="shSetRange('week')">今週</button>
+          <button class="btn-sm" onclick="shSetRange('month')">今月</button>
+        </div>
+        <div class="sh-grp">
+          <span class="sh-lbl">登録ユーザー</span>
+          <select id="sh-user" onchange="shRender()"><option value="">全員</option></select>
+        </div>
+        <div class="sh-grp">
+          <span class="sh-lbl">梱包作業者</span>
+          <select id="sh-packer" onchange="shRender()"><option value="">全員</option></select>
+        </div>
+        <div class="sh-grp">
+          <span class="sh-lbl">状態</span>
+          <select id="sh-status" onchange="shRender()"><option value="">すべて</option><option>出荷準備OK</option><option>出荷済</option></select>
+        </div>
+        <div class="sh-grp">
+          <input type="search" id="sh-q" placeholder="シールNo・OT・図番・注文No・品名で検索" oninput="shRender()">
+        </div>
+        <div class="sh-grp" style="margin-left:auto;">
+          <button class="btn-sm" onclick="shLoad()">更新</button>
+          <button class="btn-sm sh-excel" onclick="shExportExcel()" title="表示中の一覧をExcelに出力します">⤓ Excelに出力</button>
+        </div>
+      </div>
+      <div class="client-filter-bar" id="sh-client-bar"></div>
+      <div class="sh-summary" id="sh-summary"></div>
+      <div class="sh-table-wrap">
+        <table class="sh-table">
+          <thead><tr><th>No</th><th>時刻</th><th>シールNo</th><th>OT番号</th><th>お客様名</th><th>品名</th><th>客先図番</th><th>注文No</th><th>納期</th><th>出荷場所</th><th>梱包作業者</th><th>登録ユーザー</th><th>状態</th></tr></thead>
+          <tbody id="sh-tbody"><tr><td colspan="13" class="sh-empty">読込中…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="page-schedule" class="page">
@@ -4262,6 +4362,14 @@ function swYmd(d) {
 function swSetToday() { document.getElementById('sw-date').value = swYmd(new Date()); swLoadList(); }
 
 async function loadShipWork() {
+  const ro = !canEditPage('shipwork');
+  const scan = document.getElementById('sw-scan');
+  if (scan) { scan.disabled = ro; scan.placeholder = ro ? '閲覧のみ' : '------'; }
+  if (ro) {
+    document.getElementById('sw-paused')?.classList.remove('show');
+    document.getElementById('sw-result').className = 'sw-result';
+    document.getElementById('sw-result').innerHTML = '<div class="sw-result-empty">閲覧のみの権限です<small>シールの読み取り登録はできません（出荷管理の編集権限が必要です）</small></div>';
+  }
   const dt = document.getElementById('sw-date');
   if (dt && !dt.value) dt.value = swYmd(new Date());
   const pk = document.getElementById('sw-packer');
@@ -4291,6 +4399,7 @@ async function swLoadPackerList() {
 }
 
 function swFocus() {
+  if (!canEditPage('shipwork')) return;
   const el = document.getElementById('sw-scan');
   if (el && document.getElementById('page-shipwork')?.classList.contains('active')) el.focus();
 }
@@ -4301,7 +4410,7 @@ function swMaybeRefocus(e) {
 }
 function swScanState(on) {
   const pz = document.getElementById('sw-paused');
-  if (pz) pz.classList.toggle('show', !on);
+  if (pz) pz.classList.toggle('show', !on && canEditPage('shipwork'));
 }
 
 // 全画面表示（ヘッダー・メニューを隠し、ブラウザも全画面に）
@@ -4520,6 +4629,225 @@ async function swCancel(id) {
   } catch(e) { alert('取消に失敗しました: ' + e.message); }
   await swLoadList();
   swFocus();
+}
+
+// ==================== 出荷履歴（出荷準備OKの記録を日付ごとに表示・Excel出力） ====================
+let shRows = [];
+const SH_WEEK = ['日','月','火','水','木','金','土'];
+
+function shParse(ymd) { const [y, m, d] = ymd.split('-').map(Number); return new Date(y, m - 1, d); }
+function shDayLabel(ymd) {
+  const d = shParse(ymd);
+  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}（${SH_WEEK[d.getDay()]}）`;
+}
+function shHm(ts) { const d = new Date(ts); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+
+let shClient = '';
+// 取引先の表記揺れ（全角英数・大小文字）を吸収して比較する（受注管理と同じ判定）
+function shNormClient(s) { return (s || '').replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).toLowerCase(); }
+
+// 受注管理の取引先ボタン（ロゴ付き）を複製して出荷履歴用に作る
+function shBuildClientBar() {
+  const bar = document.getElementById('sh-client-bar');
+  if (!bar || bar.dataset.built) return;
+  const src = document.getElementById('client-filter-bar');
+  if (!src) return;
+  bar.innerHTML = '';
+  src.childNodes.forEach(n => {
+    const c = n.cloneNode(true);
+    if (c.nodeType === 1 && c.classList.contains('client-filter-btn')) {
+      const val = n.dataset.client != null ? n.dataset.client : (n.textContent.trim() === 'すべて' ? '' : n.textContent.trim());
+      c.dataset.value = val;
+      c.removeAttribute('onclick');
+      c.classList.remove('active');
+      c.addEventListener('click', () => shSetClient(val));
+    }
+    bar.appendChild(c);
+  });
+  bar.dataset.built = '1';
+  shSetClientUI();
+}
+
+function shSetClient(v) { shClient = v; shSetClientUI(); shRender(); }
+function shSetClientUI() {
+  document.querySelectorAll('#sh-client-bar .client-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.value === shClient));
+}
+// 期間内に記録がない取引先のボタンは薄く表示する
+function shMarkClientCounts() {
+  document.querySelectorAll('#sh-client-bar .client-filter-btn').forEach(b => {
+    const v = b.dataset.value;
+    const has = !v || shRows.some(r => shNormClient(r.client).includes(shNormClient(v)));
+    b.classList.toggle('zero', !has);
+  });
+}
+
+async function loadShipHistory() {
+  shBuildClientBar();
+  const f = document.getElementById('sh-from');
+  if (!f.value) shSetRange('today'); else await shLoad();
+}
+
+function shSetRange(kind) {
+  const now = new Date();
+  let from = new Date(now), to = new Date(now);
+  if (kind === 'week') { const w = (now.getDay() + 6) % 7; from.setDate(now.getDate() - w); }   // 月曜始まり
+  if (kind === 'month') { from = new Date(now.getFullYear(), now.getMonth(), 1); }
+  document.getElementById('sh-from').value = swYmd(from);
+  document.getElementById('sh-to').value = swYmd(to);
+  shLoad();
+}
+
+function shShiftDay(n) {
+  const base = document.getElementById('sh-to').value || swYmd(new Date());
+  const d = shParse(base); d.setDate(d.getDate() + n);
+  const v = swYmd(d);
+  document.getElementById('sh-from').value = v;
+  document.getElementById('sh-to').value = v;
+  shLoad();
+}
+
+function shOnRangeChange() {
+  const f = document.getElementById('sh-from'), t = document.getElementById('sh-to');
+  if (f.value && !t.value) t.value = f.value;
+  if (t.value && !f.value) f.value = t.value;
+  if (f.value > t.value) [f.value, t.value] = [t.value, f.value];
+  shLoad();
+}
+
+async function shLoad() {
+  const tb = document.getElementById('sh-tbody');
+  const fv = document.getElementById('sh-from').value, tv = document.getElementById('sh-to').value;
+  if (!fv || !tv) return;
+  tb.innerHTML = '<tr><td colspan="13" class="sh-empty">読込中…</td></tr>';
+  const from = shParse(fv), to = shParse(tv); to.setDate(to.getDate() + 1);
+  const url = `${SUPABASE_URL}/rest/v1/ship_ready?select=*`
+    + `&ready_at=gte.${encodeURIComponent(from.toISOString())}&ready_at=lt.${encodeURIComponent(to.toISOString())}`
+    + `&order=ready_at.asc`;
+  try { shRows = await shipFetchAll(url); }
+  catch(e) { shRows = []; tb.innerHTML = `<tr><td colspan="13" class="sh-empty">読込エラー: ${esc(e.message)}</td></tr>`; return; }
+  shRows.forEach(r => { r._day = swYmd(new Date(r.ready_at)); });
+  // 絞り込みの選択肢を作り直す（選択中の値は残す）
+  const fill = (id, vals) => {
+    const sel = document.getElementById(id), cur = sel.value;
+    sel.innerHTML = '<option value="">全員</option>' + vals.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
+    sel.value = vals.includes(cur) ? cur : '';
+  };
+  fill('sh-user', [...new Set(shRows.map(r => r.ready_by).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ja')));
+  fill('sh-packer', [...new Set(shRows.map(r => r.packer).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ja')));
+  shMarkClientCounts();
+  shRender();
+}
+
+function shFiltered() {
+  const u = document.getElementById('sh-user').value;
+  const pk = document.getElementById('sh-packer').value;
+  const st = document.getElementById('sh-status').value;
+  const q = document.getElementById('sh-q').value.trim().toLowerCase();
+  return shRows.filter(r => {
+    if (shClient && !shNormClient(r.client).includes(shNormClient(shClient))) return false;
+    if (u && r.ready_by !== u) return false;
+    if (pk && r.packer !== pk) return false;
+    if (st && r.status !== st) return false;
+    if (q) {
+      const hay = [r.sealno, r.ot_number, r.drawingno, r.orderno, r.product_name, r.client].join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function shCountBy(rows, key) {
+  const m = new Map();
+  rows.forEach(r => { const k = r[key] || '(未設定)'; m.set(k, (m.get(k) || 0) + 1); });
+  return [...m.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+function shRender() {
+  const rows = shFiltered();
+  const tb = document.getElementById('sh-tbody');
+  const days = [...new Set(rows.map(r => r._day))];
+  document.getElementById('sh-summary').innerHTML =
+    `<span class="sh-chip total">合計 <b>${rows.length}</b>件</span>`
+    + (days.length > 1 ? `<span class="sh-chip">${days.length}日分</span>` : '')
+    + `<span class="sh-lbl" style="margin-left:8px;">ユーザー別:</span>`
+    + (shCountBy(rows, 'ready_by').map(([k, n]) => `<span class="sh-chip">${esc(k)} <b>${n}</b></span>`).join('') || '<span class="sh-lbl">－</span>');
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="13" class="sh-empty">この期間の出荷準備OKの記録はありません</td></tr>'; return; }
+  let html = '';
+  for (const day of days) {
+    const list = rows.filter(r => r._day === day);
+    const users = shCountBy(list, 'ready_by').map(([k, n]) => `${esc(k)} ${n}件`).join('　');
+    html += `<tr class="sh-day"><td colspan="13">${shDayLabel(day)}　${list.length}件<span class="sh-day-users">${users}</span></td></tr>`;
+    html += list.map((r, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${shHm(r.ready_at)}</td>
+        <td><span class="sh-seal">${esc(r.sealno)}</span></td>
+        <td>${esc(r.ot_number || '')}</td>
+        <td class="wrap">${esc(r.client || '')}</td>
+        <td class="wrap">${esc(r.product_name || '')}</td>
+        <td>${esc(r.drawingno || '')}</td>
+        <td>${esc(r.orderno || '')}</td>
+        <td>${esc(r.delivery || '')}</td>
+        <td>${esc(r.destination ? shipDestLabel(r.destination) : '')}</td>
+        <td>${esc(r.packer || '')}</td>
+        <td>${esc(r.ready_by || '')}</td>
+        <td><span class="sw-status ${r.status === '出荷済' ? 'shipped' : ''}">${esc(r.status)}</span></td>
+      </tr>`).join('');
+  }
+  tb.innerHTML = html;
+}
+
+function shExportExcel() {
+  const rows = shFiltered();
+  if (!rows.length) { alert('出力する記録がありません'); return; }
+  if (typeof XLSX === 'undefined') { alert('Excel出力ライブラリを読み込めていません'); return; }
+  const fv = document.getElementById('sh-from').value, tv = document.getElementById('sh-to').value;
+  const u = document.getElementById('sh-user').value, pk = document.getElementById('sh-packer').value;
+  const st = document.getElementById('sh-status').value, q = document.getElementById('sh-q').value.trim();
+  const period = fv === tv ? shDayLabel(fv) : `${shDayLabel(fv)} 〜 ${shDayLabel(tv)}`;
+  const cliLabel = shClient ? (document.querySelector(`#sh-client-bar .client-filter-btn.active`)?.textContent.trim() || shClient) : '';
+  const cond = [cliLabel && `取引先: ${cliLabel}`, u && `登録ユーザー: ${u}`, pk && `梱包作業者: ${pk}`, st && `状態: ${st}`, q && `検索: ${q}`].filter(Boolean).join('　') || '絞り込みなし';
+  const now = new Date();
+  const stamp = `${swYmd(now).replace(/-/g, '/')} ${shHm(now)}`;
+
+  // シート1: 一覧（日付→時刻順、日ごとの連番）
+  const header = ['No', '日付', '時刻', 'シールNo', 'OT番号', 'お客様名', '品名', '客先図番', '注文No', '納期', '出荷場所', '梱包作業者', '登録ユーザー', '状態'];
+  const dayNo = new Map();
+  const body = rows.map(r => {
+    const n = (dayNo.get(r._day) || 0) + 1; dayNo.set(r._day, n);
+    return [n, r._day.replace(/-/g, '/'), shHm(r.ready_at), r.sealno || '', r.ot_number || '', r.client || '', r.product_name || '',
+            r.drawingno || '', r.orderno || '', r.delivery ? r.delivery.replace(/-/g, '/') : '',
+            r.destination ? shipDestLabel(r.destination) : '', r.packer || '', r.ready_by || '', r.status || ''];
+  });
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['出荷準備OK 一覧'],
+    [`期間: ${period}`, '', '', '', `${cond}`, '', '', '', `件数: ${rows.length}件`, '', '', `出力: ${stamp}`],
+    [],
+    header,
+    ...body,
+  ]);
+  ws['!cols'] = [{ wch: 5 }, { wch: 11 }, { wch: 7 }, { wch: 9 }, { wch: 14 }, { wch: 24 }, { wch: 34 },
+                 { wch: 18 }, { wch: 18 }, { wch: 11 }, { wch: 10 }, { wch: 11 }, { wch: 12 }, { wch: 11 }];
+  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: header.length - 1 } }];
+  ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 3, c: 0 }, e: { r: 3 + body.length, c: header.length - 1 } }) };
+
+  // シート2: 日別・ユーザー別の件数
+  const users = [...new Set(rows.map(r => r.ready_by || '(未設定)'))].sort((a, b) => a.localeCompare(b, 'ja'));
+  const days = [...new Set(rows.map(r => r._day))];
+  const sum = [['日付', ...users, '合計']];
+  days.forEach(d => {
+    const list = rows.filter(r => r._day === d);
+    sum.push([shDayLabel(d), ...users.map(u2 => list.filter(r => (r.ready_by || '(未設定)') === u2).length), list.length]);
+  });
+  sum.push(['合計', ...users.map(u2 => rows.filter(r => (r.ready_by || '(未設定)') === u2).length), rows.length]);
+  const ws2 = XLSX.utils.aoa_to_sheet(sum);
+  ws2['!cols'] = [{ wch: 18 }, ...users.map(() => ({ wch: 12 })), { wch: 8 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '出荷準備OK一覧');
+  XLSX.utils.book_append_sheet(wb, ws2, '日別集計');
+  const fname = `出荷準備OK_${fv.replace(/-/g, '')}${fv !== tv ? '-' + tv.replace(/-/g, '') : ''}${cliLabel ? '_' + cliLabel.replace(/[\\/:*?"<>|]/g, '') : ''}${u ? '_' + u.replace(/[\\/:*?"<>|]/g, '') : ''}.xlsx`;
+  try { XLSX.writeFile(wb, fname); } catch(e) { alert('Excel出力に失敗しました: ' + e.message); }
 }
 
 function shipOtOf(childId) { return shipOtMap.get(childId) || ''; }
@@ -8007,6 +8335,7 @@ function puIsAdmin() {
 }
 // 物品カタログの物品追加・画像登録・編集/削除ができるユーザー
 function puCanManageCatalog() {
+  if (currentUser && (currentUser.perm_admin != null || currentUser.perm_purchase != null)) return permLevel('purchase') === 'edit';
   if (currentUser && currentUser.perm_catalog_manage != null) return !!currentUser.perm_catalog_manage;
   const name = (currentUser?.loginname || '') + '|' + (currentUser?.userid || '');
   const allowed = ['永冨', 'nagatomi', '山下', 'yamashita', '三宅', 'miyake',
@@ -8021,6 +8350,7 @@ function puCanReorderCatalog() {
 }
 // テロップ・依頼一覧タブの閲覧権限（永冨・山下のみ）
 function puCanSeeRequestsTab() {
+  if (currentUser?.perm_admin) return true;
   if (currentUser && currentUser.perm_requests_view != null) return !!currentUser.perm_requests_view;
   const name = (currentUser?.loginname || '') + '|' + (currentUser?.userid || '');
   return name.includes('永冨') || name.includes('山下')
@@ -10865,53 +11195,155 @@ async function puCsvSelected(e) {
 }
 
 function showPage(name, navEl) {
-  // 許可されたユーザー以外はTOP・発注管理・外注管理以外のページに入れない
-  if (!canAccessFullSystem() && name !== 'purchase' && name !== 'top' && name !== 'outsourcing') {
-    name = 'purchase';
-    navEl = document.querySelector('[data-page=purchase]');
+  // 権限（なし）の画面には入れない → TOPへ
+  if (!canViewPage(name)) {
+    name = 'top';
+    navEl = document.querySelector('[data-page=top]');
   }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   if (!navEl && ['shipmenu','shipwork','shiphistory','schedule'].includes(name)) navEl = document.querySelector('[data-page=shipmenu]');
   if (navEl) navEl.classList.add('active');
+  permUpdateMode(name);
   if (name === 'orders') { loadOrders(); renderCalendar(); }
   if (name === 'productdate') loadProductdate();
   if (name === 'progress') renderFloors();
   if (name === 'schedule') loadShippingPage();
   if (name === 'shipwork') loadShipWork();
+  if (name === 'shiphistory') loadShipHistory();
   if (name === 'purchase') loadPurchasePage();
   if (name === 'outsourcing' && typeof window.osInitPage === 'function') window.osInitPage();
 }
 
-// フルアクセス許可ユーザー（それ以外は発注管理のみ利用可）
-function canAccessFullSystem() {
+// ==================== 権限 ====================
+// 画面ごとの権限: none=なし / view=閲覧 / edit=編集＆登録
+// perm_admin（フルアクセス）は全画面「編集」＋依頼一覧＋ユーザー管理（権限付与）
+const PERM_MODULES = [
+  { key: 'orders',      label: '受注管理' },
+  { key: 'shipping',    label: '出荷管理' },
+  { key: 'progress',    label: '進捗管理' },
+  { key: 'inventory',   label: '在庫管理' },
+  { key: 'productdate', label: '製品登録/変更' },
+  { key: 'purchase',    label: '発注管理' },
+  { key: 'outsourcing', label: '外注管理' },
+];
+const PERM_PAGE_MAP = {
+  orders: 'orders',
+  shipmenu: 'shipping', shipwork: 'shipping', shiphistory: 'shipping', schedule: 'shipping',
+  progress: 'progress', 'laser-machine': 'progress', 'laser-assign': 'progress',
+  inventory: 'inventory', productdate: 'productdate', purchase: 'purchase', outsourcing: 'outsourcing',
+};
+const PERM_LEVEL_LABEL = { none: 'なし', view: '閲覧', edit: '編集' };
+
+function permIsAdmin() { return !!currentUser?.perm_admin; }
+// 旧方式（新しい列が取れなかった場合の保険）
+function permLegacyFull() {
   if (currentUser && currentUser.perm_full_access != null) return !!currentUser.perm_full_access;
-  const name = (currentUser?.loginname || '') + '|' + (currentUser?.userid || '');
-  const allowed = ['永冨', 'nagatomi', '山下', 'yamashita', '三宅', 'miyake',
-    '岡本', 'okamoto', '下岡', 'shimooka', '冨田', 'tomita', '瀧本', 'takimoto'];
-  return allowed.some(a => name.includes(a));
+  return false;
+}
+function permLevel(key) {
+  if (!currentUser) return 'none';
+  if (currentUser.perm_admin) return 'edit';
+  const v = currentUser['perm_' + key];
+  if (v === 'none' || v === 'view' || v === 'edit') return v;
+  if (permLegacyFull()) return 'edit';
+  if (key === 'purchase') return currentUser.perm_catalog_manage ? 'edit' : 'view';
+  if (key === 'outsourcing') return 'edit';
+  return 'none';
+}
+function permPageModule(page) { return PERM_PAGE_MAP[page] || null; }
+function canViewPage(page) { const m = permPageModule(page); return !m || permLevel(m) !== 'none'; }
+function canEditPage(page) { const m = permPageModule(page); return !m || permLevel(m) === 'edit'; }
+function permActivePage() { const p = document.querySelector('.page.active'); return p ? p.id.replace(/^page-/, '') : 'top'; }
+// 互換用（旧コードから呼ばれる場合あり）
+function canAccessFullSystem() { return permIsAdmin(); }
+
+// 閲覧のみの画面では編集系ボタンを隠し、左下に「閲覧のみ」を表示する
+function permUpdateMode(page) {
+  const ro = !!currentUser && !canEditPage(page);
+  document.body.classList.toggle('perm-ro', ro);
+  let badge = document.getElementById('perm-ro-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'perm-ro-badge';
+    badge.textContent = '👁 閲覧のみ（この画面では編集・登録はできません）';
+    document.body.appendChild(badge);
+  }
+  badge.style.display = ro ? '' : 'none';
 }
 
-// ログイン直後に呼び出し、許可されないユーザーはナビを発注管理のみに絞って強制遷移させる
+// ---- 書き込みの最終ガード ----
+// 画面のボタンを隠すだけでなく、閲覧権限の画面からのデータ書き込み（登録・更新・削除）をここで止める
+let _permToastAt = 0;
+function permDeniedToast(msg) {
+  const now = Date.now();
+  if (now - _permToastAt < 1500) return;
+  _permToastAt = now;
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:5000;background:#b91c1c;color:#fff;'
+    + 'font-size:14px;font-weight:700;padding:11px 20px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.3);';
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2800);
+}
+function permWriteDenied(url) {
+  // ユーザー管理（loginuser の変更）はフルアクセスのみ
+  if (url.includes('/rest/v1/loginuser')) return permIsAdmin() ? null : 'ユーザー情報の変更はフルアクセス権限が必要です';
+  // ストレージの一覧取得はPOSTだが読み取りなので許可
+  if (url.includes('/storage/v1/object/list/')) return null;
+  const page = permActivePage();
+  const mod = permPageModule(page);
+  if (!mod) return null;                       // TOPなど権限対象外の画面
+  const lv = permLevel(mod);
+  if (lv === 'edit') return null;
+  if (mod === 'purchase' && lv === 'view') {
+    // 発注管理の閲覧は「依頼」はできる。物品カタログ（物品・画像）の変更だけ止める
+    if (url.includes('/rest/v1/purchase_items') || url.includes('/storage/v1/object/' + PU_IMG_BUCKET)) {
+      return '物品カタログの変更は発注管理の編集権限が必要です';
+    }
+    return null;
+  }
+  return '閲覧のみの権限のため、保存できません';
+}
+(function permInstallFetchGuard() {
+  if (window._permFetchGuard) return;
+  window._permFetchGuard = true;
+  const origFetch = window.fetch.bind(window);
+  window.fetch = function(input, init) {
+    try {
+      const url = typeof input === 'string' ? input : (input && input.url) || '';
+      const method = String((init && init.method) || (input && input.method) || 'GET').toUpperCase();
+      if (currentUser && method !== 'GET' && method !== 'HEAD' && url.startsWith(SUPABASE_URL)) {
+        const msg = permWriteDenied(url);
+        if (msg) {
+          console.warn('[perm] 書き込みを停止', method, url, msg);
+          permDeniedToast('🔒 ' + msg);
+          return Promise.resolve(new Response(JSON.stringify({ message: msg }), { status: 403, headers: { 'Content-Type': 'application/json' } }));
+        }
+      }
+    } catch (e) { /* ガード自体の失敗で通常処理を止めない */ }
+    return origFetch(input, init);
+  };
+})();
+
+// ログイン直後に呼び出し、権限のない画面のメニューを隠す
 function applyAccessRestriction() {
-  const full = canAccessFullSystem();
   document.querySelectorAll('.nav-item').forEach(el => {
-    if (el.dataset.page !== 'purchase' && el.dataset.page !== 'top' && el.dataset.page !== 'outsourcing') el.style.display = full ? '' : 'none';
+    el.style.display = canViewPage(el.dataset.page) ? '' : 'none';
   });
   const funcGrid = document.querySelector('.func-grid');
   if (funcGrid) {
     funcGrid.querySelectorAll('[onclick*="showPage("]').forEach(el => {
-      const isAlwaysVisibleBtn = el.getAttribute('onclick').includes("showPage('purchase'") || el.getAttribute('onclick').includes("showPage('outsourcing'");
-      el.style.display = (full || isAlwaysVisibleBtn) ? '' : 'none';
+      const m = el.getAttribute('onclick').match(/showPage\('([\w-]+)'/);
+      el.style.display = (!m || canViewPage(m[1])) ? '' : 'none';
     });
   }
-  if (!full) showPage('top', document.querySelector('[data-page=top]'));
+  const cur = permActivePage();
+  if (!canViewPage(cur)) showPage('top', document.querySelector('[data-page=top]'));
+  else permUpdateMode(cur);
   const uaBtn = document.getElementById('userAdminBtn');
-  if (uaBtn) {
-    const name = (currentUser?.loginname || '') + '|' + (currentUser?.userid || '');
-    uaBtn.style.display = (name.includes('永冨') || name.toLowerCase().includes('nagatomi')) ? '' : 'none';
-  }
+  if (uaBtn) uaBtn.style.display = permIsAdmin() ? '' : 'none';
 }
 
 // ==================== ユーザー管理（永冨のみ） ====================
@@ -10921,7 +11353,7 @@ function uaIsNagatomi() {
 }
 let _uaUsers = [];
 async function openUserAdmin() {
-  if (!uaIsNagatomi()) return;
+  if (!permIsAdmin()) return;
   document.getElementById('ua-modal').style.display = 'flex';
   await uaLoadUsers();
 }
@@ -10930,44 +11362,80 @@ function closeUserAdmin() {
 }
 async function uaLoadUsers() {
   const tbody = document.getElementById('ua-tbody');
-  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#9ca3af;">読込中…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;color:#9ca3af;">読込中…</td></tr>';
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/loginuser?select=id,userid,loginname,department,factory,perm_full_access,perm_catalog_manage,perm_requests_view&order=loginname.asc`, { headers: sbHeaders() });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/loginuser?select=id,userid,loginname,department,factory,perm_admin,perm_requests_view,perm_orders,perm_shipping,perm_progress,perm_inventory,perm_productdate,perm_purchase,perm_outsourcing&order=loginname.asc`, { headers: sbHeaders() });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     _uaUsers = await res.json();
     uaRenderUsers();
   } catch (e) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#dc2626;">読込エラー: ' + e.message + '</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;color:#dc2626;">読込エラー: ' + e.message + '</td></tr>';
   }
 }
 function uaEsc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function uaRenderUsers() {
   const tbody = document.getElementById('ua-tbody');
-  if (!_uaUsers.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#9ca3af;">ユーザーがいません</td></tr>'; return; }
-  tbody.innerHTML = _uaUsers.map(u => `
-    <tr data-id="${u.id}">
+  const cols = 7 + PERM_MODULES.length;
+  if (!_uaUsers.length) { tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center;color:#9ca3af;">ユーザーがいません</td></tr>`; return; }
+  const q = (document.getElementById('ua-search')?.value || '').trim();
+  const list = q ? _uaUsers.filter(u => [u.userid, u.loginname, u.department, u.factory].join(' ').includes(q)) : _uaUsers;
+  tbody.innerHTML = list.map(u => {
+    const admin = !!u.perm_admin;
+    const sel = m => {
+      const v = admin ? 'edit' : (u['perm_' + m.key] || 'none');
+      return `<td class="ua-perm"><select class="ua-lv lv-${v}" ${admin ? 'disabled title="フルアクセスのため全権限"' : ''}
+        onchange="uaSetLevel(${u.id},'${m.key}',this)">
+        ${['none', 'view', 'edit'].map(k => `<option value="${k}" ${v === k ? 'selected' : ''}>${PERM_LEVEL_LABEL[k]}</option>`).join('')}
+      </select></td>`;
+    };
+    return `
+    <tr data-id="${u.id}" class="${admin ? 'ua-admin-row' : ''}">
       <td style="font-family:monospace;font-size:12px;">${uaEsc(u.userid)}</td>
-      <td><input type="text" value="${uaEsc(u.loginname)}" data-field="loginname" style="width:70px;border:1px solid #d1d5db;border-radius:4px;padding:3px 5px;font-size:12px;"></td>
-      <td><input type="text" value="${uaEsc(u.department)}" data-field="department" style="width:90px;border:1px solid #d1d5db;border-radius:4px;padding:3px 5px;font-size:12px;"></td>
-      <td><input type="text" value="${uaEsc(u.factory)}" data-field="factory" style="width:80px;border:1px solid #d1d5db;border-radius:4px;padding:3px 5px;font-size:12px;"></td>
-      <td style="text-align:center;"><input type="checkbox" data-field="perm_full_access" ${u.perm_full_access?'checked':''} onchange="uaTogglePerm(${u.id},'perm_full_access',this.checked)"></td>
-      <td style="text-align:center;"><input type="checkbox" data-field="perm_catalog_manage" ${u.perm_catalog_manage?'checked':''} onchange="uaTogglePerm(${u.id},'perm_catalog_manage',this.checked)"></td>
-      <td style="text-align:center;"><input type="checkbox" data-field="perm_requests_view" ${u.perm_requests_view?'checked':''} onchange="uaTogglePerm(${u.id},'perm_requests_view',this.checked)"></td>
+      <td><input type="text" value="${uaEsc(u.loginname)}" data-field="loginname" style="width:64px;border:1px solid #d1d5db;border-radius:4px;padding:3px 5px;font-size:12px;"></td>
+      <td><input type="text" value="${uaEsc(u.department)}" data-field="department" style="width:72px;border:1px solid #d1d5db;border-radius:4px;padding:3px 5px;font-size:12px;"></td>
+      <td><input type="text" value="${uaEsc(u.factory)}" data-field="factory" style="width:72px;border:1px solid #d1d5db;border-radius:4px;padding:3px 5px;font-size:12px;"></td>
+      <td style="text-align:center;"><input type="checkbox" ${admin ? 'checked' : ''} onchange="uaToggleAdmin(${u.id},this)"></td>
+      ${PERM_MODULES.map(sel).join('')}
+      <td style="text-align:center;"><input type="checkbox" ${(admin || u.perm_requests_view) ? 'checked' : ''} ${admin ? 'disabled' : ''} onchange="uaTogglePerm(${u.id},'perm_requests_view',this.checked)"></td>
       <td style="white-space:nowrap;">
         <button class="btn-sm" onclick="uaSaveRow(${u.id})">保存</button>
         <button class="btn-danger-sm" onclick="uaDeleteUser(${u.id},'${uaEsc(u.loginname)}')">削除</button>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
+}
+async function uaPatch(id, body) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/loginuser?id=eq.${id}`, {
+    method: 'PATCH', headers: { ...sbHeaders(), 'Prefer': 'return=minimal' }, body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const u = _uaUsers.find(x => x.id === id); if (u) Object.assign(u, body);
+  // 自分の権限を変えた場合はすぐ画面に反映する
+  if (currentUser && u && u.userid === currentUser.userid) { Object.assign(currentUser, body); applyAccessRestriction(); }
 }
 async function uaTogglePerm(id, field, value) {
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/loginuser?id=eq.${id}`, {
-      method: 'PATCH', headers: { ...sbHeaders(), 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ [field]: value })
-    });
-    if (!res.ok) throw new Error(await res.text());
-    const u = _uaUsers.find(x => x.id === id); if (u) u[field] = value;
-  } catch (e) { alert('権限の更新に失敗しました: ' + e.message); uaLoadUsers(); }
+  try { await uaPatch(id, { [field]: value }); }
+  catch (e) { alert('権限の更新に失敗しました: ' + e.message); uaLoadUsers(); }
+}
+async function uaSetLevel(id, key, el) {
+  const v = el.value;
+  el.className = 'ua-lv lv-' + v;
+  const body = { ['perm_' + key]: v };
+  // 他アプリ・旧版との互換：発注管理の編集＝物品管理
+  if (key === 'purchase') { body.perm_catalog_manage = v === 'edit'; body.perm_catalog_reorder = v === 'edit'; }
+  try { await uaPatch(id, body); }
+  catch (e) { alert('権限の更新に失敗しました: ' + e.message); uaLoadUsers(); }
+}
+async function uaToggleAdmin(id, el) {
+  const u = _uaUsers.find(x => x.id === id);
+  if (!el.checked && u && currentUser && u.userid === currentUser.userid) {
+    if (!confirm('自分のフルアクセスを外すと、ユーザー管理（権限の設定）ができなくなります。よろしいですか？')) { el.checked = true; return; }
+  }
+  if (!el.checked && _uaUsers.filter(x => x.perm_admin).length <= 1) {
+    alert('フルアクセスのユーザーが1人もいなくなるため、外せません。'); el.checked = true; return;
+  }
+  try { await uaPatch(id, { perm_admin: el.checked }); uaRenderUsers(); }
+  catch (e) { alert('権限の更新に失敗しました: ' + e.message); uaLoadUsers(); }
 }
 async function uaSaveRow(id) {
   const tr = document.querySelector(`#ua-tbody tr[data-id="${id}"]`);
@@ -15097,7 +15565,7 @@ async function doLogin() {
 
   try {
     const url = SUPABASE_URL_LOGIN
-      + '/rest/v1/loginuser?select=id,userid,loginname,department,authority,password,factory,perm_full_access,perm_catalog_manage,perm_requests_view&userid=eq.'
+      + '/rest/v1/loginuser?select=id,userid,loginname,department,authority,password,factory,perm_full_access,perm_catalog_manage,perm_requests_view,perm_admin,perm_orders,perm_shipping,perm_progress,perm_inventory,perm_productdate,perm_purchase,perm_outsourcing&userid=eq.'
       + encodeURIComponent(userid);
     const res = await fetch(url, {
       headers: {
