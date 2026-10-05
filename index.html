@@ -1040,6 +1040,19 @@
   .sw-del:hover { background:#fef2f2; }
   .sw-empty { text-align:center; color:#6b7280; padding:40px 10px; font-size:clamp(16px, 2.4vh, 22px); font-weight:700; }
   .sw-kiosk-btn { margin-left:auto; }
+  .sw-import { display:flex; align-items:center; gap:8px; margin-top:8px; padding-top:8px; border-top:1px dashed #e5e7eb; }
+  .sw-import-status { flex:1; min-width:0; font-size:12.5px; font-weight:700; color:#374151; }
+  .sw-import-status.old { color:#b91c1c; }
+  .sw-import-status.ok { color:#047857; }
+  .sw-import-btn { background:#047857 !important; color:#fff !important; border-color:#047857 !important; font-weight:700; white-space:nowrap; }
+  body.perm-ro .sw-import-btn { display:none !important; }
+  #sw-import-prog { position:fixed; inset:0; z-index:4000; background:rgba(15,23,42,.45); display:none; align-items:center; justify-content:center; }
+  #sw-import-prog.show { display:flex; }
+  #sw-import-prog > div { background:#fff; border-radius:12px; padding:22px 28px; min-width:340px; box-shadow:0 20px 60px rgba(0,0,0,.3); text-align:center; }
+  #sw-import-prog b { display:block; font-size:16px; margin-bottom:10px; }
+  #sw-import-prog .bar { height:10px; background:#e5e7eb; border-radius:6px; overflow:hidden; margin:10px 0 6px; }
+  #sw-import-prog .bar i { display:block; height:100%; width:0; background:#047857; transition:width .2s; }
+  #sw-import-prog small { color:#6b7280; font-size:12px; }
   /* ===== 出荷履歴 ===== */
   .sh-wrap { padding:8px 16px 16px; }
   .sh-card { background:#fff; border:1px solid #e5e7eb; border-radius:10px; overflow:hidden; }
@@ -1086,6 +1099,16 @@
   .lv-view { background:#dbeafe; color:#1e40af; border-color:#93c5fd; }
   .lv-edit { background:#dcfce7; color:#166534; border-color:#86efac; }
   .ua-admin-row td { background:#fffbeb; }
+  /* ===== 製品登録：部品情報（複数） ===== */
+  .pd-parts-head { display:flex; gap:6px; font-size:11px; font-weight:700; color:#6b7280; margin-bottom:4px; padding:0 2px; }
+  .pd-parts-row { display:flex; gap:6px; align-items:center; margin-bottom:6px; }
+  .pd-parts-row select { width:92px; flex-shrink:0; }
+  .pd-parts-row .pp-no { flex:1; min-width:0; }
+  .pd-parts-row .pp-url { flex:1.4; min-width:0; }
+  .pd-parts-del { width:30px; height:30px; flex-shrink:0; border:1px solid #fecaca; background:#fff; color:#dc2626; border-radius:6px; cursor:pointer; font-size:15px; line-height:1; }
+  .pd-parts-del:hover { background:#fef2f2; }
+  .pd-parts-add { border:1px dashed #86efac; background:#f0fdf4; color:#047857; font-size:12px; font-weight:700; padding:6px 12px; border-radius:6px; cursor:pointer; }
+  .pd-parts-add:hover { background:#dcfce7; }
   .ship-placeholder { max-width:960px; margin:0 auto; padding:16px; }
   .ship-placeholder-box { background:#fff; border:1px dashed #d1d5db; border-radius:12px; padding:60px 20px; text-align:center; color:#9ca3af; font-size:14px; }
   .ship-layout { display:grid; grid-template-columns:330px 430px 1fr; gap:14px; height:calc(100vh - 130px); padding:16px; align-items:start; }
@@ -2812,6 +2835,12 @@
           <button class="btn-sm" onclick="swLoadList()">更新</button>
           <button class="btn-sm sw-kiosk-btn" id="sw-kiosk-btn" onclick="swToggleKiosk()" title="ヘッダーを隠して画面いっぱいに表示します">⛶ 全画面</button>
         </div>
+        <div class="sw-import">
+          <span class="sw-import-status" id="sw-import-status">受注データ：確認中…</span>
+          <button class="btn-sm sw-import-btn" onclick="document.getElementById('sw-import-file').click()"
+                  title="現場Excel「受注データ」(Sheet1／受注データ_T)を取り込みます。シール番号の照合に使います">📥 受注データ取込</button>
+          <input type="file" id="sw-import-file" accept=".xlsm,.xlsx,.xls" style="display:none;" onchange="swImportExcel(event)">
+        </div>
       </div>
       <div class="sw-list" id="sw-list"><div class="sw-empty">読込中…</div></div>
     </div>
@@ -4029,25 +4058,13 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           部品情報
         </div>
-        <div class="pd-form-grid">
-          <div class="pd-form-group">
-            <label class="pd-form-label">第2品目区分</label>
-            <select class="pd-form-input" id="pd-second_category">
-              <option value="">なし</option>
-              <option value="BK">BK</option>
-              <option value="P">P</option>
-            </select>
-          </div>
-          <div class="pd-form-group"></div>
-          <div class="pd-form-group">
-            <label class="pd-form-label">部品番号</label>
-            <input class="pd-form-input" id="pd-part_number" type="text" placeholder="OT番号 または P番号">
-          </div>
-          <div class="pd-form-group">
-            <label class="pd-form-label">部品番号URL</label>
-            <input class="pd-form-input" id="pd-part_number_url" type="text">
-          </div>
+        <!-- 旧互換用（先頭の1件を保存）。画面には出さない -->
+        <input type="hidden" id="pd-second_category"><input type="hidden" id="pd-part_number"><input type="hidden" id="pd-part_number_url">
+        <div class="pd-parts-head">
+          <span style="width:92px;">第2品目区分</span><span style="flex:1;">部品番号</span><span style="flex:1.4;">部品番号URL</span><span style="width:30px;"></span>
         </div>
+        <div id="pd-parts-rows"></div>
+        <button type="button" class="pd-parts-add" onclick="pdPartsAdd()">＋ 部品情報を追加</button>
       </div>
 
       <!-- 製品情報（黄） -->
@@ -4381,6 +4398,7 @@ async function loadShipWork() {
   swFocus();
   await swLoadList();
   swLoadPackerList();
+  swLoadImportStatus();
 }
 
 function swSavePacker() {
@@ -4429,31 +4447,54 @@ document.addEventListener('fullscreenchange', () => {
   if (!document.fullscreenElement && document.body.classList.contains('sw-kiosk')) swToggleKiosk(false);
 });
 
+// シール番号の照合キー：6桁の数字＋末尾の英字（BK等）。例) *355114BK* → 355114BK ／ ３５５１１４ｂｋ → 355114BK
+// BK付きは本体（355114）とは別の製品として扱う
+function swSealKey(v) {
+  const t = String(v || '').normalize('NFKC').toUpperCase().replace(/[^0-9A-Z]/g, '');
+  const m = t.match(/(\d{6})([A-Z]{1,3})?/);
+  return m ? m[1] + (m[2] || '') : '';
+}
+
 // 全角数字→半角、数字以外を除去
 function swNormalize(v) {
   return String(v || '').replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/\D/g, '');
 }
 
-// 6桁の数字がそろった時点で自動確定（Enter不要）。
-// 日本語入力の変換中は確定を待ってから判定する。スキャナーが後からEnterを送っても空欄なので無視される。
+// 入力が途切れた時点（SW_IDLE_MS）で、まとめて1回だけ確定する（Enter不要）。
+//   バーコード「355114BK」のように数字の後ろに文字が続く場合も、続きを待ってから全体を処理するので
+//   「BK」だけが読み取り欄に残らない。手入力でも6桁打って少し待てば確定する。
+//   日本語入力の変換中は確定を待つ。確定直後に遅れて届いた文字・Enterは捨てる。
+const SW_IDLE_MS = 180;
+let _swIdleTimer = null;
+let _swLastFlushAt = 0;
+
+function swFlushScan(el) {
+  clearTimeout(_swIdleTimer); _swIdleTimer = null;
+  const raw = el.value;
+  if (!raw.trim()) return;
+  // 確定直後（0.6秒以内）に数字を含まない残りだけが届いた場合は、前のバーコードの続きとして捨てる
+  if (!/\d/.test(raw.normalize('NFKC')) && Date.now() - _swLastFlushAt < 600) { el.value = ''; return; }
+  el.value = '';
+  _swLastFlushAt = Date.now();
+  swQueue = swQueue.then(() => swHandleScan(raw)).catch(err => console.error('[shipwork]', err));
+}
+
 function swOnScanInput(e) {
   if (e.isComposing && e.type !== 'compositionend') return;
   const el = e.target;
-  if (swNormalize(el.value).length < 6) return;
-  const raw = el.value;
-  el.value = '';
-  swQueue = swQueue.then(() => swHandleScan(raw)).catch(err => console.error('[shipwork]', err));
+  clearTimeout(_swIdleTimer);
+  _swIdleTimer = setTimeout(() => {
+    const v = el.value;
+    // 6桁以上の数字がそろっていれば確定。数字を含まない残り文字だけなら（確定直後のみ）捨てる
+    if (swNormalize(v).length >= 6 || (!/\d/.test(v.normalize('NFKC')) && Date.now() - _swLastFlushAt < 600)) swFlushScan(el);
+  }, SW_IDLE_MS);
 }
 
 function swOnScanKey(e) {
   if (e.key !== 'Enter' && e.key !== 'Tab') return;
   e.preventDefault();
   if (e.isComposing) return;
-  const el = e.target;
-  const raw = el.value;
-  el.value = '';
-  if (!raw.trim()) return;
-  swQueue = swQueue.then(() => swHandleScan(raw)).catch(err => console.error('[shipwork]', err));
+  swFlushScan(e.target);
 }
 
 function swBeep(kind) {
@@ -4520,45 +4561,55 @@ async function swGetJson(url) {
 }
 
 async function swHandleScan(raw) {
-  const seal = swNormalize(raw);
-  if (!/^\d{6}$/.test(seal)) {
+  const seal = swSealKey(raw);
+  if (!/^\d{6}([A-Z]{1,3})?$/.test(seal)) {
     swShowResult('err', '読み取りエラー', raw.trim(), null, '6桁ではありません\nもう一度読み取ってください');
     return;
   }
   try {
-    // ① 受注データ（子）からシールNoを探す
-    const kids = await swGetJson(`${SUPABASE_URL}/rest/v1/orders_child?select=id,order_id,sealno,delivery&sealno=eq.${seal}&order=id.desc`);
-    if (!kids.length) { swShowResult('err', '見つかりません', seal, null, '受注データにありません\nシールを確認してください'); return; }
-    const kid = kids[0];
+    // ① 現場Excel「受注データ」（取り込んだ最新分）と、アプリの受注データ（子）の両方からシール番号を探す
+    const [xls, kids] = await Promise.all([
+      swGetJson(`${SUPABASE_URL}/rest/v1/jyuchu_data?select=*&seal_no=eq.${seal}&order=batch.desc,id.asc&limit=1`),
+      swGetJson(`${SUPABASE_URL}/rest/v1/orders_child?select=id,order_id,sealno,delivery&sealno=eq.${seal}&order=id.desc`),
+    ]);
+    const xl = xls[0] || null, kid = kids[0] || null;
+    if (!xl && !kid) { swShowResult('err', '見つかりません', seal, null, '受注データにありません\nシールを確認してください'); return; }
 
-    // ② 既に出荷準備OKなら二重登録しない
-    const dup = await swGetJson(`${SUPABASE_URL}/rest/v1/ship_ready?select=*&child_id=eq.${kid.id}`);
+    // ② 既に出荷準備OKなら二重登録しない（シール番号で判定）
+    const dup = await swGetJson(`${SUPABASE_URL}/rest/v1/ship_ready?select=*&sealno=eq.${seal}`);
     if (dup.length) { swShowResult('warn', '登録済み（二重読み取り）', seal, dup[0]); swHighlight(dup[0].id); return; }
 
-    // ③ 受注・製品マスタから表示用の情報を集める
-    const ords = await swGetJson(`${SUPABASE_URL}/rest/v1/orders?select=id,orderno,drawingno,productno,delivery_destination&id=eq.${kid.order_id}`);
-    const ord = ords[0] || {};
-    let pd = {};
-    if (ord.drawingno) {
-      const pds = await swGetJson(`${SUPABASE_URL}/rest/v1/productdate?select=client,product_name&customer_drawing_no=eq.${encodeURIComponent(ord.drawingno)}&order=designid.desc&limit=1`);
-      pd = pds[0] || {};
-    }
-    await loadShipOtNumbers([{ child_id: kid.id, order_id: kid.order_id }]);
-
-    const rec = {
-      child_id: kid.id,
+    let rec;
+    const common = {
+      child_id: kid ? kid.id : null,
       sealno: seal,
       status: '出荷準備OK',
-      ot_number: shipOtOf(kid.id) || null,
-      client: pd.client || null,
-      product_name: pd.product_name || null,
-      drawingno: ord.drawingno || null,
-      orderno: ord.orderno || null,
-      delivery: kid.delivery || null,
-      destination: shipDestOf(kid.id) || ord.delivery_destination || null,
       packer: document.getElementById('sw-packer').value.trim() || null,
       ready_by: currentUser?.loginname || null,
     };
+    if (xl) {
+      // ③-A 現場Excelの値を使う（仕様=OT番号、納入場所=お客様名、品番=品名）
+      let dest = null;
+      if (kid) { await loadShipOtNumbers([{ child_id: kid.id, order_id: kid.order_id }]); dest = shipDestOf(kid.id) || null; }
+      rec = { ...common, source: 'excel',
+        ot_number: xl.ot_number || null, client: xl.client || null, product_name: xl.product_name || null,
+        drawingno: xl.drawing_no || null, orderno: xl.order_no || null,
+        delivery: xl.due_date || xl.ship_date || null, destination: dest };
+    } else {
+      // ③-B Excelに無い場合はアプリの受注データ・製品マスタから
+      const ords = await swGetJson(`${SUPABASE_URL}/rest/v1/orders?select=id,orderno,drawingno,productno,delivery_destination&id=eq.${kid.order_id}`);
+      const ord = ords[0] || {};
+      let pd = {};
+      if (ord.drawingno) {
+        const pds = await swGetJson(`${SUPABASE_URL}/rest/v1/productdate?select=client,product_name&customer_drawing_no=eq.${encodeURIComponent(ord.drawingno)}&order=designid.desc&limit=1`);
+        pd = pds[0] || {};
+      }
+      await loadShipOtNumbers([{ child_id: kid.id, order_id: kid.order_id }]);
+      rec = { ...common, source: 'app',
+        ot_number: shipOtOf(kid.id) || null, client: pd.client || null, product_name: pd.product_name || null,
+        drawingno: ord.drawingno || null, orderno: ord.orderno || null,
+        delivery: kid.delivery || null, destination: shipDestOf(kid.id) || ord.delivery_destination || null };
+    }
 
     // ④ 登録
     const res = await fetch(`${SUPABASE_URL}/rest/v1/ship_ready`, {
@@ -4576,6 +4627,127 @@ async function swHandleScan(raw) {
   } catch(e) {
     console.error('[shipwork] 登録失敗', e);
     swShowResult('err', '通信エラー', seal, null, '登録できませんでした\nもう一度読み取ってください');
+  }
+}
+
+// ==================== 現場Excel「受注データ」の取込 ====================
+// Y:\nagatomi\各部署必要資料\受注データ（Sheet1 のテーブル「受注データ_T」）を読み、jyuchu_data に丸ごと入れ替える
+async function swLoadImportStatus() {
+  const el = document.getElementById('sw-import-status');
+  if (!el) return;
+  try {
+    const logs = await swGetJson(`${SUPABASE_URL}/rest/v1/jyuchu_import_log?select=*&order=imported_at.desc&limit=1`);
+    if (!logs.length) { el.className = 'sw-import-status old'; el.textContent = '受注データ：未取込（Excelを取り込んでください）'; return; }
+    const l = logs[0], d = new Date(l.imported_at);
+    const today = swYmd(d) === swYmd(new Date());
+    el.className = 'sw-import-status ' + (today ? 'ok' : 'old');
+    el.textContent = `受注データ：${d.getMonth() + 1}/${d.getDate()} ${swFmtTime(l.imported_at)} 取込（${Number(l.row_count || 0).toLocaleString()}件${l.imported_by ? '・' + l.imported_by : ''}）${today ? '' : '　※本日分は未取込'}`;
+  } catch (e) { el.textContent = '受注データ：取込状況を確認できません'; }
+}
+
+function swImportProgress(title, done, total, note) {
+  let el = document.getElementById('sw-import-prog');
+  if (!el) {
+    el = document.createElement('div'); el.id = 'sw-import-prog';
+    el.innerHTML = '<div><b></b><div class="bar"><i></i></div><small></small></div>';
+    document.body.appendChild(el);
+  }
+  if (title == null) { el.classList.remove('show'); return; }
+  el.classList.add('show');
+  el.querySelector('b').textContent = title;
+  el.querySelector('i').style.width = total ? Math.round(done / total * 100) + '%' : '0%';
+  el.querySelector('small').textContent = note || (total ? `${done.toLocaleString()} / ${total.toLocaleString()} 件` : '');
+}
+
+// Excelのセル値 → 'YYYY-MM-DD'
+function swXlDate(v) {
+  if (v == null || v === '') return null;
+  if (v instanceof Date) return isNaN(v) ? null : swYmd(v);
+  if (typeof v === 'number') { const d = new Date(Math.round((v - 25569) * 86400000)); return isNaN(d) ? null : d.toISOString().slice(0, 10); }
+  const m = String(v).match(/(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/);
+  return m ? `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}` : null;
+}
+function swXlText(v) {
+  if (v == null) return null;
+  const t = (v instanceof Date) ? swYmd(v) : String(v).trim();
+  return t === '' ? null : t;
+}
+
+async function swImportExcel(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!file) return;
+  if (typeof XLSX === 'undefined') { alert('Excel読込ライブラリを読み込めていません'); return; }
+  if (!canEditPage('shipwork')) { alert('受注データの取込には出荷管理の編集権限が必要です'); return; }
+  try {
+    swImportProgress('Excelを読み込み中…', 0, 0, file.name);
+    await new Promise(r => setTimeout(r, 30));
+    const buf = await file.arrayBuffer();
+    // Sheet1 だけを読む（他のシートは重いので読まない）
+    let wb = XLSX.read(buf, { type: 'array', cellDates: true, sheets: 'Sheet1' });
+    let ws = wb.Sheets['Sheet1'];
+    if (!ws) { wb = XLSX.read(buf, { type: 'array', cellDates: true }); ws = wb.Sheets[wb.SheetNames[0]]; }
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
+    // 見出し行（「シール番号」を含む行）を探す
+    const nk = v => String(v == null ? '' : v).normalize('NFKC').replace(/\s+/g, '');
+    let h = -1;
+    for (let i = 0; i < Math.min(rows.length, 15); i++) if ((rows[i] || []).some(c => nk(c) === 'シール番号')) { h = i; break; }
+    if (h < 0) throw new Error('「シール番号」の列が見つかりません。受注データ（Sheet1／受注データ_T）のファイルか確認してください。');
+    const hdr = rows[h].map(nk);
+    const col = name => hdr.indexOf(nk(name));
+    const C = {
+      seal: col('シール番号'), slip: col('伝票番号'), odate: col('注文日'), client: col('納入場所'), pname: col('品番'),
+      dno: col('図番'), ot: col('仕様'), cat: col('製品区分'), ono: col('注文ＮＯ(1)'), ship: col('出荷日'), due: col('各注納期'), qty: col('数量'),
+    };
+    const g = (r, k) => (C[k] >= 0 ? r[C[k]] : null);
+    const batch = new Date().toISOString();
+    const recs = [];
+    for (let i = h + 1; i < rows.length; i++) {
+      const r = rows[i]; if (!r) continue;
+      const raw = g(r, 'seal');
+      if (raw == null || raw === '') continue;
+      const key = swSealKey(raw);                                     // 6桁＋BK等を照合キーにする（999等は除外）
+      if (!key) continue;
+      const q = g(r, 'qty');
+      recs.push({
+        batch, seal_no: key, seal_raw: String(raw).trim(),
+        slip_no: swXlText(g(r, 'slip')), order_date: swXlDate(g(r, 'odate')),
+        client: swXlText(g(r, 'client')), product_name: swXlText(g(r, 'pname')), drawing_no: swXlText(g(r, 'dno')),
+        ot_number: swXlText(g(r, 'ot')), category: swXlText(g(r, 'cat')), order_no: swXlText(g(r, 'ono')),
+        ship_date: swXlDate(g(r, 'ship')), due_date: swXlDate(g(r, 'due')),
+        quantity: (q != null && q !== '' && !isNaN(Number(q))) ? Number(q) : null,
+      });
+    }
+    if (!recs.length) throw new Error('シール番号の入った行がありませんでした。');
+    if (!confirm(`「${file.name}」から ${recs.length.toLocaleString()} 件のシール番号を取り込みます。\n今の受注データは、この内容に入れ替わります。よろしいですか？`)) { swImportProgress(null); return; }
+
+    // 新しいバッチとして登録 → 成功したら古いバッチを削除（途中で失敗しても前の内容で照合できる）
+    const CH = 1000;
+    for (let i = 0; i < recs.length; i += CH) {
+      swImportProgress('受注データを取り込み中…', i, recs.length);
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/jyuchu_data`, {
+        method: 'POST', headers: { ...sbHeaders(), 'Prefer': 'return=minimal' }, body: JSON.stringify(recs.slice(i, i + CH))
+      });
+      if (!res.ok) {
+        await fetch(`${SUPABASE_URL}/rest/v1/jyuchu_data?batch=eq.${encodeURIComponent(batch)}`, { method: 'DELETE', headers: sbHeaders() }).catch(() => {});
+        throw new Error('登録に失敗しました (HTTP ' + res.status + ') ' + (await res.text().catch(() => '')));
+      }
+    }
+    swImportProgress('古いデータを整理中…', recs.length, recs.length);
+    await fetch(`${SUPABASE_URL}/rest/v1/jyuchu_data?batch=neq.${encodeURIComponent(batch)}`, { method: 'DELETE', headers: sbHeaders() });
+    await fetch(`${SUPABASE_URL}/rest/v1/jyuchu_import_log`, {
+      method: 'POST', headers: { ...sbHeaders(), 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ batch, file_name: file.name, row_count: recs.length, imported_by: currentUser?.loginname || null })
+    });
+    swImportProgress(null);
+    await swLoadImportStatus();
+    swShowResult('ok', '受注データを取り込みました', recs.length.toLocaleString() + '件', null, `${file.name}\nシールを読み取ってください`);
+  } catch (e) {
+    swImportProgress(null);
+    console.error('[shipwork] 受注データ取込失敗', e);
+    alert('受注データの取込に失敗しました：' + e.message);
+  } finally {
+    swFocus();
   }
 }
 
@@ -4848,6 +5020,48 @@ function shExportExcel() {
   XLSX.utils.book_append_sheet(wb, ws2, '日別集計');
   const fname = `出荷準備OK_${fv.replace(/-/g, '')}${fv !== tv ? '-' + tv.replace(/-/g, '') : ''}${cliLabel ? '_' + cliLabel.replace(/[\\/:*?"<>|]/g, '') : ''}${u ? '_' + u.replace(/[\\/:*?"<>|]/g, '') : ''}.xlsx`;
   try { XLSX.writeFile(wb, fname); } catch(e) { alert('Excel出力に失敗しました: ' + e.message); }
+}
+
+// ==================== 製品登録：部品情報（複数） ====================
+const PD_PART_CATS = ['BK', 'P', 'S'];
+// レコードから部品情報の配列を取り出す（parts が空なら旧カラムの1件を使う）
+function pdPartsOf(rec) {
+  if (rec && Array.isArray(rec.parts) && rec.parts.length) return rec.parts;
+  if (rec && (rec.second_category || rec.part_number || rec.part_number_url)) {
+    return [{ cat: rec.second_category || '', no: rec.part_number || '', url: rec.part_number_url || '' }];
+  }
+  return [];
+}
+function pdPartsRowHtml(p) {
+  const e = v => String(v || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  const opts = ['', ...PD_PART_CATS].map(c => `<option value="${c}" ${p.cat === c ? 'selected' : ''}>${c || 'なし'}</option>`).join('')
+    + (p.cat && !PD_PART_CATS.includes(p.cat) ? `<option value="${e(p.cat)}" selected>${e(p.cat)}（旧データ）</option>` : '');
+  return `<div class="pd-parts-row">
+    <select class="pd-form-input pp-cat">${opts}</select>
+    <input class="pd-form-input pp-no" type="text" placeholder="OT番号 または P番号" value="${e(p.no)}">
+    <input class="pd-form-input pp-url" type="text" placeholder="URL（任意）" value="${e(p.url)}">
+    <button type="button" class="pd-parts-del" title="この部品情報を削除" onclick="this.closest('.pd-parts-row').remove()">×</button>
+  </div>`;
+}
+function pdPartsRender(list) {
+  const box = document.getElementById('pd-parts-rows');
+  if (!box) return;
+  const rows = list && list.length ? list : [{ cat: '', no: '', url: '' }];   // 最低1行は表示
+  box.innerHTML = rows.map(pdPartsRowHtml).join('');
+}
+function pdPartsAdd() {
+  const box = document.getElementById('pd-parts-rows');
+  box.insertAdjacentHTML('beforeend', pdPartsRowHtml({ cat: '', no: '', url: '' }));
+  box.lastElementChild.querySelector('.pp-cat').focus();
+}
+// 画面の行を配列にまとめる（区分・番号・URLがすべて空の行は捨てる）
+function pdPartsCollect() {
+  return [...document.querySelectorAll('#pd-parts-rows .pd-parts-row')].map(r => {
+    const o = {};
+    const cat = r.querySelector('.pp-cat').value.trim(), no = r.querySelector('.pp-no').value.trim(), url = r.querySelector('.pp-url').value.trim();
+    if (cat) o.cat = cat; if (no) o.no = no; if (url) o.url = url;
+    return o;
+  }).filter(o => o.cat || o.no || o.url);
 }
 
 function shipOtOf(childId) { return shipOtMap.get(childId) || ''; }
@@ -7709,7 +7923,7 @@ async function loadLaserAssign() {
     if (drawingnos.length) {
       const inList = drawingnos.map(d => `"${d}"`).join(',');
       const pdRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${inList})&select=customer_drawing_no,product_name,ot_number,client,product_category,second_category,part_number,part_number_url`,
+        `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${inList})&select=customer_drawing_no,product_name,ot_number,client,product_category,second_category,part_number,part_number_url,parts`,
         { headers: H }
       );
       if (pdRes.ok) (await pdRes.json()).forEach(p => pdMap.set(p.customer_drawing_no, p));
@@ -7739,6 +7953,7 @@ async function loadLaserAssign() {
           secondCategory: pd?.second_category || '',
           partNumber: pd?.part_number || '',
           partNumberUrl: pd?.part_number_url || '',
+          parts: pd?.parts || [],
           orderdate: o.orderdate || '-',
           deliverydate: o.deliverydate || '-',
           quantity: o.quantity != null ? o.quantity : '-',
@@ -7952,7 +8167,7 @@ function laserCardHtml(g, opts) {
       '<span style="font-size:8px;font-weight:700;color:#1d4ed8;letter-spacing:0.06em;white-space:nowrap;">指示書' + copyBadge + '</span>' +
       '<span style="display:flex;align-items:center;gap:4px;overflow:hidden;">' +
         (g.productCategory ? categoryBadgeHtml(g.productCategory) : '') +
-        (g.secondCategory ? secondCategoryBadgeHtml(g.secondCategory, g.partNumber, g.partNumberUrl) : '') +
+        ((g.secondCategory || (g.parts && g.parts.length)) ? secondCategoryBadgeHtml(g.secondCategory, g.partNumber, g.partNumberUrl, g.parts) : '') +
         '<span style="font-size:10px;font-weight:700;color:#2563eb;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + g.productNo + '</span>' +
       '</span>' +
     '</div>' +
@@ -12245,6 +12460,14 @@ function extractIzushiRows(full, lines) {
     if (wm) return wm[0].replace(/\s+/g, ' ').trim();   // 空白を正規化して全体を返す
     wm = nameLine.match(wiperCode) || custLine.match(wiperCode);
     if (wm) return wm[0];
+    // 大阪ﾃｯｸ行の FAC/FAL で始まる品番は、空白で区切られた1かたまり全体を図番とする
+    //   （途中で切らない。ハイフン区切りの枝番や末尾の英字も含める）
+    //   例) FAC-001080-6W → FAC-001080-6W ／ FAC1077R2A4A6A → FAC1077R2A4A6A
+    //   （商品名側の U30393A 等より大阪ﾃｯｸ行の品番を優先する）
+    for (const tok of custLine.split(/\s+/)) {
+      const t = tok.replace(/[、､,。．.]+$/, '');
+      if (/^FA[CL]/.test(t) && /\d/.test(t) && /^[A-Z0-9-]+$/.test(t)) return t;
+    }
     for (const p of pats) { const m = custLine.match(p); if (m) return m[1]; }
     // 大阪ﾃｯｸ行の7桁品番（5325781 / 5369734 等）。OT番号(OT-xxxxxx)を誤って拾わないよう、
     // OT番号部分を除いてから7桁を探す
@@ -14613,7 +14836,7 @@ async function loadOrders() {
     // ordersとproductdateを並行取得（両方ページネーション対応）
     const [rawOrders, pdList] = await Promise.all([
       fetchAllRows(`${SUPABASE_URL}/rest/v1/orders?select=*&order=orderdate.desc,id.desc`),
-      fetchAllRows(`${SUPABASE_URL}/rest/v1/productdate?select=designid,customer_drawing_no,client,product_name,ot_number,delivery_destination,product_category,second_category,part_number,part_number_url`)
+      fetchAllRows(`${SUPABASE_URL}/rest/v1/productdate?select=designid,customer_drawing_no,client,product_name,ot_number,delivery_destination,product_category,second_category,part_number,part_number_url,parts`)
     ]);
 
     // productdateをcustomer_drawing_noでMapに変換（高速検索用）
@@ -14635,6 +14858,7 @@ async function loadOrders() {
         pd_second_category:       pd?.second_category        || '',
         pd_part_number:           pd?.part_number             || '',
         pd_part_number_url:       pd?.part_number_url         || '',
+        pd_parts:                 pd?.parts                   || [],
         has_order_memo: false,
         has_pd_memo:    false,
         has_memo:       false,
@@ -15491,7 +15715,7 @@ function renderOrdersTable() {
       <td>${r.orderdate || '-'}</td>
       <td><span style="display:inline-flex;align-items:center;gap:5px;">${clientLogoHtml(r.pd_client, 'row-logo')}<span>${r.pd_client || '-'}</span></span></td>
       <td>${r.pd_product_name || '-'}</td>
-      <td>${categoryBadgeHtml(r.pd_product_category)}${secondCategoryBadgeHtml(r.pd_second_category, r.pd_part_number, r.pd_part_number_url)}</td>
+      <td>${categoryBadgeHtml(r.pd_product_category)}${secondCategoryBadgeHtml(r.pd_second_category, r.pd_part_number, r.pd_part_number_url, r.pd_parts)}</td>
       <td class="mono" style="font-size:11px;color:${categoryTextColor(r.pd_product_category)};font-weight:700;">${r.pd_ot_number || '-'}</td>
       <td class="mono" style="font-size:11px">${r.drawingno || '-'}</td>
       <td class="mono" style="font-size:11px">${r.orderno || '-'}</td>
@@ -15766,7 +15990,7 @@ function renderDetailModal(p, children) {
       </div>
       <div class="dm-hero">
         <div class="dm-hero-name">${pd ? esc(pd.product_name || '-') : '<span class="dm-muted">製品マスタ未登録</span>'}</div>
-        <div class="dm-hero-tags">${pd ? categoryBadgeHtml(pd.product_category) + secondCategoryBadgeHtml(pd.second_category, pd.part_number, pd.part_number_url) : ''}</div>
+        <div class="dm-hero-tags">${pd ? categoryBadgeHtml(pd.product_category) + secondCategoryBadgeHtml(pd.second_category, pd.part_number, pd.part_number_url, pd.parts) : ''}</div>
       </div>
       <div class="dm-grid">
         ${f('受注番号', dash(p.orderno), 'mono strong')}
@@ -16361,7 +16585,11 @@ function categoryTextColor(cat) {
 // 第2品目区分バッジ(BK／P)。丸型・光沢グレー・白文字。カーソルを合わせると部品番号をツールチップ表示。
 // part_number_url が登録されている場合はクリックでそのURLを新規タブで開く。
 // 品目区分バッジ(categoryBadgeHtml)の直後に並べて使う想定。
-function secondCategoryBadgeHtml(secondCat, partNo, partNoUrl) {
+// parts（複数の部品情報）があればそれを優先して全件バッジ表示する
+function secondCategoryBadgeHtml(secondCat, partNo, partNoUrl, parts) {
+  if (Array.isArray(parts) && parts.length) {
+    return parts.filter(x => x && x.cat).map(x => secondCategoryBadgeHtml(x.cat, x.no, x.url)).join('');
+  }
   if (!secondCat) return '';
   const title = String(partNo || '').replace(/"/g, '&quot;');
   const inner = secondCat;
@@ -18622,7 +18850,7 @@ function renderProductdateTable() {
 
   document.getElementById('pd-tbody').innerHTML = slice.map(r => `
     <tr onclick="openPdDetail(${r.designid})" title="クリックして詳細を表示" style="cursor:pointer;">
-      <td>${categoryBadgeHtml(r.product_category)}${secondCategoryBadgeHtml(r.second_category, r.part_number, r.part_number_url)}</td>
+      <td>${categoryBadgeHtml(r.product_category)}${secondCategoryBadgeHtml(r.second_category, r.part_number, r.part_number_url, r.parts)}</td>
       <td>${r.client||'-'}</td>
       <td class="mono" style="font-size:11px;color:${categoryTextColor(r.product_category)};font-weight:700;">${r.ot_number||'-'}</td>
       <td class="mono" style="font-size:11px">${r.customer_drawing_no||'-'}</td>
@@ -18680,7 +18908,7 @@ function openPdDetail(id) {
               <div class="dhero-value">${fmt(rec.product_name)}</div>
             </div>
             <div class="dhero-badges">
-              ${categoryBadgeHtml(rec.product_category)}${secondCategoryBadgeHtml(rec.second_category, rec.part_number, rec.part_number_url)}
+              ${categoryBadgeHtml(rec.product_category)}${secondCategoryBadgeHtml(rec.second_category, rec.part_number, rec.part_number_url, rec.parts)}
             </div>
           </div>
         </div>
@@ -18898,6 +19126,7 @@ function openPdModal(id) {
       }
       el.value = v;
     });
+    pdPartsRender(pdPartsOf(rec));
     // 子レコードセクション表示・読み込み
     childSection.style.display = 'block';
     loadPdChildRows(id);
@@ -18910,6 +19139,7 @@ function openPdModal(id) {
       if (el) el.value = '';
     });
     document.getElementById('pd-rotatable').value = 'true'; // 新規は回転可を既定に
+    pdPartsRender([]);
     // 新規時は子セクション非表示（保存後に再度開いて追加可能）
     childSection.style.display = 'none';
     document.getElementById('pd-child-rows').innerHTML = '';
@@ -19174,9 +19404,10 @@ async function savePdRecord() {
     ot_number:              document.getElementById('pd-ot_number').value.trim() || null,
     customer_drawing_no:    document.getElementById('pd-customer_drawing_no').value.trim() || null,
     product_category:       document.getElementById('pd-product_category').value.trim() || null,
-    second_category:        document.getElementById('pd-second_category').value.trim() || null,
-    part_number:            document.getElementById('pd-part_number').value.trim() || null,
-    part_number_url:        document.getElementById('pd-part_number_url').value.trim() || null,
+    parts:                  pdPartsCollect(),
+    second_category:        pdPartsCollect()[0]?.cat || null,
+    part_number:            pdPartsCollect()[0]?.no  || null,
+    part_number_url:        pdPartsCollect()[0]?.url || null,
     width_mm:               document.getElementById('pd-width_mm').value  !== '' ? parseInt(document.getElementById('pd-width_mm').value)  : null,
     depth_mm:               document.getElementById('pd-depth_mm').value  !== '' ? parseInt(document.getElementById('pd-depth_mm').value)  : null,
     height_mm:              document.getElementById('pd-height_mm').value !== '' ? parseInt(document.getElementById('pd-height_mm').value) : null,
