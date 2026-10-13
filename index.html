@@ -397,13 +397,17 @@
   .pu-card-admin a { font-size:11px; color:#64748b; cursor:pointer; text-decoration:underline; }
   .pu-card-admin a.del { color:#dc2626; }
 
-  #pu-cart-btn { position:fixed; right:26px; bottom:26px; z-index:900; width:58px; height:58px; border-radius:50%;
-    border:none; background:#1d4ed8; color:#fff; cursor:pointer; box-shadow:0 4px 14px rgba(29,78,216,.4);
-    display:flex; align-items:center; justify-content:center; transition:transform .15s; }
-  #pu-cart-btn:hover { transform:scale(1.08); }
-  #pu-cart-badge { position:absolute; top:-4px; right:-4px; min-width:22px; height:22px; border-radius:11px;
-    background:#f59e0b; color:#fff; font-size:12px; font-weight:800; display:flex; align-items:center;
-    justify-content:center; padding:0 5px; border:2px solid #fff; }
+  /* カートボタン：カード内の「カートへ」（青）と見分けやすいよう、白フチ付きの濃紺ピル型にする */
+  #pu-cart-btn { position:fixed; right:24px; bottom:24px; z-index:900; height:52px; padding:0 18px 0 16px; border-radius:26px;
+    border:3px solid #fff; background:#0f172a; color:#fff; cursor:pointer; font-family:inherit; font-size:14px; font-weight:800; letter-spacing:.04em;
+    box-shadow:0 0 0 1px rgba(15,23,42,.12), 0 10px 28px rgba(15,23,42,.35);
+    display:flex; align-items:center; gap:8px; transition:transform .15s, box-shadow .15s; }
+  #pu-cart-btn:hover { transform:translateY(-2px); box-shadow:0 0 0 1px rgba(15,23,42,.12), 0 14px 32px rgba(15,23,42,.42); }
+  #pu-cart-btn .pu-cart-label { white-space:nowrap; }
+  #pu-cart-badge { min-width:24px; height:24px; border-radius:12px; background:#f59e0b; color:#fff; font-size:12.5px; font-weight:800;
+    display:flex; align-items:center; justify-content:center; padding:0 6px; }
+  /* 一番下の行まで下げた時にカートボタンの裏に隠れないよう、一覧の下に余白を確保 */
+  #pu-grid { padding-bottom:96px; }
 
   .pu-overlay { position:fixed; inset:0; background:rgba(15,23,42,.45); z-index:1000;
     display:flex; align-items:center; justify-content:center; }
@@ -3585,6 +3589,7 @@
   <!-- カートボタン（このページ表示中のみ見える） -->
   <button id="pu-cart-btn" onclick="puOpenCart()" title="カートを見る">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px;"><circle cx="9" cy="21" r="1.6"/><circle cx="19" cy="21" r="1.6"/><path stroke-linecap="round" stroke-linejoin="round" d="M2 2h3l2.7 12.4a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+    <span class="pu-cart-label">カート</span>
     <span id="pu-cart-badge" style="display:none;">0</span>
   </button>
 
