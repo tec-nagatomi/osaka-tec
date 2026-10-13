@@ -1079,8 +1079,9 @@
   .sh-seal { font-family:'SF Mono','Consolas',monospace; font-weight:800; color:#1d4ed8; }
   .sh-empty { text-align:center; color:#9ca3af; padding:50px 0; font-size:13px; }
   /* ===== 権限 ===== */
-  #perm-ro-badge { position:fixed; left:14px; bottom:14px; z-index:1500; background:#1e3a8a; color:#fff; font-size:12.5px; font-weight:700;
-    padding:7px 14px; border-radius:20px; box-shadow:0 4px 14px rgba(0,0,0,.25); pointer-events:none; }
+  .perm-tag { display:inline-flex; align-items:center; font-size:11px; font-weight:700; line-height:1; padding:4px 8px 3px; border-radius:4px; border:1px solid; cursor:default; white-space:nowrap; }
+  .perm-tag.view { background:#f3f4f6; color:#4b5563; border-color:#d1d5db; }
+  .perm-tag.edit { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
   body.perm-ro #page-orders .import-card,
   body.perm-ro [onclick^="document.getElementById('editable-excel-file')"],
   body.perm-ro #pallet-autosim-btn, body.perm-ro #pallet-repack-btn, body.perm-ro #pallet-clearall-btn,
@@ -2411,6 +2412,7 @@
     <div style="display:flex;align-items:center;gap:8px;">
       <div class="avatar">OT</div>
       <span>管理者</span>
+      <span id="perm-mode-tag" class="perm-tag" style="display:none;"></span>
     </div>
     <button class="btn-logout" id="userAdminBtn" style="display:none;margin-right:6px;" onclick="openUserAdmin()">👥 ユーザー</button>
     <button class="btn-logout" onclick="doLogout()">ログアウト</button>
@@ -3733,6 +3735,10 @@
         <button class="pd-btn-new" onclick="openPdImportModal()" style="background:#059669;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
           Excelインポート
+        </button>
+        <button class="pd-btn-new" onclick="exportProductdateExcel(event)" style="background:#fff;color:#047857;border:1px solid #a7f3d0;" title="表示中（検索・取引先で絞り込んだ結果）の製品マスタをExcelに出力します。Shiftキーを押しながらクリックすると全件を出力します">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Excel出力
         </button>
         <button class="pd-btn-new" onclick="openDimImportModal()" style="background:#b45309;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M9 3v18"/></svg>
@@ -11478,14 +11484,22 @@ function canAccessFullSystem() { return permIsAdmin(); }
 function permUpdateMode(page) {
   const ro = !!currentUser && !canEditPage(page);
   document.body.classList.toggle('perm-ro', ro);
-  let badge = document.getElementById('perm-ro-badge');
-  if (!badge) {
-    badge = document.createElement('div');
-    badge.id = 'perm-ro-badge';
-    badge.textContent = '👁 閲覧のみ（この画面では編集・登録はできません）';
-    document.body.appendChild(badge);
+  // ヘッダーのユーザー名の横に、この画面の権限を「閲覧」「編集」で表示（TOPなど権限対象外の画面は非表示）
+  const tag = document.getElementById('perm-mode-tag');
+  if (tag) {
+    const mod = permPageModule(page);
+    if (!currentUser || !mod) {
+      tag.style.display = 'none';
+    } else {
+      tag.style.display = '';
+      tag.className = 'perm-tag ' + (ro ? 'view' : 'edit');
+      tag.textContent = ro ? '閲覧' : '編集';
+      const label = (PERM_MODULES.find(m => m.key === mod) || {}).label || '';
+      tag.title = ro ? `${label}：閲覧のみ（この画面では編集・登録はできません）` : `${label}：編集・登録できます`;
+    }
   }
-  badge.style.display = ro ? '' : 'none';
+  // 旧：左下の「閲覧のみ」表示は廃止
+  document.getElementById('perm-ro-badge')?.remove();
 }
 
 // ---- 書き込みの最終ガード ----
@@ -15753,6 +15767,8 @@ function doLogout() {
   if (avatarEl) avatarEl.textContent = 'OT';
   const nameSpans = document.querySelectorAll('.header-right span');
   nameSpans.forEach(s => { if (!s.id) s.textContent = '管理者'; });
+  const permTag = document.getElementById('perm-mode-tag');
+  if (permTag) permTag.style.display = 'none';
   // 入力フィールドをクリア
   document.getElementById('login-userid').value = '';
   document.getElementById('login-password').value = '';
@@ -19008,6 +19024,58 @@ const PD_FIELD_LABELS = {
   width_mm: '幅(mm)', depth_mm: '奥行(mm)', height_mm: '高さ(mm)', weight_kg: '重量(kg)', rotatable: '回転可',
   stroke_mm: 'ストローク(mm)', sliding_resistance: '摺動抵抗', designid: 'ID',
 };
+// ---- 製品マスタのExcel出力 ----
+// 表示中（検索・取引先フィルター適用後）のデータを出力。Shift+クリック、または絞り込みなしの場合は全件。
+// 列は PD_FIELD_LABELS の日本語見出しで並べ、それ以外にDBに存在する列も末尾に出力する（列の追加にも自動で追随）。
+const PD_EXPORT_ORDER = [
+  'designid', 'client', 'product_category', 'second_category', 'ot_number', 'customer_drawing_no', 'product_code',
+  'product_name', 'part_number', 'part_number_url', 'current_price', 'latest_quote_date', 'approval_return_date',
+  'delivery_destination', 'remarks', 'width_mm', 'depth_mm', 'height_mm', 'weight_kg', 'rotatable',
+  'stroke_mm', 'sliding_resistance', 'approved_url', 'drawing_url', 'old_drawing_url', 'component_url',
+];
+function exportProductdateExcel(ev) {
+  const e = ev || window.event;
+  const q = (document.getElementById('pd-search')?.value || '').trim();
+  const isFiltered = !!(pdClientFilterValue || q);
+  const useAll = (e && e.shiftKey) || !isFiltered;
+  const rows = useAll ? allProductdate : filteredProductdate;
+  if (!rows || !rows.length) { alert('出力するデータがありません'); return; }
+
+  // 出力列：既定順 → それ以外の列（created_at等）
+  const present = new Set();
+  rows.forEach(r => Object.keys(r).forEach(k => present.add(k)));
+  const keys = PD_EXPORT_ORDER.filter(k => present.has(k))
+    .concat([...present].filter(k => !PD_EXPORT_ORDER.includes(k) && !k.startsWith('_')).sort());
+  const extraLabels = { created_at: '登録日時', updated_at: '更新日時' };
+  const header = keys.map(k => PD_FIELD_LABELS[k] || extraLabels[k] || k);
+  const toCell = (k, v) => {
+    if (v == null) return '';
+    if (typeof v === 'boolean') return v ? '○' : '';
+    if (k === 'current_price' || /_mm$|_kg$|sliding_resistance|designid/.test(k)) {
+      const n = Number(v); return isNaN(n) ? v : n;
+    }
+    if (typeof v === 'object') return JSON.stringify(v);
+    return v;
+  };
+  const body = rows.map(r => keys.map(k => toCell(k, r[k])));
+
+  const ws = XLSX.utils.aoa_to_sheet([header, ...body]);
+  const widthOf = k => ({ product_name: 34, client: 26, remarks: 30, customer_drawing_no: 18, ot_number: 14,
+    approved_url: 30, drawing_url: 30, old_drawing_url: 30, component_url: 30, part_number_url: 30,
+    delivery_destination: 16, product_code: 14, part_number: 14 }[k] || 11);
+  ws['!cols'] = keys.map(k => ({ wch: widthOf(k) }));
+  ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: body.length, c: keys.length - 1 } }) };
+  ws['!freeze'] = { xSplit: 0, ySplit: 1 };
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '製品マスタ');
+
+  const d = new Date();
+  const ts = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}`;
+  const scope = useAll ? '全件' : (pdClientFilterValue ? pdClientFilterValue.replace(/株式会社|[\\/:*?"<>|]/g, '').trim() : '絞り込み');
+  try { XLSX.writeFile(wb, `製品マスタ_${scope}_${rows.length}件_${ts}.xlsx`); }
+  catch (err) { alert('Excel出力に失敗しました: ' + err.message); }
+}
+
 async function loadPdChangelog(designid) {
   const el = document.getElementById('pd-detail-changelog');
   if (!el) return;
