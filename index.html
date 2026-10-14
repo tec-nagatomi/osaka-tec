@@ -11804,6 +11804,8 @@ async function handleFiles(files) {
   // 納入先の長い名称を短縮（例: ヤマザキマザックマニュファクチャリング(株)　美濃加茂製作所 → 美濃加茂製作所）
   for (const r of extractedRows) r.delivery_destination = shortenDeliveryDest(r.delivery_destination);
 
+  // IZUSHI等: 商品名＋大阪ﾃｯｸ行の結合図番など、図番候補を製品マスタで照合
+  await resolveDrawingAlternatives(extractedRows);
   // マザック汎用品番（Z93〜）の製品照合
   const genericInfo = await resolveMazakGenericRows(extractedRows);
   let msg = extractedRows.length + '件のデータを抽出しました';
@@ -12547,6 +12549,18 @@ function extractIzushiRows(full, lines) {
     const drawingno = extractDrawing(custLine, productName);
     const otNumber  = extractOt(custLine) || extractOt(productName);
 
+    // 商品名と大阪ﾃｯｸ行の2行で1つの図番になっているケース
+    //   例) 商品名「WIPER SET FOR U30457B07」＋大阪ﾃｯｸ行「FAC11511A」
+    //       → 製品マスタの客先図番「WIPER SET FOR U30457B07 FAC11511A」で照合
+    //   照合優先順: ①2行結合 → ②通常抽出の図番（FAC11511A）→ ③商品名1行目のみ
+    //   ※実際の採用は resolveDrawingAlternatives() で製品マスタ存在確認後に決定
+    const norm1 = s => String(s || '').replace(/\s+/g, ' ').trim();
+    const custBody = norm1(custLine.replace(/OT-?\d{3,6}(?:-[\d\u2460-\u2473]+)?/g, ' '));
+    const drawAlts = [];
+    if (custBody && productName) drawAlts.push(norm1(productName + ' ' + custBody));
+    if (drawingno) drawAlts.push(drawingno);
+    if (productName) drawAlts.push(norm1(productName));
+
     rows.push({
       orderdate:            orderDate,
       orderno,
@@ -12560,9 +12574,36 @@ function extractIzushiRows(full, lines) {
       shippingdate:         null,
       _productName:         productName, // 参考: 商品名（保存されない・ログ/確認用）
       _otNumber:            otNumber,    // 参考: OT番号（保存されない・productdateから補完）
+      _drawAlts:            [...new Set(drawAlts)].filter(Boolean), // 図番候補（優先順）
     });
   }
   return rows;
+}
+
+// ---- 図番候補（_drawAlts）の製品マスタ照合 ----
+// 優先順に客先図番(productdate.customer_drawing_no)の存在を確認し、最初に見つかった候補を drawingno に採用。
+// どれも見つからなければ従来の drawingno のまま（未登録扱い）。
+async function resolveDrawingAlternatives(rows) {
+  const targets = rows.filter(r => Array.isArray(r._drawAlts) && r._drawAlts.length > 1);
+  if (!targets.length) return;
+  const H = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+  const keys = [...new Set(targets.flatMap(r => r._drawAlts))];
+  const exist = new Set();
+  try {
+    for (let i = 0; i < keys.length; i += 50) {
+      const chunk = keys.slice(i, i + 50);
+      const inList = chunk.map(d => `"${String(d).replace(/"/g, '\\"')}"`).join(',');
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${encodeURIComponent(inList)})&select=customer_drawing_no`, { headers: H });
+      if (res.ok) for (const p of await res.json()) exist.add(p.customer_drawing_no);
+    }
+  } catch (e) { console.warn('[図番候補照合] 失敗', e); return; }
+  for (const r of targets) {
+    const hit = r._drawAlts.find(d => exist.has(d));
+    if (hit && hit !== r.drawingno) {
+      console.log(`[図番候補照合] ${r.drawingno} → ${hit}`);
+      r.drawingno = hit;
+    }
+  }
 }
 
 // ---- フォーマット3: オークマ 購買注文書 ----
@@ -16128,7 +16169,7 @@ function renderEditContent(p, children) {
     + '<div class="edit-section-title">受注情報の編集</div>'
     + '<div class="edit-grid">'
     + '<div class="edit-field"><label>製品番号</label><input class="edit-input" readonly value="' + (p.productno || '') + '"></div>'
-    + '<div class="edit-field"><label>受注番号</label><input class="edit-input" readonly value="' + (p.orderno || '') + '"></div>'
+    + '<div class="edit-field"><label>受注番号</label><input class="edit-input" id="edit-orderno" value="' + String(p.orderno || '').replace(/"/g, '&quot;') + '"></div>'
     + '<div class="edit-field"><label>図番</label><input class="edit-input" id="edit-drawingno" value="' + (p.drawingno || '') + '"></div>'
     + '<div class="edit-field"><label>原番</label><input class="edit-input" id="edit-originalno" value="' + (p.originalno || '') + '"></div>'
     + '<div class="edit-field"><label>受注日</label><input class="edit-input" id="edit-orderdate" type="date" value="' + (p.orderdate || '') + '"></div>'
@@ -16214,8 +16255,27 @@ async function saveAllEdits() {
       if (!pdr.ok) { const e = await pdr.json(); throw new Error(e.message || '製品マスタ更新失敗'); }
     }
 
+    // --- 受注番号の変更チェック（重複禁止） ---
+    const oldOrderno = String(p.orderno || '').trim();
+    const newOrderno = (document.getElementById('edit-orderno')?.value || '').trim();
+    const ordernoChanged = newOrderno !== oldOrderno;
+    if (ordernoChanged) {
+      if (!newOrderno) throw new Error('受注番号は空にできません');
+      const dupRes = await fetch(`${SUPABASE_URL}/rest/v1/orders?orderno=eq.${encodeURIComponent(newOrderno)}&id=neq.${p.id}&select=id,drawingno&limit=5`, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+      });
+      if (!dupRes.ok) throw new Error('受注番号の重複確認に失敗しました');
+      const dups = await dupRes.json();
+      if (dups.length) throw new Error(`受注番号「${newOrderno}」は既に登録されています（図番: ${dups.map(d => d.drawingno || '-').join(', ')}）`);
+      if (!confirm(`受注番号を「${oldOrderno}」→「${newOrderno}」に変更します。\nよろしいですか？`)) {
+        btn.disabled = false;
+        throw new Error('保存をキャンセルしました');
+      }
+    }
+
     // --- 親データ（orders）更新 ---
     const parentPatch = {
+      ...(ordernoChanged ? { orderno: newOrderno } : {}),
       drawingno:    document.getElementById('edit-drawingno').value.trim() || null,
       originalno:   document.getElementById('edit-originalno').value.trim() || null,
       orderdate:    document.getElementById('edit-orderdate').value || null,
@@ -16248,8 +16308,21 @@ async function saveAllEdits() {
     });
     if (!pr.ok) {
       const e = await pr.json().catch(() => ({}));
-      if (e.code === '23505') throw new Error('同じ受注番号＋図番の受注が既に登録されているため、この図番には変更できません');
+      if (e.code === '23505') throw new Error('同じ受注番号＋図番の受注が既に登録されているため、変更できません');
       throw new Error(e.message || '親更新失敗');
+    }
+
+    // 受注番号を変更した場合：出荷準備データ（ship_ready）に控えている受注番号も追従
+    if (ordernoChanged && _detailChildren.length) {
+      try {
+        const ids = _detailChildren.map(c => c.id).join(',');
+        await fetch(`${SUPABASE_URL}/rest/v1/ship_ready?child_id=in.(${ids})`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ orderno: newOrderno })
+        });
+      } catch (e) { console.warn('[受注番号変更] ship_ready 更新失敗', e); }
     }
 
     // --- 子データ更新 ---
