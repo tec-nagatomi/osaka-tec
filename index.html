@@ -11808,7 +11808,7 @@ async function handleFiles(files) {
   if (extractedRows.length === 0) {
     showStatus('error', unreadableFiles.length
       ? `注文書の形式を判別できませんでした（${unreadableFiles.join('、')}）。図番・注番の列が見つからないため登録しません。`
-      : 'データを抽出できませんでした。画像PDFの場合はテキスト抽出不可です（YP4-N等）。テキスト付きPDFをご使用ください。');
+      : 'データを抽出できませんでした。スキャン画像のPDFは、現在は野村製作所の発注書のみ文字認識(OCR)に対応しています。それ以外はテキスト付きPDFをご使用ください。');
     return;
   }
   // 納入先の長い名称を短縮（例: ヤマザキマザックマニュファクチャリング(株)　美濃加茂製作所 → 美濃加茂製作所）
@@ -11822,7 +11822,9 @@ async function handleFiles(files) {
   if (genericInfo.total) msg += `（汎用品番Z93: ${genericInfo.matched}/${genericInfo.total}件を製品マスタと照合）`;
   if (skippedCount) msg += `（図番の無い行 ${skippedCount}件は除外）`;
   if (unreadableFiles.length) msg += ` ※形式を判別できず除外: ${unreadableFiles.join('、')}`;
-  showStatus('success', msg, 100);
+  const ocrCount = extractedRows.filter(r => r._ocr).length;
+  if (ocrCount) msg += ` ※${ocrCount}件はスキャン画像を文字認識(OCR)で読み取りました。注番・数量・単価・納期を原本と照らして確認してください`;
+  showStatus(ocrCount ? 'warning' : 'success', msg, 100);
   renderPreview();
 }
 
@@ -11960,6 +11962,218 @@ function isValidOrderRow(r) {
   return true;
 }
 
+// ---- 画像PDF（スキャン）用 OCR ----
+// テキストを持たない画像PDF（スキャンした注文書）は、ページを画像にして文字認識(OCR)する。
+// OCRライブラリ(tesseract.js)と日本語データ(約2MB)は初回だけ読み込み、以降はブラウザにキャッシュされる。
+const OCR_TESS_URL    = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+const OCR_WORKER_PATH = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js';
+const OCR_CORE_PATH   = 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1';
+const OCR_LANG_PATH   = 'https://cdn.jsdelivr.net/npm/@tesseract.js-data/jpn@1.0.0/4.0.0_best_int';
+let _ocrLibPromise = null;
+function loadTesseract() {
+  if (window.Tesseract) return Promise.resolve(window.Tesseract);
+  if (!_ocrLibPromise) {
+    _ocrLibPromise = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = OCR_TESS_URL;
+      s.onload = () => resolve(window.Tesseract);
+      s.onerror = () => { _ocrLibPromise = null; reject(new Error('OCRライブラリの読み込みに失敗しました')); };
+      document.head.appendChild(s);
+    });
+  }
+  return _ocrLibPromise;
+}
+async function createOcrWorker() {
+  const T = await loadTesseract();
+  const w = await T.createWorker('jpn', 1, { workerPath: OCR_WORKER_PATH, corePath: OCR_CORE_PATH, langPath: OCR_LANG_PATH });
+  await w.setParameters({ preserve_interword_spaces: '1', tessedit_pageseg_mode: '6' });  // 6=1ブロックとして読む（既定値。各ページで同じ条件にそろえる）
+  return w;
+}
+async function renderPdfPageToCanvas(page, dpi) {
+  const vp = page.getViewport({ scale: (dpi || 200) / 72 });
+  const c = document.createElement('canvas');
+  c.width = Math.ceil(vp.width); c.height = Math.ceil(vp.height);
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+  await page.render({ canvasContext: ctx, viewport: vp }).promise;
+  return c;
+}
+async function ocrPdfPage(worker, page) {
+  const canvas = await renderPdfPageToCanvas(page, 200);
+  const { data } = await worker.recognize(canvas, {}, { text: true, blocks: true });
+  const lines = [];
+  for (const b of (data.blocks || [])) for (const pg of (b.paragraphs || [])) for (const l of (pg.lines || [])) {
+    lines.push({ text: l.text || '', bbox: l.bbox });
+  }
+  return { canvas, text: data.text || '', lines };
+}
+// OCR結果の正規化: 全角英数→半角、日本語文字の間に入る余分な空白を除去
+function ocrNormalize(s) {
+  return String(s || '')
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+    .replace(/[／]/g, '/').replace(/[￥]/g, '¥')
+    .replace(/([^\x00-\x7F]) (?=[^\x00-\x7F])/g, '$1');   // 1つだけの空白は詰める（2つ以上は欄の区切りとして残す）
+}
+// 全角カタカナ→半角カタカナ（注文書の表記に合わせる）＋ 半角の濁点・半濁点の読み違いを補正
+//   例) ケフ7ラー材 → ｹﾌﾟﾗｰ材（半濁点ﾟが「7」「2」「°」に化けやすい）
+function ocrHalfKana(s) {
+  const base = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンァィゥェォャュョッー';
+  const half = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝｧｨｩｪｫｬｭｮｯｰ';
+  const daku = 'ガギグゲゴザジズゼゾダヂヅデドバビブベボ', dakuB = 'カキクケコサシスセソタチツテトハヒフヘホ';
+  const han = 'パピプペポ', hanB = 'ハヒフヘホ';
+  let out = '';
+  for (const ch of String(s || '')) {
+    let i;
+    if ((i = daku.indexOf(ch)) >= 0) out += half[base.indexOf(dakuB[i])] + 'ﾞ';
+    else if ((i = han.indexOf(ch)) >= 0) out += half[base.indexOf(hanB[i])] + 'ﾟ';
+    else if (ch === 'ヴ') out += 'ｳﾞ';
+    else if ((i = base.indexOf(ch)) >= 0) out += half[i];
+    else out += ch;
+  }
+  return out
+    .replace(/([ﾊﾋﾌﾍﾎ])[72°゜º。o](?=[ｦ-ﾝｰ])/g, '$1ﾟ')
+    .replace(/([ｳｶ-ﾄﾊ-ﾎ])["”'’″](?=[ｦ-ﾝｰ]|$)/g, '$1ﾞ');
+}
+// 複数の写し（発注書・現品票・受領書・納品書）から読んだ候補のうち、最も多い値を採用する
+function ocrVote(arr) {
+  const cnt = new Map();
+  for (const v of arr) if (v !== '' && v != null) cnt.set(v, (cnt.get(v) || 0) + 1);
+  let best = '', n = 0;
+  for (const [v, c] of cnt) if (c > n) { best = v; n = c; }
+  return best;
+}
+
+// ---- フォーマット4b: 野村製作所（スキャン画像の発注書） ----
+// 1ページに 発注書／現品票／受領書／納品書兼請求書 の4つの写しがある。
+// OCRの読み違いを減らすため、各写しから同じ項目を集めて多数決で決める。
+async function extractNomuraOcrRows(ocr, worker, page) {
+  const t = ocrNormalize(ocr.text);
+  const OT_RE = /[0OＯ]T-?(\d{6}(?:-\d{1,2})?)/;
+
+  // 注文No（10桁 0000xxxxxx → 先頭の0000を除く：テキスト版と同じ扱い）
+  const orderno = ocrVote([...t.matchAll(/(?:^|[^\d])0000(\d{6})(?!\d)/g)].map(m => m[1]));
+  // 発注日: 取引先コード(8桁)の直後の日付
+  let orderDate = ocrVote([...t.matchAll(/\d{8}\s*[|「\[\]]?\s*(\d{4}\/\d{2}\/\d{2})/g)].map(m => m[1]));
+  // 納期＋発注数: 行頭の「2026/09/15  1 …」
+  const dq = [...t.matchAll(/^[\s|\[]*(\d{4}\/\d{2}\/\d{2})\s+(\d{1,5})(?!\d|\/)/gm)];
+  const deliverydate = ocrVote(dq.map(m => m[1]));
+  const quantity = parseInt(ocrVote(dq.filter(m => m[1] === deliverydate).map(m => m[2]))) || 1;
+  if (!orderDate) {
+    const ds = [...t.matchAll(/(\d{4}\/\d{2}\/\d{2})/g)].map(m => m[1]).filter(d => d !== deliverydate);
+    orderDate = ds[0] || '';
+  }
+  // 工事番号（AH226174 など）: 2ページ目の購入仕様書と結び付けるために使う（保存はしない）
+  const seiban = ocrVote([...t.matchAll(/(?:^|[^A-Z0-9])([A-Z]{2}\d{6})(?![0-9])/g)].map(m => m[1]));
+  // OT番号
+  let otRaw = ocrVote([...t.matchAll(new RegExp(OT_RE.source, 'g'))].map(m => m[1]));
+  // 「大阪ﾃｯｸ OT-006755-1」のように半角カナと並ぶ行はページ全体のOCRで落ちやすい。
+  // 見つからない場合は「品名/形式寸法」欄の下を高解像度で切り出して読み直す
+  if (!otRaw && page) {
+    try {
+      const heads = ocr.lines.filter(l => l.bbox && /品名\/?形式/.test(ocrNormalize(l.text))).sort((a, b) => a.bbox.y0 - b.bbox.y0);
+      if (heads.length) {
+        const hi = await renderPdfPageToCanvas(page, 300), k = 1.5, found = [];
+        await worker.setParameters({ tessedit_pageseg_mode: '6' });
+        for (const hd of heads.slice(0, 4)) {
+          const bb = hd.bbox, h = Math.max(24, Math.min(60, (bb.y1 - bb.y0) * k));
+          const left = Math.max(0, Math.round(bb.x0 * k - 10)), top = Math.round(bb.y1 * k);
+          if (top >= hi.height) continue;
+          const rect = { left, top, width: Math.min(hi.width - left, Math.round(h * 30)), height: Math.min(hi.height - top, Math.round(h * 2.6)) };
+          const r = await worker.recognize(hi, { rectangle: rect });
+          const m = ocrNormalize(r.data.text).match(OT_RE);
+          if (m) found.push(m[1]);
+          if (found.length >= 2 && found[0] === found[1]) break;
+        }
+        otRaw = ocrVote(found);
+      }
+    } catch (e) { console.warn('[野村OCR] OT番号の再認識に失敗', e); }
+    finally { try { await worker.setParameters({ tessedit_pageseg_mode: '6' }); } catch (_) {} }
+  }
+  const otNumber = otRaw ? 'OT-' + otRaw : '';
+  // 「OT-062180のシートがケプラー材」の OT番号より後ろ（購入仕様書の貴社図番の仕様と突き合わせに使う）
+  const specText = ocrVote(t.split('\n').map(l => { const m = l.match(new RegExp(OT_RE.source + '([^\\s|\\d\\-][^\\s|]+)')); return m ? m[2] : ''; }));
+  // 品番/図番（テキスト版と同じ「2A2556-0」形式。空欄の注文書もある）
+  const drawingno = ocrVote([...t.replace(new RegExp(OT_RE.source, 'g'), ' ').matchAll(/(?:^|[^A-Z0-9])(\d[A-Z]\d{4}-\d)(?![0-9])/g)].map(m => m[1]));
+  // 見積No → originalno（テキスト版と同じ）
+  const originalno = ocrVote([...t.matchAll(/見.?No\.?\s*(\d{5,})/g)].map(m => m[1]));
+  // 単価: ¥金額を集め、「単価×数量」が金額として存在するものを単価とする（区切りの , と . の読み違いを吸収）
+  const yen = [...t.matchAll(/[¥\\Y]\s*(\d{1,3}(?:\s?[,.]\s?\d{3})+|\d{3,})(?![\d,.])/g)]
+    .map(m => parseInt(m[1].replace(/[\s,.]/g, ''))).filter(v => v > 0);
+  let price = 0;
+  if (yen.length) {
+    const set = new Set(yen);
+    const cands = yen.filter(v => quantity > 1 ? set.has(v * quantity) : true);
+    price = parseInt(ocrVote(cands.length ? cands : yen.filter(v => v === Math.min(...yen)))) || 0;
+  }
+
+  // 品名: 「OT-xxxxxx…」行のすぐ上の行を切り出して1行モードで再認識し、最も確からしいものを採用
+  let productName = '';
+  try {
+    const otLines = ocr.lines.filter(l => l.bbox && OT_RE.test(ocrNormalize(l.text))).sort((a, b) => a.bbox.y0 - b.bbox.y0);
+    let best = { conf: 0, text: '' };
+    await worker.setParameters({ tessedit_pageseg_mode: '7' });
+    for (const l of otLines.slice(0, 4)) {
+      const bb = l.bbox, h = Math.max(18, Math.min(40, bb.y1 - bb.y0));
+      const left = Math.max(0, bb.x0 - 5), top = Math.max(0, bb.y0 - Math.round(h * 1.25));
+      const rect = { left, top, width: Math.min(ocr.canvas.width - left, Math.round(h * 25), 660), height: Math.round(h * 1.2) };
+      const r = await worker.recognize(ocr.canvas, { rectangle: rect });
+      const txt = ocrNormalize(r.data.text).replace(/[|\[\]「」_]/g, '').replace(/\s{2,}.*$/, '').trim();
+      if (/[぀-ヿ一-鿿]{2,}/.test(txt) && r.data.confidence > best.conf) best = { conf: r.data.confidence, text: txt };
+      if (best.conf >= 75) break;
+    }
+    productName = best.conf >= 65 ? best.text : '';   // 読み取りが怪しい品名は使わない（製品マスタの品名を優先）
+  } catch (e) { console.warn('[野村OCR] 品名の読み取りに失敗', e); }
+  finally { try { await worker.setParameters({ tessedit_pageseg_mode: '6' }); } catch (_) {} }
+
+  console.log('[野村OCR]', { orderno, orderDate, deliverydate, quantity, price, seiban, otNumber, drawingno, originalno, productName });
+  if (!orderno && !otNumber && !drawingno) return [];
+  return [{
+    orderdate: orderDate, orderno, drawingno, quantity, unit: '', price, originalno, deliverydate,
+    // 製番 = 品番/図番。空欄の場合は購入仕様書の「貴社図番」で後から補う（parsePDF の最後で処理）
+    productno: drawingno || null, delivery_destination: null, shippingdate: null,
+    _otNumber: otNumber || undefined, _productName: productName || undefined, _ocr: true,
+    _nomuraSeiban: seiban || undefined, _nomuraSpecText: specText || undefined,
+  }];
+}
+
+// 野村製作所: 貴社図番の後ろの仕様（例: ｹﾌﾟﾗｰ材）を確定する
+//   購入仕様書の候補（OCRで崩れやすい）を、発注書の「品名/形式寸法」欄
+//   （例: OT-062180のシートがケプラー材 ← こちらは全角で読みやすい）の中の最も近い部分に置き換える。
+//   近い部分が無ければ、候補の中で最も多いものを使う。
+function ocrEditDistance(a, b) {
+  const A = [...a], B = [...b], d = Array.from({ length: A.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= B.length; j++) d[0][j] = j;
+  for (let i = 1; i <= A.length; i++) for (let j = 1; j <= B.length; j++)
+    d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (A[i-1] === B[j-1] ? 0 : 1));
+  return d[A.length][B.length];
+}
+function nomuraResolveSpecTail(tails, specText) {
+  tails = (tails || []).filter(Boolean);
+  if (!tails.length) return '';
+  const ref = [...ocrHalfKana(String(specText || '').replace(/\s+/g, ''))];
+  let best = null;
+  if (ref.length) {
+    const lens = tails.map(c => [...c].length);
+    const minL = Math.max(1, Math.min(...lens) - 2), maxL = Math.max(...lens) + 2;
+    for (let len = minL; len <= maxL; len++) {
+      for (let st = 0; st + len <= ref.length; st++) {
+        // 濁点・半濁点・長音・小書き文字から始まる切り出しは不自然なので除外
+        if (/[ﾞﾟｰｧ-ｯ]/.test(ref[st])) continue;
+        if (st + len < ref.length && /[ﾞﾟ]/.test(ref[st + len])) continue;
+        const win = ref.slice(st, st + len).join('');
+        // すべての候補との近さの平均（候補どうしの多数決に近い効果）
+        let sum = 0;
+        for (const cand of tails) sum += 1 - ocrEditDistance(cand, win) / Math.max([...cand].length, len);
+        let score = sum / tails.length;
+        if (st + len === ref.length) score += 0.05;   // 行末（=仕様の末尾）で終わる切り出しを少し優先
+        if (!best || score > best.score) best = { score, win };
+      }
+    }
+  }
+  if (best && best.score >= 0.5) return best.win;
+  return ocrVote(tails);
+}
+
 // ---- PDF Parser ----
 async function parsePDF(file) {
   const buf = await file.arrayBuffer();
@@ -11971,6 +12185,9 @@ async function parsePDF(file) {
   }).promise;
   console.log(`[PDF] ページ数: ${pdf.numPages}, ファイル: ${file.name}`);
   const rows = [];
+  let ocrWorker = null;
+  const nomuraSpecs = [];   // 野村製作所 購入仕様書の［工事番号, 貴社図番］
+  try {
   for (let p = 1; p <= pdf.numPages; p++) {
     const page = await pdf.getPage(p);
     const content = await page.getTextContent();
@@ -11979,7 +12196,55 @@ async function parsePDF(file) {
       const sample = content.items.slice(0, 3).map(i => i.str).join(' | ');
       console.log(`[PDF] ページ${p} サンプル: ${sample}`);
     }
-    if (!content.items.length) continue;
+    if (!content.items.length) {
+      // テキストが無い＝スキャン画像のPDF → OCRで読み取る
+      try {
+        showStatus('processing', `画像PDFを文字認識(OCR)しています… ${file.name}（${p}/${pdf.numPages}ページ）※初回は読み込みに時間がかかります`);
+        if (!ocrWorker) ocrWorker = await createOcrWorker();
+        const ocr = await ocrPdfPage(ocrWorker, page);
+        const t = ocrNormalize(ocr.text);
+        console.log(`[OCR p${p}] 先頭:`, t.substring(0, 120).replace(/\n/g, ' '));
+        if (/貴社図番/.test(t)) {
+          // 野村製作所の購入仕様書: 「貴社図番:OT-062180 ｹﾌﾟﾗｰ材」と工事番号(AH226174)を控えておく
+          //   図番の後ろの仕様（半角カナ）はOCRで崩れやすいため、読み方を変えた複数の候補を集め、
+          //   最後に発注書側の「品名/形式寸法」欄の文字と突き合わせて確定する（parsePDF の最後）
+          const ZRE = /貴社図番\s*[:：]?\s*([0-9A-Z][0-9A-Z\-]{3,})([^\n]*)/;
+          const srcs = [t];
+          const gl = ocr.lines.find(l => l.bbox && /貴社図番/.test(ocrNormalize(l.text)));
+          if (gl) {
+            try {
+              await ocrWorker.setParameters({ tessedit_pageseg_mode: '7' });
+              for (const [dpi, ext] of [[300, 0], [300, 160], [400, 0], [400, 120]]) {
+                const hi = await renderPdfPageToCanvas(page, dpi), k = dpi / 200, bb = gl.bbox;
+                const left = Math.max(0, Math.round(bb.x0 * k - 8)), top = Math.max(0, Math.round(bb.y0 * k - 9));
+                const rect = { left, top,
+                  width:  Math.min(hi.width - left, Math.round((bb.x1 - bb.x0 + ext) * k)),
+                  height: Math.min(hi.height - top, Math.round((bb.y1 - bb.y0) * k + 18)) };
+                const r = await ocrWorker.recognize(hi, { rectangle: rect });
+                srcs.push(ocrNormalize(r.data.text));
+              }
+            } catch (e) { console.warn('[OCR] 貴社図番行の再認識に失敗', e); }
+            finally { try { await ocrWorker.setParameters({ tessedit_pageseg_mode: '6' }); } catch (_) {} }
+          }
+          const zms = srcs.map(x => x.match(ZRE)).filter(Boolean);
+          if (zms.length) {
+            const ot = ocrVote(zms.map(m => m[1].replace(/^0T(?=-?\d)/, 'OT')));
+            const tails = zms.map(m => ocrHalfKana(String(m[2] || '').replace(/\s{2,}.*$/, '').replace(/[|\[\]「」_]/g, '').trim())).filter(Boolean);
+            const km = t.match(/(?:^|[^A-Z0-9])([A-Z]{2}\d{6})(?![0-9])/);
+            nomuraSpecs.push({ seiban: km ? km[1] : '', ot, tails });
+            console.log('[PDF] → 野村製作所 購入仕様書: 貴社図番', ot, '候補', tails, '工事番号', km ? km[1] : '-');
+          }
+        } else if (/野村製作所/.test(t) && /(注文No|発注書|0000\d{6})/.test(t)) {
+          console.log('[PDF] → フォーマット4b: 野村製作所（スキャン画像・OCR）');
+          rows.push(...await extractNomuraOcrRows(ocr, ocrWorker, page));
+        } else {
+          console.log('[OCR] → フォーマット不明（スキップ）');
+        }
+      } catch (e) {
+        console.warn('[OCR] 失敗', e);
+      }
+      continue;
+    }
 
     // pdf.jsはword単位でitemsを返す → y座標でグループ化して行を再構築
     // transform[5] はページ下からのy（大きいほど上）→ 降順ソートで上から下へ
@@ -12067,7 +12332,22 @@ async function parsePDF(file) {
     } else {
       console.log('[PDF] → フォーマット不明（スキップ） full=', full.substring(0,200));
     }
-    // テキストが取れない画像PDFはスキップ
+  }
+  } finally {
+    if (ocrWorker) { try { await ocrWorker.terminate(); } catch (_) {} }
+  }
+  // 野村製作所: 品番/図番が空欄の行は、購入仕様書の貴社図番を製番にする
+  //   工事番号が一致する仕様書を優先し、無ければ仕様書が1枚だけのときにその値を使う
+  if (nomuraSpecs.length) {
+    for (const r of rows) {
+      if (!('_nomuraSeiban' in r) || r.productno) continue;
+      const sp = nomuraSpecs.find(x => x.seiban && x.seiban === r._nomuraSeiban)
+              || (nomuraSpecs.length === 1 ? nomuraSpecs[0] : null);
+      if (sp) {
+        const tail = nomuraResolveSpecTail(sp.tails, r._nomuraSpecText);
+        r.productno = sp.ot + (tail ? ' ' + tail : '');
+      }
+    }
   }
   return rows;
 }
@@ -12429,6 +12709,59 @@ function extractYuasaRows(full, rawItems) {
     });
   }
 
+  // 【パターンC: 「大阪ﾃｯｸ」行が無い明細（中部支店 北陸営業所 等）】
+  //   y=297: x=75 "ﾃﾚｽｺｶﾊﾞｰ"  x=136 "3S02527800 1"  x=649 "K178649"(客先注文Ｎｏ)
+  //   y=291: x=60 "1"(行番号)
+  //   y=290: x=372 "2"(数量)  x=441 "60,000"(単価)  x=506 "120,000"(金額)  x=546 "2026/12/22"(希望納期)
+  //   y=286: x=136 "COVER"    x=649 "K326X1H"(明細備考)
+  //   → 行番号を基準に上下±8ptの文字を1明細として読む
+  if (!rows.length) {
+    const UNIT_RE = /^(式|ケ|個|本|枚|セット|台|組|ヶ|ｹ)$/;
+    const hdr = rawItems.find(t => /^品名・型式$/.test(t.text));
+    const hdrY = hdr ? hdr.y : Infinity;
+    const totalItem = rawItems.find(t => /^合計金額$/.test(t.text));
+    const bottomY = totalItem ? totalItem.y : -Infinity;
+    const rowNos = rawItems.filter(t => t.x < 70 && /^\d{1,2}$/.test(t.text) && t.y < hdrY && t.y > bottomY)
+                           .sort((a, b) => b.y - a.y);
+    for (const rn of rowNos) {
+      const near = rawItems.filter(t => t !== rn && Math.abs(t.y - rn.y) <= 8 && t.y < hdrY - 5);
+      if (!near.length) continue;
+      const upper = near.filter(t => t.y >= rn.y + 3);   // 品名・型式／客先注文Ｎｏの段
+      const lower = near.filter(t => t.y <= rn.y - 3);   // 英名・明細備考の段
+      // 型式（客先図番）: 品名・型式欄の英数字コード。「3S02527800 1」のような途中の空白は詰める
+      const codeItem = near.filter(t => t.x >= 120 && t.x < 340)
+        .map(t => ({ t, c: t.text.replace(/\s+/g, '') }))
+        .find(o => /^[A-Z0-9][A-Z0-9\-]{4,}$/i.test(o.c) && /\d/.test(o.c) && /[A-Z]/i.test(o.c));
+      if (!codeItem) continue;
+      const drawingno = normDno(codeItem.c.toUpperCase());
+      let quantity = 1, unit = '', price = 0, deliverydate = '';
+      for (const t of near.sort((a, b) => a.x - b.x)) {
+        const txt = t.text.trim();
+        const upM = txt.match(/^(式|ケ|個|本|枚|セット|台|組)\s+([\d,]+)$/);
+        if (upM) { unit = upM[1]; price = parseInt(upM[2].replace(/,/g, '')); continue; }
+        if (UNIT_RE.test(txt) && t.x >= 380 && t.x < 440) { unit = txt; continue; }
+        if (/^\d{4}\/\d{2}\/\d{2}$/.test(txt)) { if (!deliverydate && t.x >= 520 && t.x < 600) deliverydate = txt; continue; }
+        if (/^\d{1,4}$/.test(txt) && t.x >= 330 && t.x < 400) { quantity = parseInt(txt); continue; }
+        if (/^[\d,]+$/.test(txt) && t.x >= 400 && t.x < 480 && !price) { price = parseInt(txt.replace(/,/g, '')); continue; }
+      }
+      const clientNo = (upper.find(t => t.x >= 640) || {}).text || '';
+      const remark   = (lower.find(t => t.x >= 640) || {}).text || '';
+      const nameJa = (near.find(t => t.x >= 70 && t.x < 130 && t !== codeItem.t) || {}).text || '';
+      const nameEn = (lower.find(t => t.x >= 120 && t.x < 340) || {}).text || '';
+      let otNumber = '';
+      for (const t of near) { const m = t.text.match(/OT-[0-9A-Z][\w\-]*/i); if (m) { otNumber = m[0].toUpperCase(); break; } }
+      const orderno = getOrdernoForY(rn.y);
+      console.log('[Yuasa result C]', { orderno, drawingno, quantity, unit, price, clientNo, remark, deliverydate });
+      rows.push({
+        orderdate: orderDate, orderno, drawingno, quantity, unit, price,
+        originalno: clientNo.trim() || remark.trim(),   // 原番 = 客先注文Ｎｏ（無ければ明細備考）
+        deliverydate, delivery_destination: null, shippingdate: null,
+        _otNumber: otNumber || undefined,
+        _productName: [nameJa, nameEn].filter(Boolean).join(' ') || undefined,
+      });
+    }
+  }
+
   return rows;
 }
 
@@ -12475,7 +12808,7 @@ function extractNomuraRows(full, lines) {
 
   if (orderno || drawingno) {
     rows.push({ orderdate: orderDate, orderno, drawingno, quantity: 1, unit: '',
-                price, originalno, deliverydate,
+                price, originalno, deliverydate, productno: drawingno || null,  // 製番 = 品番/図番
                 delivery_destination: null, shippingdate: null });
   }
   return rows;
