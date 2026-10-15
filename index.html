@@ -12165,20 +12165,26 @@ function extractKitamuraRows(full) {
   const lines = sec.split('\n');
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    const m = line.match(/^([A-Z]{2}\d{6,})\s+([\S]+)\s+\d{2}\s+.+?\s+(\d+)\s+([\d,]+)\.00/);
+    // 注文番号は英字2〜3文字＋数字（例: PG80142173 / PGX1513691）
+    // 客先図番は「部品コード-版数」（例: 1P08200-1 + 01 → 1P08200-1-01）で製品マスタと一致させる
+    const m = line.match(/^([A-Z]{2,3}\d{6,})\s+([\S]+)\s+(\d{2})\s+.+?\s+(\d+)\s+([\d,]+)\.\d{2}/);
     if (m) {
       const orderno   = m[1];
-      const drawingno = m[2];
-      const quantity  = parseInt(m[3]);
-      const price     = parseInt(m[4].replace(/,/g, ''));
+      const drawingno = m[2] + '-' + m[3];
+      const quantity  = parseInt(m[4]);
+      const price     = parseInt(m[5].replace(/,/g, ''));
       let deliverydate = '';
-      // 次の最大3行から納期日を探す（レイアウトにより1〜2行後にくる場合がある）
+      let otNumber = '';
+      // 次の最大3行から納期日・OT番号を探す（レイアウトにより1〜2行後にくる場合がある）
       for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
-        const nd = lines[j].match(/(\d{4}\/\d{2}\/\d{2})/);
-        if (nd) { deliverydate = nd[1]; break; }
+        if (/^[A-Z]{2,3}\d{6,}\s/.test(lines[j].trim())) break; // 次の明細行に入ったら終了
+        if (!deliverydate) { const nd = lines[j].match(/(\d{4}\/\d{2}\/\d{2})/); if (nd) deliverydate = nd[1]; }
+        if (!otNumber) { const ot = lines[j].match(/OT-[0-9A-Z][\w\-]*/i); if (ot) otNumber = ot[0]; }
+        if (deliverydate && otNumber) break;
       }
       rows.push({ orderdate: orderDate, orderno, drawingno, quantity, unit: '', price,
-                  originalno, deliverydate, delivery_destination: null, shippingdate: null });
+                  originalno, deliverydate, delivery_destination: null, shippingdate: null,
+                  _otNumber: otNumber || undefined });
     }
   }
   return rows;
