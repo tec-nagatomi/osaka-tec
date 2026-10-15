@@ -3775,13 +3775,13 @@
           <tr>
             <th>品目区分</th>
             <th>販売先</th>
+            <th>品名</th>
             <th>OT番号</th>
             <th>客先図番</th>
-            <th>品名</th>
             <th>最新見積日</th>
             <th>現行価格</th>
-            <th>納入先</th>
             <th>承認返却日</th>
+            <th>納入先</th>
           </tr>
         </thead>
         <tbody id="pd-tbody"></tbody>
@@ -18990,13 +18990,13 @@ function renderProductdateTable() {
     <tr onclick="openPdDetail(${r.designid})" title="クリックして詳細を表示" style="cursor:pointer;">
       <td>${categoryBadgeHtml(r.product_category)}${secondCategoryBadgeHtml(r.second_category, r.part_number, r.part_number_url, r.parts)}</td>
       <td>${r.client||'-'}${r.maker && r.maker !== r.client ? `<div style="font-size:10.5px;color:#6b7280;margin-top:1px;">→ ${r.maker}</div>` : ''}</td>
+      <td>${r.product_name||'-'}</td>
       <td class="mono" style="font-size:11px;color:${categoryTextColor(r.product_category)};font-weight:700;">${r.ot_number||'-'}</td>
       <td class="mono" style="font-size:11px">${r.customer_drawing_no||'-'}</td>
-      <td>${r.product_name||'-'}</td>
       <td>${r.latest_quote_date||'-'}</td>
       <td style="text-align:right">${r.current_price!=null ? Number(r.current_price).toLocaleString() : '-'}</td>
-      <td>${r.delivery_destination||'-'}</td>
       <td>${r.approval_return_date||'-'}</td>
+      <td>${r.delivery_destination||'-'}</td>
     </tr>`).join('');
 
   document.getElementById('pd-page-info').textContent =
