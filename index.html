@@ -2174,6 +2174,39 @@
   #page-orders .orders-search { padding:8px 12px; }
   #page-orders .ord-search { flex:1 1 160px; min-width:150px; }
   /* ==== カレンダー日別一覧ポップアップ ==== */
+  .insl-overlay { position:fixed; inset:0; z-index:10040; background:rgba(15,23,42,.55); display:flex; align-items:center; justify-content:center; padding:20px; }
+  .insl-modal { background:#fff; border-radius:12px; width:min(1280px,97vw); height:90vh; display:flex; flex-direction:column; box-shadow:0 24px 60px rgba(15,23,42,.35); overflow:hidden; }
+  .insl-head { display:flex; align-items:center; gap:12px; padding:14px 18px; border-bottom:1px solid #e5e7eb; }
+  .insl-title { font-size:16px; font-weight:800; color:#111827; }
+  .insl-count { font-size:12px; font-weight:600; color:#6b7280; margin-left:6px; }
+  .insl-actions { margin-left:auto; display:flex; gap:8px; align-items:center; }
+  .insl-tools { padding:10px 18px; border-bottom:1px solid #f3f4f6; background:#f9fafb; display:flex; flex-direction:column; gap:8px; }
+  .insl-search { display:flex; align-items:center; gap:6px; background:#fff; border:1px solid #d1d5db; border-radius:8px; padding:6px 10px; max-width:420px; }
+  .insl-search svg { width:15px; height:15px; color:#9ca3af; flex:none; }
+  .insl-search input { border:0; outline:0; flex:1; font-size:13px; background:transparent; }
+  .insl-makers { display:flex; flex-wrap:wrap; gap:6px; }
+  .insl-makers button { display:inline-flex; align-items:center; gap:5px; border:1px solid #e5e7eb; background:#fff; border-radius:16px; padding:4px 10px; font-size:12px; font-weight:600; color:#374151; cursor:pointer; }
+  .insl-makers button b { color:#1d4ed8; font-size:11px; }
+  .insl-makers button.on { background:#1d4ed8; border-color:#1d4ed8; color:#fff; }
+  .insl-makers button.on b { color:#fff; }
+  .insl-body { flex:1; overflow:auto; }
+  .insl-empty { padding:40px; text-align:center; color:#9ca3af; font-size:13px; }
+  .insl-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  .insl-table th { position:sticky; top:0; background:#fafafa; text-align:left; font-size:10.5px; font-weight:700; color:#9ca3af; padding:7px 10px; border-bottom:1px solid #e5e7eb; z-index:1; white-space:nowrap; }
+  .insl-table td { padding:7px 10px; border-bottom:1px solid #f3f4f6; vertical-align:top; color:#111827; }
+  .insl-table tbody tr:hover td { background:#f8fafc; }
+  .insl-table .no { color:#9ca3af; text-align:right; width:36px; }
+  .insl-table .fn a { color:#1d4ed8; font-weight:700; text-decoration:none; word-break:break-all; }
+  .insl-table .fn a:hover { text-decoration:underline; }
+  .insl-table .mono { font-family:'SF Mono','Consolas',monospace; font-size:12px; word-break:break-all; }
+  .insl-table .pn { max-width:240px; }
+  .insl-table .r { text-align:right; white-space:nowrap; }
+  .insl-table .muted { color:#9ca3af; white-space:nowrap; }
+  .insl-table .ops { white-space:nowrap; }
+  .insl-op { display:inline-block; border:1px solid #d1d5db; background:#fff; color:#374151; border-radius:6px; padding:3px 8px; font-size:11px; font-weight:700; cursor:pointer; margin-right:3px; }
+  .insl-op:hover { background:#f3f4f6; }
+  .insl-op.del { color:#dc2626; border-color:#fecaca; }
+  .insl-op.del:hover { background:#fef2f2; }
   .cdm-overlay { position:fixed; inset:0; z-index:1200; background:rgba(15,23,42,.55); display:none; align-items:center; justify-content:center; padding:24px; }
   .cdm-overlay.open { display:flex; animation:cdmFade .15s ease-out; }
   @keyframes cdmFade { from { opacity:0; } to { opacity:1; } }
@@ -2195,12 +2228,36 @@
   .cdm-group-name { font-size:13.5px; font-weight:800; color:#111827; }
   .cdm-group-count { margin-left:auto; font-size:12px; font-weight:800; color:#1d4ed8; background:#eff6ff; border-radius:10px; padding:2px 9px; }
   .cdm-table { width:100%; border-collapse:collapse; font-size:12.5px; table-layout:fixed; }
-  .cdm-table th:nth-child(1), .cdm-table td:nth-child(1) { width:44px; text-align:right; padding-right:4px; }
+  .cdm-table th:nth-child(1), .cdm-table td:nth-child(1) { width:80px; text-align:right; padding-right:4px; }
   .cdm-table th:nth-child(3), .cdm-table td:nth-child(3) { width:240px; }
   .cdm-table th:nth-child(4), .cdm-table td:nth-child(4) { width:170px; }
   .cdm-table th:nth-child(5), .cdm-table td:nth-child(5) { width:190px; }
   .cdm-table td { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cdm-tg { display:inline-flex; align-items:center; justify-content:center; width:40px; height:26px; margin-right:4px; vertical-align:middle;
+            border:0; border-radius:5px; background:#4b5563; color:#fff; font-size:16px; line-height:1; cursor:pointer; padding:0; }
+  .cdm-tg:hover { background:#374151; }
+  .cdm-tg:active { background:#1f2937; }
+  .cdm-table tr.kids-open .cdm-tg { background:#374151; }
+  .cdm-table tr.cdm-row.kids-open > td.cdm-ins > * { visibility:hidden; }   /* 子データを開いている間は親の検査表ボタンを隠す */
+  .cdm-table tr.kids-open > td { background:#eff6ff; }
+  .cdm-table tr.cdm-sub > td { padding:0 12px 10px 48px; background:#f8fafc; cursor:default; overflow:visible; white-space:normal; }
+  .cdm-table tr.cdm-sub:hover > td { background:#f8fafc; }
+  .cdm-kid-table { width:100%; border-collapse:collapse; font-size:12px; background:#fff; border:1px solid #e5e7eb; border-radius:8px; overflow:hidden; table-layout:auto; }
+  .cdm-kid-table th { text-align:left; font-size:10px; font-weight:700; color:#9ca3af; padding:5px 10px; background:#f9fafb; border-bottom:1px solid #f3f4f6; width:auto !important; }
+  .cdm-kid-table td { padding:5px 10px; border-bottom:1px solid #f3f4f6; color:#111827; width:auto !important; white-space:nowrap; }
+  .cdm-kid-table tr:last-child td { border-bottom:0; }
+  .cdm-kid-table td.kn { white-space:normal; }
+  .cdm-kid-table th, .cdm-kid-table td { text-align:left !important; padding-right:10px !important; padding-left:10px !important; }
+  .cdm-kid-table tbody tr { cursor:default; }
+  .cdm-kid-table tbody td { background:#fff !important; font-weight:400; }
+  .cdm-kid-table tbody tr:hover td { background:#f8fafc !important; }
+  .cdm-kid-table .mono { font-family:'SF Mono','Consolas',monospace; }
+  .cdm-kid-table .muted { color:#9ca3af; }
+  .cdm-kid-table td.cdm-ins { text-align:right !important; }
   .cdm-table td.cdm-no { color:#9ca3af; font-size:11.5px; font-variant-numeric:tabular-nums; }
+  .cdm-table tr.cdm-row > td.cdm-no { text-align:left; padding-left:6px; padding-right:4px; white-space:nowrap; }
+  .cdm-table td.cdm-no .cdm-no-n { display:inline-block; min-width:18px; text-align:right; vertical-align:middle; }
+  .cdm-table tr.cdm-row > td.cdm-no:not(:has(.cdm-tg)) .cdm-no-n { margin-left:44px; }
   .cdm-table th:nth-child(6), .cdm-table td:nth-child(6) { width:100px; padding-left:0; }
   .dm-ins-files { display:flex; flex-direction:column; gap:3px; }
   .cdm-ins-btn { display:inline-flex; align-items:center; gap:3px; padding:3px 8px; border:1px solid #a7f3d0; background:#ecfdf5; color:#047857; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap; }
@@ -2791,6 +2848,9 @@
             </button>
             <button class="cal-inspect-btn" onclick="openInspectionUpload()" title="検査表ファイルをSupabaseに登録">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;vertical-align:middle;margin-right:3px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>検査表登録
+            </button>
+            <button class="cal-inspect-btn" onclick="openInspectionList()" title="登録済みの検査表の一覧">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;vertical-align:middle;margin-right:3px;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>検査表リスト
             </button>
           </div>
           <div class="cal-grid" id="cal-grid"></div>
@@ -17094,6 +17154,7 @@ function isNearDeadline(dateStr) {
 
 function closeDetail() {
   document.getElementById('detail-overlay').classList.remove('open');
+  if (typeof cdmRestoreAfterDetail === 'function') cdmRestoreAfterDetail();   // カレンダーの日別一覧から開いたときは一覧に戻る
 }
 function closeDetailIfBg(e) {
   if (e.target === document.getElementById('detail-overlay')) closeDetail();
@@ -19048,8 +19109,18 @@ async function loadCalendarEvents() {
       `${SUPABASE_URL}/rest/v1/orders_child?select=id,order_id,sealno,delivery&order=id.asc`
     );
     const children = allChildren.filter(c => c.delivery);
-    const sealsByOrder = new Map();
-    allChildren.forEach(c => { if (!c.sealno) return; if (!sealsByOrder.has(c.order_id)) sealsByOrder.set(c.order_id, []); sealsByOrder.get(c.order_id).push(c.sealno); });
+    const sealsByOrder = new Map(), childrenByOrder = new Map();
+    allChildren.forEach(c => {
+      if (!childrenByOrder.has(c.order_id)) childrenByOrder.set(c.order_id, []);
+      childrenByOrder.get(c.order_id).push(c);
+      if (!c.sealno) return; if (!sealsByOrder.has(c.order_id)) sealsByOrder.set(c.order_id, []); sealsByOrder.get(c.order_id).push(c.sealno);
+    });
+    // 構成品（productdate_child）：子データのOT番号を受注詳細と同じ方法で求めるために使う
+    const pdcByParent = new Map();
+    try {
+      (await fetchAllRows(`${SUPABASE_URL}/rest/v1/productdate_child?select=parent_designid,ot_number,product_name,sort_order&order=parent_designid.asc,sort_order.asc`))
+        .forEach(k => { if (!pdcByParent.has(k.parent_designid)) pdcByParent.set(k.parent_designid, []); pdcByParent.get(k.parent_designid).push(k); });
+    } catch (e) { console.warn('[Calendar] 構成品の取得に失敗', e); }
     if (!children.length && !allOrders.length) return;
 
     // ordersをMapで持つ（既にallOrdersにある場合はそれを使う）
@@ -19066,9 +19137,35 @@ async function loadCalendarEvents() {
     if (allProductdate.length) {
       allProductdate.forEach(p => { if (p.customer_drawing_no) pdMap.set(p.customer_drawing_no, p); });
     } else {
-      const pl = await fetchAllRows(`${SUPABASE_URL}/rest/v1/productdate?select=customer_drawing_no,product_name,client,ot_number,product_category`);
+      const pl = await fetchAllRows(`${SUPABASE_URL}/rest/v1/productdate?select=designid,customer_drawing_no,product_name,client,ot_number,product_category`);
       pl.forEach(p => { if (p.customer_drawing_no) pdMap.set(p.customer_drawing_no, p); });
     }
+
+    // 子データごとのOT番号（受注詳細の子データ一覧と同じ求め方）。'-' はOT番号なし
+    //   構成品があれば「シール番号 − 最小シール番号」を構成品の数で割った余りで構成品を選ぶ。無ければ製品のOT番号
+    // 子データ1件ごとの製品名・OT番号（受注詳細の子データ一覧と同じ求め方）
+    const kidDetailCache = new Map();
+    const kidDetailsOf = (orderId, order, pd) => {
+      if (kidDetailCache.has(orderId)) return kidDetailCache.get(orderId);
+      const kids = childrenByOrder.get(orderId) || [];
+      const pdc = pd ? (pdcByParent.get(pd.designid) || []) : [];
+      const ownOt = order?.pd_ot_number || pd?.ot_number || '-';
+      const ownName = pd?.product_name || order?.drawingno || '-';
+      const nums = kids.map(c => parseInt(c.sealno)).filter(n => !isNaN(n));
+      const base = nums.length ? Math.min(...nums) : 0;
+      const list = kids.map(c => {
+        const n = parseInt(c.sealno);
+        let name = ownName, ot = ownOt;
+        if (pdc.length && !isNaN(n)) { const k = pdc[(n - base) % pdc.length]; if (k) { name = k.product_name || ownName; ot = k.ot_number || '-'; } }
+        return { id: c.id, seal: c.sealno || '', delivery: c.delivery ? String(c.delivery).substring(0, 10) : '', name, ot };
+      }).sort((a, b) => (parseInt(a.seal) || 0) - (parseInt(b.seal) || 0) || a.id - b.id);
+      kidDetailCache.set(orderId, list);
+      return list;
+    };
+    const childOtsOf = (orderId, order, pd) => {
+      const kids = kidDetailsOf(orderId, order, pd);
+      return kids.length ? [...new Set(kids.map(k => k.ot))] : [order?.pd_ot_number || pd?.ot_number || '-'];
+    };
 
     // イベントを日付ごとに集約
     calEvents = {};
@@ -19085,7 +19182,10 @@ async function loadCalendarEvents() {
         if (!calEvents[dateKey]) calEvents[dateKey] = [];
         const ot = order?.pd_ot_number || pd?.ot_number || '';
         const cat = order?.pd_product_category || pd?.product_category || '';
-        calEvents[dateKey].push({ label, shortLabel, orderno: order?.orderno || '', sealno: c.sealno, order_id: c.order_id, client, ot, cat });
+        // 出荷日基準：この日が出荷日の子データだけを展開表示に使う
+        const kid = kidDetailsOf(c.order_id, order, pd).find(k => k.id === c.id);
+        const childOts = kid ? [kid.ot] : childOtsOf(c.order_id, order, pd);
+        calEvents[dateKey].push({ label, shortLabel, orderno: order?.orderno || '', sealno: c.sealno, order_id: c.order_id, client, ot, cat, childOts, kids: kid ? [kid] : [] });
       }
     } else {
       // 受注日基準: orders.orderdate
@@ -19099,7 +19199,9 @@ async function loadCalendarEvents() {
         if (!calEvents[dateKey]) calEvents[dateKey] = [];
         const ot = order.pd_ot_number || pd?.ot_number || '';
         const cat = order.pd_product_category || pd?.product_category || '';
-        calEvents[dateKey].push({ cat, label, shortLabel, orderno: order.orderno || '', sealno: '', seals: sealsByOrder.get(orderId) || [], order_id: orderId, client, ot });
+        const childOts = childOtsOf(orderId, order, pd);
+        // 受注日基準：その受注の子データすべてを展開表示に使う
+        calEvents[dateKey].push({ cat, childOts, kids: kidDetailsOf(orderId, order, pd), label, shortLabel, orderno: order.orderno || '', sealno: '', seals: sealsByOrder.get(orderId) || [], order_id: orderId, client, ot });
       }
     }
     renderCalendar();
@@ -19211,9 +19313,11 @@ function openCalDayModal(dateKey, events) {
     if (!byClient.has(cl)) byClient.set(cl, new Map());
     const orders = byClient.get(cl);
     const key = ev.order_id;
-    if (!orders.has(key)) orders.set(key, { order_id: ev.order_id, orderno: ev.orderno, label: ev.label, ot: ev.ot || '', cat: ev.cat || '', seals: [], n: 0 });
+    if (!orders.has(key)) orders.set(key, { order_id: ev.order_id, orderno: ev.orderno, label: ev.label, ot: ev.ot || '', cat: ev.cat || '', childOts: [], kids: [], seals: [], n: 0 });
     const o = orders.get(key);
     o.n++;
+    (ev.childOts || [ev.ot || '-']).forEach(t => { if (!o.childOts.includes(t)) o.childOts.push(t); });
+    (ev.kids || []).forEach(k => { if (!o.kids.some(x => x.id === k.id)) o.kids.push(k); });
     if (ev.sealno) o.seals.push(ev.sealno);
     if (ev.seals) o.seals.push(...ev.seals);
   }
@@ -19268,14 +19372,27 @@ function openCalDayModal(dateKey, events) {
               <thead><tr><th>No</th><th>品名</th><th>OT番号</th><th>受注番号</th><th>シールNo</th><th></th></tr></thead>
               <tbody>
                 ${g.orders.map((o, k) => `
-                  <tr data-cover="${o.cat === 'カバー' ? 1 : 0}" onclick="closeCalDayModal();openOrderDetail(${o.order_id})" title="受注詳細を開く">
-                    <td class="cdm-no">${k + 1}</td>
+                  <tr class="cdm-row" data-cover="${o.cat === 'カバー' ? 1 : 0}" onclick="cdmOpenOrder(${o.order_id})" title="受注詳細を開く">
+                    <td class="cdm-no">${o.kids.length ? `<button type="button" class="cdm-tg" onclick="event.stopPropagation();cdmToggleKids(this)" title="子データを表示">▼</button>` : ''}<span class="cdm-no-n">${k + 1}</span></td>
                     <td class="cdm-name">${escH(o.label)}</td>
                     <td class="mono cdm-ot">${escH(o.ot) || '<span class="muted">—</span>'}</td>
                     <td class="mono">${escH(o.orderno)}</td>
                     <td class="mono muted">${escH(sealText(o.seals)) || '—'}</td>
-                    <td class="cdm-ins" data-ot="${escH(o.ot)}"></td>
-                  </tr>`).join('')}
+                    <td class="cdm-ins" data-ots="${escH(JSON.stringify(o.childOts))}"></td>
+                  </tr>${o.kids.length ? `
+                  <tr class="cdm-sub" style="display:none;"><td colspan="6">
+                    <table class="cdm-kid-table">
+                      <thead><tr><th>製品名</th><th>OT番号</th><th>納期</th><th>シールNo</th><th></th></tr></thead>
+                      <tbody>${o.kids.map(kd => `
+                        <tr>
+                          <td class="kn">${escH(kd.name)}</td>
+                          <td class="mono">${kd.ot && kd.ot !== '-' ? escH(kd.ot) : '<span class="muted">—</span>'}</td>
+                          <td>${kd.delivery ? escH(kd.delivery) : '<span class="muted">未設定</span>'}</td>
+                          <td class="mono">${escH(kd.seal) || '<span class="muted">—</span>'}</td>
+                          <td class="cdm-ins" data-ots="${escH(JSON.stringify([kd.ot || '-']))}"></td>
+                        </tr>`).join('')}</tbody>
+                    </table>
+                  </td></tr>` : ''}`).join('')}
               </tbody>
             </table>
           </section>`).join('')}
@@ -19286,16 +19403,30 @@ function openCalDayModal(dateKey, events) {
   cdmFillInspectionButtons(ov);
 }
 
+// ▼／▲：その受注の子データ（出荷日基準＝その日が出荷日の子データ／受注日基準＝その受注の子データすべて）を開閉
+function cdmToggleKids(btn) {
+  const tr = btn.closest('tr.cdm-row');
+  const sub = tr && tr.nextElementSibling;
+  if (!sub || !sub.classList.contains('cdm-sub')) return;
+  const open = !tr.classList.contains('kids-open');
+  tr.classList.toggle('kids-open', open);
+  sub.style.display = open ? '' : 'none';
+  btn.textContent = open ? '▲' : '▼';
+  btn.title = open ? '子データを閉じる' : '子データを表示';
+}
+
 // 販売先ごとの「すべて／カバーのみ」切り替え（Noは表示中の行で振り直す）
 function cdmSetCatFilter(btn, mode) {
   const sec = btn.closest('.cdm-group');
   if (!sec) return;
   sec.querySelectorAll('.cdm-cat-toggle button').forEach(b => b.classList.toggle('on', b === btn));
   let k = 0;
-  sec.querySelectorAll('tbody tr').forEach(tr => {
+  sec.querySelectorAll('tr.cdm-row').forEach(tr => {
     const show = mode !== 'cover' || tr.dataset.cover === '1';
     tr.style.display = show ? '' : 'none';
-    if (show) { const no = tr.querySelector('.cdm-no'); if (no) no.textContent = ++k; }
+    const sub = tr.nextElementSibling && tr.nextElementSibling.classList.contains('cdm-sub') ? tr.nextElementSibling : null;
+    if (sub) sub.style.display = show && tr.classList.contains('kids-open') ? '' : 'none';
+    if (show) { const no = tr.querySelector('.cdm-no-n'); if (no) no.textContent = ++k; }
   });
   const cnt = sec.querySelector('.cdm-group-count');
   if (cnt) cnt.textContent = k + '件';
@@ -19320,9 +19451,18 @@ async function cdmFillInspectionButtons(root) {
     try { names = [...(await listInspectionFiles()).keys()]; _cdmInsCache = { at: Date.now(), names }; }
     catch (e) { console.warn('[検査表] ファイル一覧の取得に失敗', e); return; }
   }
+  // 子データのOT番号ごとに検査表を探し、1つでも見つからない（またはOT番号なし）ならボタンを出さない
   root.querySelectorAll('td.cdm-ins').forEach(td => {
-    const hits = findInspectionFiles(td.dataset.ot, names);
-    if (!hits.length) { td.innerHTML = ''; return; }
+    let ots = [];
+    try { ots = JSON.parse(td.dataset.ots || '[]'); } catch (e) {}
+    const hits = [];
+    let complete = ots.length > 0;
+    for (const ot of ots) {
+      const h = (ot && ot !== '-') ? findInspectionFiles(ot, names) : [];
+      if (!h.length) { complete = false; break; }
+      h.forEach(n => { if (!hits.includes(n)) hits.push(n); });
+    }
+    if (!complete || !hits.length) { td.innerHTML = ''; return; }
     const tip = hits.join('\n').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
     td.innerHTML = `<button type="button" class="cdm-ins-btn" title="${tip}" onclick="event.stopPropagation()">`
       + `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>`
@@ -19353,7 +19493,21 @@ async function dmFillInspectionFiles(ots, elId = 'dm-inspection-files') {
   el.innerHTML = hits.map(n => `<a class="dm-link" href="${e(inspectionPublicUrl(n))}" target="_blank" rel="noopener" title="${e(n)} を開く">${icon}<span>${e(n)}</span></a>`).join('');
 }
 
+// 一覧から受注詳細を開く：一覧は閉じずに隠しておき、受注詳細を閉じたら元の一覧（スクロール位置・切り替え状態もそのまま）に戻る
+function cdmOpenOrder(orderId) {
+  const ov = document.getElementById('cal-day-overlay');
+  if (ov) ov.classList.remove('open');
+  window._cdmReturn = true;
+  openOrderDetail(orderId);
+}
+function cdmRestoreAfterDetail() {
+  if (!window._cdmReturn) return;
+  window._cdmReturn = false;
+  const ov = document.getElementById('cal-day-overlay');
+  if (ov && ov.innerHTML) { ov.classList.add('open'); document.body.style.overflow = 'hidden'; }
+}
 function closeCalDayModal() {
+  window._cdmReturn = false;
   const ov = document.getElementById('cal-day-overlay');
   if (ov) ov.classList.remove('open');
   document.body.style.overflow = '';
@@ -19387,9 +19541,9 @@ function inspectionPublicUrl(name) {
   return `${SUPABASE_URL}/storage/v1/object/public/${INSPECTION_BUCKET}/${encodeURIComponent(inspectionStorageKey(name))}`;
 }
 
-async function listInspectionFiles() {
+async function listInspectionObjects() {
   const H = { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
-  const map = new Map();
+  const out = [];
   for (let offset = 0; ; offset += 1000) {
     const r = await fetch(`${SUPABASE_URL}/storage/v1/object/list/${INSPECTION_BUCKET}`, {
       method: 'POST', headers: H,
@@ -19397,9 +19551,14 @@ async function listInspectionFiles() {
     });
     if (!r.ok) throw new Error('登録済みファイルの取得に失敗しました（' + r.status + '）');
     const list = await r.json();
-    list.forEach(o => { if (o.id) map.set(inspectionNameFromKey(o.name), (o.metadata && o.metadata.size) || 0); });
+    list.forEach(o => { if (o.id) out.push({ key: o.name, name: inspectionNameFromKey(o.name), size: (o.metadata && o.metadata.size) || 0, updated: o.updated_at || o.created_at || '' }); });
     if (list.length < 1000) break;
   }
+  return out;
+}
+async function listInspectionFiles() {
+  const map = new Map();
+  (await listInspectionObjects()).forEach(o => map.set(o.name, o.size));
   return map;
 }
 
@@ -19435,6 +19594,7 @@ function openInspectionUpload() {
       </div>
       <div id="insup-result" style="font-size:12px;"></div>
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+        <button onclick="closeInspectionUpload();openInspectionList()" style="margin-right:auto;padding:8px 14px;border-radius:8px;border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;font-size:13px;font-weight:600;cursor:pointer;">検査表リスト</button>
         <button id="insup-cancel" onclick="closeInspectionUpload()" style="padding:8px 20px;border-radius:8px;border:1px solid #e5e7eb;background:#f9fafb;color:#374151;font-size:13px;font-weight:600;cursor:pointer;">閉じる</button>
         <button id="insup-start" onclick="startInspectionUpload()" disabled style="padding:8px 20px;border-radius:8px;border:none;background:#059669;color:#fff;font-size:13px;font-weight:600;cursor:pointer;opacity:.5;">登録する</button>
       </div>
@@ -19553,6 +19713,199 @@ async function startInspectionUpload() {
      ${fails.length ? `<div style="max-height:120px;overflow:auto;background:#fef2f2;border-radius:6px;padding:6px 8px;margin-top:6px;color:#b91c1c;">${fails.map(s => s.replace(/</g, '&lt;')).join('<br>')}</div>
        <div style="color:#6b7280;margin-top:4px;">もう一度フォルダを選ぶと、失敗した分だけ登録し直せます。</div>` : ''}`;
   renderInspectionSummary();
+  if (ok && _insList) reloadInspectionList();   // 検査表リストを開いていれば最新にする
+}
+
+// ==================== 検査表リスト（一覧・検索・客先名フィルター・差し替え・名前変更・削除） ====================
+var _insList = null;   // { files:[], products:Map(key → [{ot,maker,name}]), q:'', maker:'' }
+
+async function openInspectionList() {
+  document.getElementById('insl-overlay')?.remove();
+  _insList = { files: [], q: '', maker: '', loading: true };
+  const ov = document.createElement('div');
+  ov.id = 'insl-overlay';
+  ov.className = 'insl-overlay';
+  ov.innerHTML = `
+    <div class="insl-modal" role="dialog" aria-modal="true">
+      <div class="insl-head">
+        <div class="insl-title">検査表リスト <span id="insl-count" class="insl-count"></span></div>
+        <div class="insl-actions">
+          <button class="dm-btn" onclick="openInspectionUpload()" title="検査表ファイルを追加登録">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>検査表登録</button>
+          <button class="detail-modal-close" onclick="closeInspectionList()" title="閉じる（Esc）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+      </div>
+      <div class="insl-tools">
+        <div class="insl-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="insl-q" type="search" placeholder="OT番号・ファイル名で検索" oninput="_insList.q=this.value;renderInspectionList()">
+        </div>
+        <div id="insl-makers" class="insl-makers"></div>
+      </div>
+      <div class="insl-body" id="insl-body"><div class="insl-empty">読み込み中…</div></div>
+    </div>`;
+  document.body.appendChild(ov);
+  ov.addEventListener('click', e => { if (e.target === ov) closeInspectionList(); });
+  requestAnimationFrame(() => ov.classList.add('open'));
+  await reloadInspectionList();
+}
+function closeInspectionList() {
+  document.getElementById('insl-overlay')?.remove();
+  _insList = null;
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && _insList && !document.getElementById('insup-overlay')) closeInspectionList();
+});
+
+// 製品マスタ（＋構成品）のOT番号から「検査表のキー → 製品」の対応表を作る
+async function inspectionProductIndex() {
+  const H = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+  let pds = (typeof allProductdate !== 'undefined' && allProductdate.length) ? allProductdate : null;
+  if (!pds) pds = await fetchAllRows(`${SUPABASE_URL}/rest/v1/productdate?select=designid,ot_number,maker,client,product_name,customer_drawing_no`);
+  let kids = [];
+  try { kids = await fetchAllRows(`${SUPABASE_URL}/rest/v1/productdate_child?select=parent_designid,ot_number,product_name`); } catch (e) {}
+  const byId = new Map(pds.map(p => [p.designid, p]));
+  const idx = new Map();
+  const add = (ot, rec) => {
+    const k = inspectionKey(ot);
+    if (!k || k === '-') return;
+    if (!idx.has(k)) idx.set(k, []);
+    const arr = idx.get(k);
+    if (!arr.some(x => x.ot === rec.ot && x.name === rec.name && x.maker === rec.maker)) arr.push(rec);
+  };
+  pds.forEach(p => add(p.ot_number, { ot: p.ot_number, maker: p.maker || p.client || '', client: p.client || '', name: p.product_name || '', dno: p.customer_drawing_no || '' }));
+  kids.forEach(c => { const p = byId.get(c.parent_designid); if (p) add(c.ot_number, { ot: c.ot_number, maker: p.maker || p.client || '', client: p.client || '', name: c.product_name || p.product_name || '', dno: p.customer_drawing_no || '' }); });
+  return idx;
+}
+// ファイル名から一致する製品を探す（ファイル名＝OT番号、または「OT番号(〜)」「OT番号 〜」）
+function inspectionMatchProducts(fileName, idx) {
+  const b = inspectionKey(fileName);
+  const cands = [b];
+  for (let i = 0; i < b.length; i++) if (b[i] === '(' || b[i] === ' ') cands.push(b.slice(0, i));
+  const out = [];
+  cands.forEach(k => (idx.get(k) || []).forEach(r => { if (!out.includes(r)) out.push(r); }));
+  return out;
+}
+
+async function reloadInspectionList() {
+  if (!_insList) return;
+  const body = document.getElementById('insl-body');
+  try {
+    const [objs, idx] = await Promise.all([listInspectionObjects(), inspectionProductIndex().catch(e => { console.warn('[検査表リスト] 製品マスタの取得に失敗', e); return new Map(); })]);
+    if (!_insList) return;
+    _insList.files = objs.map(o => {
+      const prods = inspectionMatchProducts(o.name, idx);
+      const makers = [...new Set(prods.map(p => p.maker).filter(Boolean))];
+      return { ...o, prods, makers };
+    });
+    _insList.loading = false;
+    _cdmInsCache = { at: Date.now(), names: objs.map(o => o.name) };
+    renderInspectionList();
+  } catch (e) {
+    if (body) body.innerHTML = `<div class="insl-empty" style="color:#dc2626;">${String(e.message).replace(/</g, '&lt;')}</div>`;
+  }
+}
+
+function renderInspectionList() {
+  if (!_insList || _insList.loading) return;
+  const e = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const q = inspectionKey(_insList.q || '').replace(/\s+/g, '');
+  const qHit = f => !q || inspectionKey(f.name).replace(/\s+/g, '').includes(q) || f.prods.some(p => inspectionKey(p.ot).replace(/\s+/g, '').includes(q));
+  const searched = _insList.files.filter(qHit);
+  // 客先名ボタン（検索結果の件数で表示）
+  const counts = new Map(); let none = 0;
+  searched.forEach(f => { if (!f.makers.length) none++; f.makers.forEach(m => counts.set(m, (counts.get(m) || 0) + 1)); });
+  const makers = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ja'));
+  const mk = _insList.maker;
+  const short = m => m.replace(/株式会社|（株）|\(株\)/g, '').trim();
+  document.getElementById('insl-makers').innerHTML =
+    `<button type="button" class="${!mk ? 'on' : ''}" onclick="_insList.maker='';renderInspectionList()">すべて<b>${searched.length}</b></button>`
+    + makers.map(([m, n]) => `<button type="button" class="${mk === m ? 'on' : ''}" onclick="_insList.maker=decodeURIComponent('${encodeURIComponent(m)}');renderInspectionList()">${clientLogoHtml(m, 'cf-logo')}<span>${e(short(m))}</span><b>${n}</b></button>`).join('')
+    + (none ? `<button type="button" class="${mk === '__none' ? 'on' : ''}" onclick="_insList.maker='__none';renderInspectionList()"><span>製品マスタ未登録</span><b>${none}</b></button>` : '');
+  const rows = searched.filter(f => !mk || (mk === '__none' ? !f.makers.length : f.makers.includes(mk)));
+  document.getElementById('insl-count').textContent = `${rows.length} / ${_insList.files.length}件`;
+  const kb = n => n >= 1024 * 1024 ? (n / 1024 / 1024).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+  const dt = t => { if (!t) return ''; const d = new Date(t); return isNaN(d) ? '' : `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+  const body = document.getElementById('insl-body');
+  if (!rows.length) { body.innerHTML = '<div class="insl-empty">該当する検査表はありません</div>'; return; }
+  body.innerHTML = `
+    <table class="insl-table">
+      <thead><tr><th>No</th><th>ファイル名</th><th>OT番号（製品マスタ）</th><th>客先名</th><th>品名</th><th class="r">サイズ</th><th>更新日時</th><th>操作</th></tr></thead>
+      <tbody>${rows.map((f, i) => {
+        const id = encodeURIComponent(f.key);
+        const ots = [...new Set(f.prods.map(p => p.ot))];
+        return `<tr>
+          <td class="no">${i + 1}</td>
+          <td class="fn"><a href="${e(inspectionPublicUrl(f.name))}" target="_blank" rel="noopener" title="開く（ダウンロード）">${e(f.name)}</a></td>
+          <td class="mono">${ots.length ? ots.map(e).join('<br>') : '<span class="muted">—</span>'}</td>
+          <td>${f.makers.length ? f.makers.map(m => e(short(m))).join('<br>') : '<span class="muted">—</span>'}</td>
+          <td class="pn">${f.prods.length ? [...new Set(f.prods.map(p => p.name))].map(e).join('<br>') : ''}</td>
+          <td class="r muted">${kb(f.size)}</td>
+          <td class="muted">${dt(f.updated)}</td>
+          <td class="ops">
+            <label class="insl-op" title="編集したファイルで差し替える（ファイル名はそのまま）">差し替え<input type="file" accept=".xlsx,.xlsm,.xls,.pdf" style="display:none" onchange="replaceInspectionFile(decodeURIComponent('${id}'), this)"></label>
+            <button class="insl-op" onclick="renameInspectionFile(decodeURIComponent('${id}'))" title="ファイル名を変更">名前変更</button>
+            <button class="insl-op del" onclick="deleteInspectionFile(decodeURIComponent('${id}'))" title="このファイルを削除">削除</button>
+          </td>
+        </tr>`; }).join('')}</tbody>
+    </table>`;
+}
+
+function _insToast(msg, color) {
+  if (typeof _pdfedToast === 'function') return _pdfedToast(msg, color);
+  console.log(msg);
+}
+function _insHeaders(extra) { return { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, ...(extra || {}) }; }
+
+// 差し替え：Excelで直したファイルを、同じファイル名のまま上書きする
+async function replaceInspectionFile(key, input) {
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+  const name = inspectionNameFromKey(key);
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  if (!INSPECTION_EXTS[ext]) { alert('Excel（.xlsx/.xlsm/.xls）またはPDFを選んでください'); return; }
+  if (ext !== (name.split('.').pop() || '').toLowerCase() && !confirm(`拡張子が違います（登録済み: ${name} ／ 選んだファイル: ${file.name}）。\nこのまま「${name}」として差し替えますか？`)) return;
+  if (!confirm(`「${name}」を選んだファイル（${file.name}）で差し替えます。よろしいですか？`)) return;
+  const r = await fetch(`${SUPABASE_URL}/storage/v1/object/${INSPECTION_BUCKET}/${encodeURIComponent(key)}`, {
+    method: 'POST', headers: _insHeaders({ 'Content-Type': INSPECTION_EXTS[ext], 'x-upsert': 'true', 'cache-control': '0' }), body: file
+  });
+  if (!r.ok) { alert('差し替えに失敗しました: ' + r.status + ' ' + (await r.text()).slice(0, 120)); return; }
+  _insToast('✅ 差し替えました: ' + name, '#059669');
+  await reloadInspectionList();
+}
+
+// 名前変更：拡張子はそのまま。同じ名前のファイルがあるときは変更しない
+async function renameInspectionFile(key) {
+  const oldName = inspectionNameFromKey(key);
+  const m = oldName.match(/^(.*?)(\.[^.]+)?$/);
+  const base = m[1], ext = m[2] || '';
+  let nb = prompt(`新しいファイル名を入力してください（拡張子 ${ext} はそのまま）`, base);
+  if (nb == null) return;
+  nb = nb.trim().replace(/\.(xlsx|xlsm|xls|pdf)$/i, '');
+  if (!nb || nb === base) return;
+  if (/[\\/]/.test(nb)) { alert('ファイル名に「/」「\\」は使えません'); return; }
+  const newName = nb + ext;
+  if (_insList && _insList.files.some(f => f.name.toLowerCase() === newName.toLowerCase())) { alert(`「${newName}」はすでにあります`); return; }
+  const r = await fetch(`${SUPABASE_URL}/storage/v1/object/move`, {
+    method: 'POST', headers: _insHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ bucketId: INSPECTION_BUCKET, sourceKey: key, destinationKey: inspectionStorageKey(newName) })
+  });
+  if (!r.ok) { alert('名前の変更に失敗しました: ' + r.status + ' ' + (await r.text()).slice(0, 120)); return; }
+  _insToast(`✅ ${oldName} → ${newName}`, '#059669');
+  await reloadInspectionList();
+}
+
+// 削除（元に戻せない）
+async function deleteInspectionFile(key) {
+  const name = inspectionNameFromKey(key);
+  if (!confirm(`「${name}」を削除します。元に戻せません。よろしいですか？`)) return;
+  const r = await fetch(`${SUPABASE_URL}/storage/v1/object/${INSPECTION_BUCKET}`, {
+    method: 'DELETE', headers: _insHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ prefixes: [key] })
+  });
+  if (!r.ok) { alert('削除に失敗しました: ' + r.status + ' ' + (await r.text()).slice(0, 120)); return; }
+  _insToast('🗑 削除しました: ' + name, '#dc2626');
+  await reloadInspectionList();
 }
 
 // 検査表印刷: dateKey='2026-07-15'なら指定日、nullなら当月全件
@@ -21890,7 +22243,7 @@ $("os-product").addEventListener("change", e=>{
   recalc();
   // オーダーNoを自動採番して表示（空欄のときのみ・編集可）
   if(!$("os-orderNoInput").value.trim()){
-    nextOrderNo().then(no=>{ if(!$("os-orderNoInput").value.trim()) $("os-orderNoInput").value = no; }).catch(()=>{});
+    peekNextOrderNo().then(no=>{ if(no && !$("os-orderNoInput").value.trim()) $("os-orderNoInput").value = no; }).catch(()=>{});
   }
 });
 function clearProduct(){
@@ -22334,6 +22687,20 @@ async function nextOrderNo(){
   return await res.json();
 }
 
+/* 次に使うオーダーNo（使用済みの最大値+1）。表示用なので番号は消費しない */
+async function peekNextOrderNo(){
+  const res = await fetch(`${SB_URL}/rest/v1/hatchu_orders?select=order_no&order=order_no.desc&limit=1`, { headers: HDR });
+  if(!res.ok) throw new Error("HTTP "+res.status);
+  const rows = await res.json();
+  return rows.length ? Number(rows[0].order_no) + 1 : await nextOrderNo();
+}
+/* そのオーダーNoがすでに使われているか */
+async function orderNoUsed(no){
+  const res = await fetch(`${SB_URL}/rest/v1/hatchu_orders?select=order_no&order_no=eq.${encodeURIComponent(no)}&limit=1`, { headers: HDR });
+  if(!res.ok) return false;
+  return (await res.json()).length > 0;
+}
+
 /* 最終使用オーダーNoを表示 */
 async function refreshLastOrderNo(){
   try{
@@ -22358,7 +22725,12 @@ $("os-createBtn").addEventListener("click", async ()=>{
   $("os-createBtn").disabled=true; setStatus("作成中…","");
   try{
     let orderNo = $("os-orderNoInput").value.trim();
-    if(!orderNo){ orderNo = await nextOrderNo(); $("os-orderNoInput").value = orderNo; }
+    let bumped = "";
+    // 空欄、またはすでに使われている番号のときは次の番号を採番する（同じオーダーNoの二重発行を防ぐ）
+    if(!orderNo || await orderNoUsed(orderNo)){
+      if(orderNo) bumped = orderNo;
+      orderNo = await nextOrderNo(); $("os-orderNoInput").value = orderNo;
+    }
     const price = effectivePrice(qty).price;
     const amount = qty*price;
     const delivery = $("os-delivery").value.trim();
@@ -22372,7 +22744,9 @@ $("os-createBtn").addEventListener("click", async ()=>{
     const ins = await fetch(`${SB_URL}/rest/v1/hatchu_orders`, { method:"POST", headers:{...HDR, Prefer:"return=minimal"}, body: JSON.stringify(rec) });
     if(!ins.ok){ const t=await ins.text(); throw new Error("保存失敗: "+t); }
     renderDocuments(rec);
-    setStatus(`作成完了（オーダーNo ${orderNo}）`, "ok");
+    setStatus(`作成完了（オーダーNo ${orderNo}）${bumped ? `　※${bumped}は使用済みのため${orderNo}で作成しました` : ""}`, "ok");
+    // 次の発注書用に、オーダーNoを次の番号へ自動で進める
+    peekNextOrderNo().then(no=>{ if(no) $("os-orderNoInput").value = no; }).catch(()=>{ $("os-orderNoInput").value = Number(orderNo) + 1; });
     $("os-previewPanel").style.display="block";
     $("os-orderView").classList.add("os-has-preview");
     $("os-orderNoTag").textContent = "オーダーNo "+orderNo;
