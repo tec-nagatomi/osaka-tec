@@ -817,6 +817,7 @@
 
   /* ---- Calendar ---- */
   .calendar-card { background: #fff; border-radius: 10px; border: 1px solid #e5e7eb; padding: 18px; }
+  .calendar-card .cal-card-title { display:flex; align-items:center; gap:6px; margin-bottom:6px; }
   .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
   .cal-title { font-size: 14px; font-weight: 600; color: #111827; }
   .cal-nav { display: flex; gap: 4px; }
@@ -2207,6 +2208,42 @@
   .insl-op:hover { background:#f3f4f6; }
   .insl-op.del { color:#dc2626; border-color:#fecaca; }
   .insl-op.del:hover { background:#fef2f2; }
+  .shp-drop { margin-top:8px; display:flex; align-items:center; gap:8px; padding:9px 10px; border:2px dashed #93c5fd; border-radius:8px; background:#eff6ff; color:#1e40af; font-size:11.5px; line-height:1.35; cursor:pointer; transition:background .15s, border-color .15s; }
+  .shp-drop:hover, .shp-drop.over { background:#dbeafe; border-color:#2563eb; }
+  .shp-drop svg { width:22px; height:22px; flex:none; }
+  .shp-drop small { color:#3b82f6; font-size:10.5px; }
+  .shp-busy { position:fixed; inset:0; z-index:10060; background:rgba(15,23,42,.45); display:flex; align-items:center; justify-content:center; }
+  .shp-busy-box { background:#fff; border-radius:12px; padding:22px 26px; min-width:320px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.25); }
+  .shp-busy-box .spin { display:inline-block; width:22px; height:22px; border:3px solid #2563eb; border-right-color:transparent; border-radius:50%; animation:spin 0.8s linear infinite; }
+  .shp-busy-msg { font-size:13px; color:#374151; margin:10px 0; }
+  .shp-busy-bar { height:6px; background:#e5e7eb; border-radius:3px; overflow:hidden; }
+  .shp-busy-bar i { display:block; height:100%; width:0; background:#2563eb; transition:width .2s; }
+  .shp-overlay { position:fixed; inset:0; z-index:10030; background:rgba(15,23,42,.55); display:flex; align-items:center; justify-content:center; padding:20px; }
+  .shp-modal { background:#fff; border-radius:12px; width:min(1200px,97vw); max-height:92vh; display:flex; flex-direction:column; box-shadow:0 24px 60px rgba(15,23,42,.35); overflow:hidden; }
+  .shp-head { display:flex; align-items:center; gap:12px; padding:14px 18px; border-bottom:1px solid #e5e7eb; }
+  .shp-title { font-size:16px; font-weight:800; color:#111827; flex:1; }
+  .shp-file { font-size:12px; font-weight:600; color:#6b7280; margin-left:10px; }
+  .shp-note { padding:8px 18px; font-size:12px; color:#92400e; background:#fffbeb; border-bottom:1px solid #fde68a; }
+  .shp-body { flex:1; overflow:auto; }
+  .shp-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  .shp-table th { position:sticky; top:0; z-index:1; background:#fafafa; text-align:left; font-size:10.5px; font-weight:700; color:#9ca3af; padding:7px 8px; border-bottom:1px solid #e5e7eb; white-space:nowrap; }
+  .shp-table td { padding:6px 8px; border-bottom:1px solid #f3f4f6; vertical-align:top; }
+  .shp-table tr.off td { opacity:.45; }
+  .shp-table tr.shp-sec td { background:#f1f5f9; font-weight:800; color:#334155; font-size:12px; padding:6px 10px; }
+  .shp-table .mono { font-family:'SF Mono','Consolas',monospace; font-size:12px; white-space:nowrap; }
+  .shp-table .muted { color:#9ca3af; }
+  .shp-table .c { text-align:center; width:28px; }
+  .shp-table .r { text-align:right; white-space:nowrap; }
+  .shp-table .files { font-size:11.5px; color:#047857; font-family:'SF Mono','Consolas',monospace; }
+  .shp-in { border:1px solid #d1d5db; border-radius:6px; padding:4px 6px; font-size:12px; font-family:'SF Mono','Consolas',monospace; }
+  .shp-in.ot { width:250px; } .shp-in.qty { width:44px; text-align:right; } .shp-in.seal { width:110px; }
+  .shp-ng { display:block; color:#dc2626; font-weight:700; }
+  .shp-warn { color:#b45309; font-weight:700; }
+  .shp-foot { display:flex; align-items:center; gap:10px; padding:12px 18px; border-top:1px solid #e5e7eb; }
+  .shp-sum { margin-right:auto; font-size:13px; color:#374151; }
+  .shp-btn { padding:8px 18px; border-radius:8px; border:1px solid #e5e7eb; background:#f9fafb; color:#374151; font-size:13px; font-weight:700; cursor:pointer; }
+  .shp-btn.primary { background:#059669; border-color:#059669; color:#fff; }
+  .shp-btn:disabled { opacity:.5; cursor:default; }
   .cdm-overlay { position:fixed; inset:0; z-index:1200; background:rgba(15,23,42,.55); display:none; align-items:center; justify-content:center; padding:24px; }
   .cdm-overlay.open { display:flex; animation:cdmFade .15s ease-out; }
   @keyframes cdmFade { from { opacity:0; } to { opacity:1; } }
@@ -2267,6 +2304,9 @@
   .cdm-cat-toggle { display:inline-flex; border:1px solid #e5e7eb; border-radius:7px; overflow:hidden; margin-left:auto; margin-right:8px; }
   .cdm-cat-toggle button { border:0; background:#fff; color:#6b7280; font-size:11px; font-weight:700; padding:4px 10px; cursor:pointer; }
   .cdm-cat-toggle + .cdm-group-count { margin-left:0; }
+  .cdm-print-all { display:inline-flex; align-items:center; gap:4px; margin-left:8px; padding:5px 11px; border:1px solid #6ee7b7; background:#ecfdf5; color:#047857; border-radius:7px; font-size:11.5px; font-weight:700; cursor:pointer; white-space:nowrap; }
+  .cdm-print-all:hover { background:#d1fae5; }
+  .cdm-print-all svg { width:13px; height:13px; }
   .cdm-cat-toggle button + button { border-left:1px solid #e5e7eb; }
   .cdm-cat-toggle button.on { background:#1d4ed8; color:#fff; }
   .cdm-table td.cdm-ot { white-space:normal; word-break:break-all; overflow:visible; line-height:1.35; }
@@ -2831,6 +2871,10 @@
         </div>
         <!-- Calendar -->
         <div class="calendar-card" id="calendar-card">
+          <div class="import-title cal-card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            検査表印刷カレンダー
+          </div>
           <div class="calendar-header-row">
             <button class="cal-nav-btn" onclick="calPrevMonth()">‹</button>
             <span class="cal-month-label" id="cal-month-label"></span>
@@ -2854,6 +2898,11 @@
             </button>
           </div>
           <div class="cal-grid" id="cal-grid"></div>
+          <div class="shp-drop" id="shp-drop" title="スキャンした出荷表PDFを読み込んで、必要な検査表をまとめて印刷します">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><polyline points="9 15 12 12 15 15"/></svg>
+            <span><b>出荷表PDF</b>をここにドロップ<br><small>検査表をまとめて印刷（クリックでも選択可）</small></span>
+            <input type="file" accept="application/pdf,.pdf" style="display:none">
+          </div>
         </div>
       </div>
       <div class="orders-list-card">
@@ -19185,7 +19234,7 @@ async function loadCalendarEvents() {
         // 出荷日基準：この日が出荷日の子データだけを展開表示に使う
         const kid = kidDetailsOf(c.order_id, order, pd).find(k => k.id === c.id);
         const childOts = kid ? [kid.ot] : childOtsOf(c.order_id, order, pd);
-        calEvents[dateKey].push({ label, shortLabel, orderno: order?.orderno || '', sealno: c.sealno, order_id: c.order_id, client, ot, cat, childOts, kids: kid ? [kid] : [] });
+        calEvents[dateKey].push({ label, shortLabel, drawingno: order?.drawingno || '', orderno: order?.orderno || '', sealno: c.sealno, order_id: c.order_id, client, ot, cat, childOts, kids: kid ? [kid] : [] });
       }
     } else {
       // 受注日基準: orders.orderdate
@@ -19201,7 +19250,7 @@ async function loadCalendarEvents() {
         const cat = order.pd_product_category || pd?.product_category || '';
         const childOts = childOtsOf(orderId, order, pd);
         // 受注日基準：その受注の子データすべてを展開表示に使う
-        calEvents[dateKey].push({ cat, childOts, kids: kidDetailsOf(orderId, order, pd), label, shortLabel, orderno: order.orderno || '', sealno: '', seals: sealsByOrder.get(orderId) || [], order_id: orderId, client, ot });
+        calEvents[dateKey].push({ cat, childOts, kids: kidDetailsOf(orderId, order, pd), drawingno: order.drawingno || '', label, shortLabel, orderno: order.orderno || '', sealno: '', seals: sealsByOrder.get(orderId) || [], order_id: orderId, client, ot });
       }
     }
     renderCalendar();
@@ -19313,7 +19362,7 @@ function openCalDayModal(dateKey, events) {
     if (!byClient.has(cl)) byClient.set(cl, new Map());
     const orders = byClient.get(cl);
     const key = ev.order_id;
-    if (!orders.has(key)) orders.set(key, { order_id: ev.order_id, orderno: ev.orderno, label: ev.label, ot: ev.ot || '', cat: ev.cat || '', childOts: [], kids: [], seals: [], n: 0 });
+    if (!orders.has(key)) orders.set(key, { order_id: ev.order_id, orderno: ev.orderno, label: ev.label, ot: ev.ot || '', cat: ev.cat || '', drawingno: ev.drawingno || '', childOts: [], kids: [], seals: [], n: 0 });
     const o = orders.get(key);
     o.n++;
     (ev.childOts || [ev.ot || '-']).forEach(t => { if (!o.childOts.includes(t)) o.childOts.push(t); });
@@ -19351,7 +19400,6 @@ function openCalDayModal(dateKey, events) {
           <span class="cdm-sub">${(typeof calBaseMode !== 'undefined' && calBaseMode === 'order') ? '受注日' : '出荷日'}　${events.length}件 ／ 受注 ${orderCount}件 ／ 販売先 ${groups.length}社</span>
         </div>
         <div class="cdm-actions">
-          <button class="dm-btn success" onclick="closeCalDayModal();printInspectionSheets('${dateKey}')" title="この日の検査表を印刷"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>検査表</button>
           <button class="detail-modal-close" onclick="closeCalDayModal()" title="閉じる（Esc）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
       </div>
@@ -19367,6 +19415,8 @@ function openCalDayModal(dateKey, events) {
                 <button type="button" onclick="cdmSetCatFilter(this, 'cover')">カバーのみ</button>
               </div>
               <span class="cdm-group-count">${g.orders.length}件</span>
+              <button type="button" class="cdm-print-all" onclick="cdmPrintGroup(this)" title="この販売先の検査表をまとめて複合機で印刷">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>まとめて印刷</button>
             </div>
             <table class="cdm-table">
               <thead><tr><th>No</th><th>品名</th><th>OT番号</th><th>受注番号</th><th>シールNo</th><th></th></tr></thead>
@@ -19378,7 +19428,9 @@ function openCalDayModal(dateKey, events) {
                     <td class="mono cdm-ot">${escH(o.ot) || '<span class="muted">—</span>'}</td>
                     <td class="mono">${escH(o.orderno)}</td>
                     <td class="mono muted">${escH(sealText(o.seals)) || '—'}</td>
-                    <td class="cdm-ins" data-ots="${escH(JSON.stringify(o.childOts))}"></td>
+                    <td class="cdm-ins" data-ots="${escH(JSON.stringify(o.childOts))}" data-items="${escH(JSON.stringify(o.kids.length
+                      ? o.kids.map(kd => ({ ot_number: kd.ot, drawingno: o.drawingno, sealno: kd.seal }))
+                      : [{ ot_number: o.ot, drawingno: o.drawingno, sealno: '' }]))}" data-label="${escH(o.orderno + ' ' + o.label)}"></td>
                   </tr>${o.kids.length ? `
                   <tr class="cdm-sub" style="display:none;"><td colspan="6">
                     <table class="cdm-kid-table">
@@ -19389,7 +19441,7 @@ function openCalDayModal(dateKey, events) {
                           <td class="mono">${kd.ot && kd.ot !== '-' ? escH(kd.ot) : '<span class="muted">—</span>'}</td>
                           <td>${kd.delivery ? escH(kd.delivery) : '<span class="muted">未設定</span>'}</td>
                           <td class="mono">${escH(kd.seal) || '<span class="muted">—</span>'}</td>
-                          <td class="cdm-ins" data-ots="${escH(JSON.stringify([kd.ot || '-']))}"></td>
+                          <td class="cdm-ins" data-ots="${escH(JSON.stringify([kd.ot || '-']))}" data-items="${escH(JSON.stringify([{ ot_number: kd.ot, drawingno: o.drawingno, sealno: kd.seal }]))}" data-label="${escH(kd.name + (kd.seal ? '（' + kd.seal + '）' : ''))}"></td>
                         </tr>`).join('')}</tbody>
                     </table>
                   </td></tr>` : ''}`).join('')}
@@ -19401,6 +19453,41 @@ function openCalDayModal(dateKey, events) {
   ov.classList.add('open');
   document.body.style.overflow = 'hidden';
   cdmFillInspectionButtons(ov);
+}
+
+// 検査表ボタン：その行（親＝表示中の子データすべて／子＝その1件）の検査表を、確認なしで複合機へ送る
+//   Supabaseに登録した検査表Excelの URL を印刷サーバー（localhost:8765/print）へ送り、
+//   印刷サーバーがダウンロード → 図番・シールNo・日付を書き込み → PDF化して印刷する
+// その行（td.cdm-ins）の印刷ジョブ：OT番号ごとに、Supabaseに登録した検査表ファイル（分割ファイルはすべて）
+function cdmJobsFromTd(td) {
+  let items = [];
+  try { items = JSON.parse(td.dataset.items || '[]'); } catch (e) {}
+  const names = (_cdmInsCache && _cdmInsCache.names) || [];
+  const jobs = [];
+  items.filter(i => i.ot_number && i.ot_number !== '-').forEach(i => {
+    findInspectionFiles(i.ot_number, names).forEach(n => jobs.push({ ...i, file_name: n, file_url: inspectionPublicUrl(n) }));
+  });
+  return jobs;
+}
+// 販売先ごとの「まとめて印刷」：表示中（すべて／カバーのみ）の行のうち、検査表ボタンが出ている行をまとめて印刷する
+function cdmPrintGroup(btn) {
+  const sec = btn.closest('.cdm-group');
+  if (!sec) return;
+  const jobs = [];
+  sec.querySelectorAll('tr.cdm-row').forEach(tr => {
+    if (tr.style.display === 'none') return;
+    const td = tr.querySelector(':scope > td.cdm-ins');
+    if (td && td.querySelector('.cdm-ins-btn')) jobs.push(...cdmJobsFromTd(td));
+  });
+  const name = sec.querySelector('.cdm-group-name')?.textContent || '';
+  if (!jobs.length) { showInspectDialog(`${name}：印刷できる検査表がありません`, 0, null); return; }
+  showInspectDialog(`${name}（まとめて印刷）`, jobs.length, jobs, jobs.length);
+}
+function cdmPrintInspection(btn) {
+  const td = btn.closest('td.cdm-ins');
+  const jobs = cdmJobsFromTd(td);
+  if (!jobs.length) return;
+  showInspectDialog(td.dataset.label || '検査表', jobs.length, jobs, jobs.length);   // 西暦を入れるか確認してから印刷
 }
 
 // ▼／▲：その受注の子データ（出荷日基準＝その日が出荷日の子データ／受注日基準＝その受注の子データすべて）を開閉
@@ -19446,11 +19533,10 @@ function findInspectionFiles(ot, names) {
   return names.filter(n => { const b = inspectionKey(n); return b === k || b.startsWith(k + '(') || b.startsWith(k + ' '); });
 }
 async function cdmFillInspectionButtons(root) {
+  // 開くたびに最新の検査表ファイル一覧を取得する（複製・名前変更・登録した直後でもすぐ反映されるように）
   let names = _cdmInsCache.names;
-  if (!names || Date.now() - _cdmInsCache.at > 60 * 1000) {
-    try { names = [...(await listInspectionFiles()).keys()]; _cdmInsCache = { at: Date.now(), names }; }
-    catch (e) { console.warn('[検査表] ファイル一覧の取得に失敗', e); return; }
-  }
+  try { names = [...(await listInspectionFiles()).keys()]; _cdmInsCache = { at: Date.now(), names }; }
+  catch (e) { console.warn('[検査表] ファイル一覧の取得に失敗', e); if (!names) return; }
   // 子データのOT番号ごとに検査表を探し、1つでも見つからない（またはOT番号なし）ならボタンを出さない
   root.querySelectorAll('td.cdm-ins').forEach(td => {
     let ots = [];
@@ -19464,7 +19550,7 @@ async function cdmFillInspectionButtons(root) {
     }
     if (!complete || !hits.length) { td.innerHTML = ''; return; }
     const tip = hits.join('\n').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-    td.innerHTML = `<button type="button" class="cdm-ins-btn" title="${tip}" onclick="event.stopPropagation()">`
+    td.innerHTML = `<button type="button" class="cdm-ins-btn" title="押すと複合機で印刷&#10;${tip}" onclick="event.stopPropagation();cdmPrintInspection(this)">`
       + `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>`
       + `検査表${hits.length > 1 ? `<b>${hits.length}</b>` : ''}</button>`;
   });
@@ -19475,12 +19561,10 @@ async function dmFillInspectionFiles(ots, elId = 'dm-inspection-files') {
   if (!el) return;
   let names = _cdmInsCache.names;
   try {
-    if (!names || Date.now() - _cdmInsCache.at > 60 * 1000) {
-      names = [...(await listInspectionFiles()).keys()];
-      _cdmInsCache = { at: Date.now(), names };
-    }
+    names = [...(await listInspectionFiles()).keys()];   // 毎回最新を取得
+    _cdmInsCache = { at: Date.now(), names };
   } catch (e) {
-    el.className = 'dm-muted'; el.textContent = '取得できませんでした'; return;
+    if (!names) { el.className = 'dm-muted'; el.textContent = '取得できませんでした'; return; }
   }
   const cur = document.getElementById(elId);   // 待っている間に別の受注を開いた場合に備える
   if (cur !== el) return;
@@ -19504,7 +19588,12 @@ function cdmRestoreAfterDetail() {
   if (!window._cdmReturn) return;
   window._cdmReturn = false;
   const ov = document.getElementById('cal-day-overlay');
-  if (ov && ov.innerHTML) { ov.classList.add('open'); document.body.style.overflow = 'hidden'; }
+  if (ov && ov.innerHTML) { ov.classList.add('open'); document.body.style.overflow = 'hidden'; cdmFillInspectionButtons(ov); }
+}
+// 検査表ファイルが増減したら、開いているカレンダーの一覧のボタンも更新する
+function cdmRefreshIfOpen() {
+  const ov = document.getElementById('cal-day-overlay');
+  if (ov && ov.classList.contains('open')) cdmFillInspectionButtons(ov);
 }
 function closeCalDayModal() {
   window._cdmReturn = false;
@@ -19714,6 +19803,7 @@ async function startInspectionUpload() {
        <div style="color:#6b7280;margin-top:4px;">もう一度フォルダを選ぶと、失敗した分だけ登録し直せます。</div>` : ''}`;
   renderInspectionSummary();
   if (ok && _insList) reloadInspectionList();   // 検査表リストを開いていれば最新にする
+  if (ok && typeof cdmRefreshIfOpen === 'function') cdmRefreshIfOpen();
 }
 
 // ==================== 検査表リスト（一覧・検索・客先名フィルター・差し替え・名前変更・削除） ====================
@@ -19801,6 +19891,7 @@ async function reloadInspectionList() {
     _insList.loading = false;
     _cdmInsCache = { at: Date.now(), names: objs.map(o => o.name) };
     renderInspectionList();
+    if (typeof cdmRefreshIfOpen === 'function') cdmRefreshIfOpen();
   } catch (e) {
     if (body) body.innerHTML = `<div class="insl-empty" style="color:#dc2626;">${String(e.message).replace(/</g, '&lt;')}</div>`;
   }
@@ -19844,6 +19935,7 @@ function renderInspectionList() {
           <td class="muted">${dt(f.updated)}</td>
           <td class="ops">
             <label class="insl-op" title="編集したファイルで差し替える（ファイル名はそのまま）">差し替え<input type="file" accept=".xlsx,.xlsm,.xls,.pdf" style="display:none" onchange="replaceInspectionFile(decodeURIComponent('${id}'), this)"></label>
+            <button class="insl-op" onclick="duplicateInspectionFile(decodeURIComponent('${id}'))" title="このファイルを別の名前で複製">複製</button>
             <button class="insl-op" onclick="renameInspectionFile(decodeURIComponent('${id}'))" title="ファイル名を変更">名前変更</button>
             <button class="insl-op del" onclick="deleteInspectionFile(decodeURIComponent('${id}'))" title="このファイルを削除">削除</button>
           </td>
@@ -19896,6 +19988,35 @@ async function renameInspectionFile(key) {
   await reloadInspectionList();
 }
 
+// 複製：新しいファイル名を入れたときだけ作る（元と同じ名前・すでにある名前では作らない）
+async function duplicateInspectionFile(key) {
+  const srcName = inspectionNameFromKey(key);
+  const m = srcName.match(/^(.*?)(\.[^.]+)?$/);
+  const base = m[1], ext = m[2] || '';
+  let nb = base;
+  while (true) {
+    nb = prompt(`「${srcName}」を複製します。\n新しいファイル名を入力してください（拡張子 ${ext} はそのまま）\n※元と同じ名前のままでは複製できません`, nb);
+    if (nb == null) return;
+    nb = nb.trim().replace(/\.(xlsx|xlsm|xls|pdf)$/i, '');
+    if (!nb) { alert('ファイル名を入力してください'); nb = base; continue; }
+    if (/[\\/]/.test(nb)) { alert('ファイル名に「/」「\\」は使えません'); continue; }
+    if (nb === base) { alert('元と同じ名前です。ファイル名を変更してください'); continue; }
+    if (_insList && _insList.files.some(f => f.name.toLowerCase() === (nb + ext).toLowerCase())) { alert(`「${nb + ext}」はすでにあります。別の名前にしてください`); continue; }
+    break;
+  }
+  const newName = nb + ext;
+  let r;
+  try {
+    r = await fetch(`${SUPABASE_URL}/storage/v1/object/copy`, {
+      method: 'POST', headers: _insHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ bucketId: INSPECTION_BUCKET, sourceKey: key, destinationKey: inspectionStorageKey(newName) })
+    });
+  } catch (e) { alert('複製に失敗しました: ' + e.message); return; }
+  if (!r.ok) { alert('複製に失敗しました: ' + r.status + ' ' + (await r.text()).slice(0, 120)); return; }
+  _insToast(`✅ 複製しました: ${srcName} → ${newName}`, '#059669');
+  await reloadInspectionList();
+}
+
 // 削除（元に戻せない）
 async function deleteInspectionFile(key) {
   const name = inspectionNameFromKey(key);
@@ -19906,6 +20027,354 @@ async function deleteInspectionFile(key) {
   if (!r.ok) { alert('削除に失敗しました: ' + r.status + ' ' + (await r.text()).slice(0, 120)); return; }
   _insToast('🗑 削除しました: ' + name, '#dc2626');
   await reloadInspectionList();
+}
+
+// ==================== 出荷表PDF（スキャン）→ 検査表まとめて印刷 ====================
+// 出荷表の列: 注文No / 品名 / 客先図番 / OT番号 / 数量 / シールNo / 出荷先 / 出荷便
+// 罫線から表のマス目を見つけ、マスごとに文字認識（英数字モデル・複数回読んで多数決）する。
+// 検査表には 社内番号(F6)=OT番号、製造No.(F7)=シールNo、検査日=今日 を書き込んで印刷する（客先番号F5=客先図番）。
+var SHP_OCR_LANG_PATH = 'https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_best_int';
+var _shp = null;   // { fileName, rows:[...] }
+
+function shpInitDrop() {
+  const dz = document.getElementById('shp-drop');
+  if (!dz || dz._init) return;
+  dz._init = true;
+  const inp = dz.querySelector('input[type=file]');
+  dz.addEventListener('click', e => { if (e.target !== inp) inp.click(); });
+  inp.addEventListener('change', () => { const f = inp.files && inp.files[0]; inp.value = ''; if (f) shpHandleFile(f); });
+  ['dragenter', 'dragover'].forEach(t => dz.addEventListener(t, e => { e.preventDefault(); e.stopPropagation(); dz.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(t => dz.addEventListener(t, e => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('over'); }));
+  dz.addEventListener('drop', e => {
+    const f = [...(e.dataTransfer?.files || [])].find(x => /\.pdf$/i.test(x.name) || x.type === 'application/pdf');
+    if (f) shpHandleFile(f); else alert('PDFファイルをドロップしてください');
+  });
+}
+document.addEventListener('DOMContentLoaded', shpInitDrop);
+setTimeout(shpInitDrop, 0);
+
+function shpProgress(msg, pct) {
+  let ov = document.getElementById('shp-busy');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'shp-busy';
+    ov.className = 'shp-busy';
+    ov.innerHTML = '<div class="shp-busy-box"><span class="spin"></span><div class="shp-busy-msg"></div><div class="shp-busy-bar"><i></i></div></div>';
+    document.body.appendChild(ov);
+  }
+  ov.querySelector('.shp-busy-msg').textContent = msg;
+  ov.querySelector('.shp-busy-bar i').style.width = (pct == null ? 0 : Math.max(0, Math.min(100, pct))) + '%';
+}
+function shpProgressDone() { document.getElementById('shp-busy')?.remove(); }
+
+async function shpHandleFile(file) {
+  shpProgress('出荷表を読み込み中…', 2);
+  let worker = null;
+  try {
+    const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+    shpProgress('文字認識の準備中…（初回は少し時間がかかります）', 5);
+    const T = await loadTesseract();
+    worker = await T.createWorker('eng', 1, { workerPath: OCR_WORKER_PATH, corePath: OCR_CORE_PATH, langPath: SHP_OCR_LANG_PATH });
+    await worker.setParameters({ tessedit_pageseg_mode: '7' });
+    const rows = [];
+    for (let pn = 1; pn <= pdf.numPages; pn++) {
+      const page = await pdf.getPage(pn);
+      const got = await shpReadPage(page, worker, (done, total) =>
+        shpProgress(`文字認識中… ${pn}/${pdf.numPages}ページ（${done}/${total}行）`, 8 + 90 * ((pn - 1) + done / Math.max(1, total)) / pdf.numPages));
+      rows.push(...got);
+    }
+    shpProgressDone();
+    if (!rows.length) { alert('出荷表の表が見つかりませんでした（罫線のある表をスキャンしたPDFを使ってください）'); return; }
+    await shpOpenReview(file.name, rows);
+  } catch (e) {
+    console.error('[出荷表]', e);
+    shpProgressDone();
+    alert('出荷表の読み込みに失敗しました: ' + e.message);
+  } finally {
+    if (worker) { try { await worker.terminate(); } catch (_) {} }
+  }
+}
+
+// ページを向きを変えながら描画し、表（罫線）が見つかって注文No（BJ-）が読めた向きで読む
+async function shpReadPage(page, worker, onProgress) {
+  const DPI = 200, k = DPI / 200;
+  const rots = [0, 180, 90, 270];
+  for (const rot of rots) {
+    const vp = page.getViewport({ scale: DPI / 72, rotation: rot });
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
+    const ctx = cv.getContext('2d', { willReadFrequently: true });
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+    const g = shpPrepare(cv, k);
+    if (!g.blocks.length) continue;
+    const b0 = g.blocks[0];
+    const test = await shpOcrCell(worker, g, b0.rows[0], b0.xl, null, 'order');
+    if (!/^BJ-\d{8}-\d{3}$/.test(test)) continue;
+    return await shpReadBlocks(worker, g, onProgress);
+  }
+  return [];
+}
+
+// 画像の前処理：色の濃さ（RGBの最大値）で白黒にし、罫線（長い線）を見つけてマス目にする
+function shpPrepare(cv, k) {
+  const W = cv.width, H = cv.height;
+  const src = cv.getContext('2d').getImageData(0, 0, W, H).data;
+  const mx = new Uint8ClampedArray(W * H), dark = new Uint8Array(W * H);
+  for (let i = 0, p = 0; i < W * H; i++, p += 4) {
+    const v = Math.max(src[p], src[p + 1], src[p + 2]);
+    mx[i] = v; dark[i] = v < 130 ? 1 : 0;
+  }
+  const hm = new Uint8Array(W * H), vm = new Uint8Array(W * H);
+  const minH = Math.round(150 * k), minV = Math.round(30 * k);
+  const rowCnt = new Int32Array(H);
+  for (let y = 0; y < H; y++) {
+    let s = -1;
+    for (let x = 0; x <= W; x++) {
+      const d = x < W && dark[y * W + x];
+      if (d && s < 0) s = x;
+      else if (!d && s >= 0) { if (x - s >= minH) { for (let t = s; t < x; t++) hm[y * W + t] = 1; rowCnt[y] += x - s; } s = -1; }
+    }
+  }
+  for (let x = 0; x < W; x++) {
+    let s = -1;
+    for (let y = 0; y <= H; y++) {
+      const d = y < H && dark[y * W + x];
+      if (d && s < 0) s = y;
+      else if (!d && s >= 0) { if (y - s >= minV) for (let t = s; t < y; t++) vm[t * W + x] = 1; s = -1; }
+    }
+  }
+  const group = arr => { const g = []; arr.forEach(v => { if (g.length && v - g[g.length - 1][g[g.length - 1].length - 1] <= 3) g[g.length - 1].push(v); else g.push([v]); }); return g.map(a => Math.round(a.reduce((x, y) => x + y, 0) / a.length)); };
+  const ys = []; for (let y = 0; y < H; y++) if (rowCnt[y] > W * 0.15) ys.push(y);
+  const yl = group(ys);
+  // 罫線の間隔で表（ブロック）に分ける
+  const blocks = []; let cur = null;
+  for (let i = 0; i + 1 < yl.length; i++) {
+    const gap = yl[i + 1] - yl[i];
+    if (gap >= 20 * k && gap <= 90 * k) {
+      if (!cur) { cur = { rows: [] }; blocks.push(cur); }
+      cur.rows.push([yl[i], yl[i + 1]]);
+    } else cur = null;
+  }
+  blocks.forEach(b => {
+    const y0 = b.rows[0][0], y1 = b.rows[b.rows.length - 1][1];
+    const xs = [];
+    for (let x = 0; x < W; x++) { let c = 0; for (let y = y0; y < y1; y++) c += vm[y * W + x]; if (c > (y1 - y0) * 0.6) xs.push(x); }
+    b.xl = group(xs); b.y0 = y0; b.y1 = y1;
+  });
+  const ok = blocks.filter(b => b.xl.length >= 7);
+  // 2種類の画像：濃さそのまま（グレー）／罫線を消した白黒
+  const mk = fn => { const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); const id = x.createImageData(W, H); for (let i = 0, p = 0; i < W * H; i++, p += 4) { const v = fn(i); id.data[p] = id.data[p + 1] = id.data[p + 2] = v; id.data[p + 3] = 255; } x.putImageData(id, 0, 0); return c; };
+  const gray = mk(i => mx[i]);
+  const bin = mk(i => (dark[i] && !hm[i] && !vm[i]) ? 0 : 255);
+  return { W, H, k, gray, bin, blocks: ok };
+}
+
+function shpCrop(src, x0, y0, x1, y1, scale) {
+  const w = Math.max(1, x1 - x0), h = Math.max(1, y1 - y0);
+  const c = document.createElement('canvas');
+  c.width = Math.round(w * scale) + 60; c.height = Math.round(h * scale) + 60;
+  const x = c.getContext('2d');
+  x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+  x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+  x.drawImage(src, x0, y0, w, h, 30, 30, Math.round(w * scale), Math.round(h * scale));
+  return c;
+}
+
+var SHP_COLS = {
+  order: { col: 0, wl: 'BJU0123456789-', need: 2, vars: [['gray', 3], ['bin', 3], ['gray', 2.5], ['bin', 2.5]],
+           norm: t => { t = t.replace(/[~_]/g, '-'); const m = t.match(/(\d{8})-?(\d{3})$/); return m ? `BJ-${m[1]}-${m[2]}` : ''; } },
+  dno:   { col: 2, wl: 'H0123456789-', need: 2, vars: [['gray', 3], ['bin', 3], ['gray', 2.5]],
+           norm: t => t.replace(/[~_]/g, '-').replace(/^[^H]*H/, 'H') },
+  ot:    { col: 3, wl: 'OT0123456789-,()', need: 2, vars: [['gray', 3], ['gray', 3.5], ['bin', 3], ['bin', 3.5], ['gray', 2.5]],
+           norm: t => { t = t.replace(/[~_]/g, '-').replace(/^0T/, 'OT'); const i = t.indexOf('OT-'); return i >= 0 ? t.slice(i) : ''; } },
+  qty:   { col: 4, wl: '0123456789', need: 2, vars: [['gray', 2], ['gray', 3], ['bin', 3], ['gray', 2.5], ['bin', 2]],
+           norm: t => /^\d{1,3}$/.test(t) ? t : '' },
+  seal:  { col: 5, wl: '0123456789-', need: 3, vars: [['gray', 2], ['gray', 2.5], ['gray', 3], ['gray', 3.5], ['bin', 2], ['bin', 2.5], ['bin', 3], ['bin', 3.5]],
+           norm: t => { t = t.replace(/[~_]/g, '-'); const m = t.match(/(\d{6})(-\d{1,3})?$/); return m ? m[1] + (m[2] || '') : ''; } },
+};
+
+// 1マスを読み方を変えて何回か読み、同じ結果が need 回そろったものを採用（そろわなければ一番多かったもの）
+async function shpOcrCell(worker, g, row, xl, valid, kind) {
+  const cfg = SHP_COLS[kind];
+  // valid(v) を渡したときは、それを満たす読み取り結果を優先する（OT番号＝検査表ファイルがすべてそろう読み方）
+  const x0 = xl[cfg.col] + 4 * g.k, x1 = xl[cfg.col + 1] - 4 * g.k, y0 = row[0] + 4 * g.k, y1 = row[1] - 4 * g.k;
+  await worker.setParameters({ tessedit_char_whitelist: cfg.wl });
+  const cnt = new Map(); let empty = 0;
+  for (const [img, sc] of cfg.vars) {
+    const { data } = await worker.recognize(shpCrop(g[img], x0, y0, x1, y1, sc));
+    const v = cfg.norm(String(data.text || '').replace(/\s+/g, ''));
+    if (!v) { empty++; if (kind === 'seal' && empty >= 4 && !cnt.size) return ''; continue; }
+    const n = (cnt.get(v) || 0) + 1; cnt.set(v, n);
+    if (n >= cfg.need && (typeof valid !== 'function' || valid(v))) return v;
+  }
+  let best = '', bn = 0;
+  if (typeof valid === 'function') cnt.forEach((n, v) => { if (valid(v) && n > bn) { best = v; bn = n; } });
+  if (!best) cnt.forEach((n, v) => { if (n > bn) { best = v; bn = n; } });
+  return best;
+}
+
+async function shpReadBlocks(worker, g, onProgress) {
+  const out = [];
+  let names = _cdmInsCache.names;
+  if (!names || Date.now() - _cdmInsCache.at > 60 * 1000) {
+    try { names = [...(await listInspectionFiles()).keys()]; _cdmInsCache = { at: Date.now(), names }; } catch (e) { names = names || []; }
+  }
+  const otValid = v => { const l = shpExpandOts(v); return l.length > 0 && l.every(o => findInspectionFiles(o, names).length > 0); };
+  const total = g.blocks.reduce((a, b) => a + b.rows.length, 0);
+  let done = 0;
+  for (const b of g.blocks) {
+    // 表の上の見出し（例「10/30 オークマ出荷」）から日付だけ読む
+    let title = '';
+    try {
+      await worker.setParameters({ tessedit_char_whitelist: '' });
+      const tc = shpCrop(g.gray, b.xl[0], Math.max(0, b.y0 - 70 * g.k), b.xl[b.xl.length - 1], b.y0 - 4 * g.k, 2);
+      const { data } = await worker.recognize(tc);
+      const m = String(data.text || '').match(/(\d{1,2})\s*\/\s*(\d{1,2})/);
+      if (m) title = `${+m[1]}/${+m[2]}`;
+    } catch (_) {}
+    for (const row of b.rows) {
+      const r = { title };
+      for (const kind of ['order', 'dno', 'ot', 'qty', 'seal']) r[kind] = await shpOcrCell(worker, g, row, b.xl, kind === 'ot' ? otValid : null, kind);
+      done++; onProgress && onProgress(done, total);
+      if (!r.order && !r.ot) continue;   // 空行・見出し行
+      r.qty = r.qty || '1';
+      out.push(r);
+    }
+  }
+  return out;
+}
+
+// OT番号の書き方を展開：「OT-105989-2,90-2,91-2」→ OT-105989-2 / OT-105990-2 / OT-105991-2
+function shpExpandOts(ot) {
+  const t = String(ot || '').trim();
+  if (!t) return [];
+  const parts = t.split(/[,、]/).map(s => s.trim()).filter(Boolean);
+  const m0 = parts[0].match(/^OT-(\d+)(.*)$/);
+  if (!m0) return parts;
+  const base = m0[1];
+  return parts.map((p, i) => {
+    if (i === 0) return p;
+    if (/^OT-/.test(p)) return p;
+    const m = p.match(/^(\d+)(.*)$/);
+    if (!m) return p;
+    const num = m[1].length >= base.length ? m[1] : base.slice(0, base.length - m[1].length) + m[1];
+    return `OT-${num}${m[2]}`;
+  });
+}
+// シールNoを展開：「354576-577」→ 354576 / 354577
+function shpExpandSeals(seal) {
+  const m = String(seal || '').trim().match(/^(\d{4,})(?:-(\d{1,4}))?$/);
+  if (!m) return seal ? [String(seal).trim()] : [];
+  if (!m[2]) return [m[1]];
+  const end = m[1].slice(0, m[1].length - m[2].length) + m[2];
+  const a = parseInt(m[1], 10), b = parseInt(end, 10);
+  if (!(b >= a) || b - a > 50) return [String(seal).trim()];
+  const r = []; for (let n = a; n <= b; n++) r.push(String(n));
+  return r;
+}
+// 検査表ファイルを探す（見つからなければ末尾の余分な文字やカッコを外して探し、近い名前も候補にする）
+function shpFindFiles(ot, names) {
+  let hits = findInspectionFiles(ot, names);
+  if (hits.length) return { hits, used: ot, guess: false };
+  const tries = [ot.replace(/\(.*?\)$/, ''), ot.replace(/[^\d)]$/, ''), ot.replace(/\d$/, '')].filter(t => t && t !== ot && /^OT-\d+/.test(t));
+  for (const t of tries) { hits = findInspectionFiles(t, names); if (hits.length) return { hits, used: t, guess: true }; }
+  const k = inspectionKey(ot);
+  const near = names.filter(n => { const b = inspectionKey(n); return Math.abs(b.length - k.length) <= 1 && ocrEditDistance(b, k) === 1; });
+  if (near.length === 1) return { hits: near, used: inspectionKey(near[0]), guess: true };
+  return { hits: [], used: ot, guess: false };
+}
+
+// 1行分の印刷ジョブ（OT番号とシールNoの組み合わせ）
+function shpJobsForRow(r, names) {
+  const ots = shpExpandOts(r.ot), seals = shpExpandSeals(r.seal), qty = Math.max(1, parseInt(r.qty) || 1);
+  const pairs = [];
+  if (ots.length > 1) {
+    ots.forEach((ot, i) => pairs.push({ ot, seal: seals.length === ots.length ? seals[i] : (r.seal || '') }));
+  } else if (ots.length === 1) {
+    if (seals.length === qty) seals.forEach(s => pairs.push({ ot: ots[0], seal: s }));
+    else for (let i = 0; i < qty; i++) pairs.push({ ot: ots[0], seal: r.seal || '' });
+  }
+  const jobs = [], missing = [], guessed = [];
+  pairs.forEach(p => {
+    const f = shpFindFiles(p.ot, names);
+    if (!f.hits.length) { if (!missing.includes(p.ot)) missing.push(p.ot); return; }
+    if (f.guess && !guessed.includes(`${p.ot}→${f.used}`)) guessed.push(`${p.ot}→${f.used}`);
+    f.hits.forEach(n => jobs.push({ ot_number: f.used, shanai_no: f.used, drawingno: r.dno || '', sealno: p.seal, file_name: n, file_url: inspectionPublicUrl(n) }));
+  });
+  return { jobs, missing, guessed };
+}
+
+async function shpOpenReview(fileName, rows) {
+  let names = _cdmInsCache.names;
+  if (!names || Date.now() - _cdmInsCache.at > 60 * 1000) {
+    try { names = [...(await listInspectionFiles()).keys()]; _cdmInsCache = { at: Date.now(), names }; } catch (e) { names = names || []; }
+  }
+  _shp = { fileName, rows: rows.map(r => ({ ...r, on: true })), names };
+  document.getElementById('shp-overlay')?.remove();
+  const ov = document.createElement('div');
+  ov.id = 'shp-overlay';
+  ov.className = 'shp-overlay';
+  ov.innerHTML = `
+    <div class="shp-modal" role="dialog" aria-modal="true">
+      <div class="shp-head">
+        <div class="shp-title">出荷表から検査表を印刷<span class="shp-file">${String(fileName).replace(/</g, '&lt;')}</span></div>
+        <button class="detail-modal-close" onclick="shpClose()" title="閉じる"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="shp-note">読み取った内容を確認してください。OT番号・数量・シールNoは直せます（スキャンの読み取りなので、特にシールNoは印刷前に必ず確認してください）。</div>
+      <div class="shp-body" id="shp-body"></div>
+      <div class="shp-foot">
+        <span id="shp-sum" class="shp-sum"></span>
+        <button class="shp-btn" onclick="shpClose()">閉じる</button>
+        <button class="shp-btn primary" id="shp-print" onclick="shpPrint()">まとめて印刷</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  shpRender();
+}
+function shpClose() { document.getElementById('shp-overlay')?.remove(); _shp = null; }
+
+function shpRender() {
+  if (!_shp) return;
+  const e = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  let total = 0, lastTitle = null;
+  const body = _shp.rows.map((r, i) => {
+    const { jobs, missing, guessed } = shpJobsForRow(r, _shp.names);
+    r._jobs = jobs;
+    if (r.on) total += jobs.length;
+    const head = r.title !== lastTitle ? `<tr class="shp-sec"><td colspan="8">${r.title ? e(r.title) + ' 出荷' : '出荷'}</td></tr>` : '';
+    lastTitle = r.title;
+    const files = [...new Set(jobs.map(j => j.file_name))];
+    const st = missing.length
+      ? `<span class="shp-ng">検査表なし: ${missing.map(e).join(', ')}</span>`
+      : '';
+    const gs = guessed.length ? `<div class="shp-warn">要確認: ${guessed.map(e).join(', ')}</div>` : '';
+    return head + `<tr class="${r.on ? '' : 'off'}">
+      <td class="c"><input type="checkbox" ${r.on ? 'checked' : ''} onchange="_shp.rows[${i}].on=this.checked;shpRender()"></td>
+      <td class="mono">${e(r.order) || '<span class="muted">—</span>'}</td>
+      <td class="mono">${e(r.dno) || '<span class="muted">—</span>'}</td>
+      <td><input class="shp-in ot" value="${e(r.ot)}" onchange="_shp.rows[${i}].ot=this.value.trim();shpRender()"></td>
+      <td><input class="shp-in qty" value="${e(r.qty)}" onchange="_shp.rows[${i}].qty=this.value.trim();shpRender()"></td>
+      <td><input class="shp-in seal" value="${e(r.seal)}" placeholder="なし" onchange="_shp.rows[${i}].seal=this.value.trim();shpRender()"></td>
+      <td class="files">${files.length ? files.map(n => `<div>${e(n)}</div>`).join('') : ''}${st}${gs}</td>
+      <td class="r"><b>${jobs.length}</b>枚</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('shp-body').innerHTML = `
+    <table class="shp-table">
+      <thead><tr><th></th><th>注文No</th><th>客先図番</th><th>OT番号（社内番号）</th><th>数量</th><th>シールNo（製造No.）</th><th>印刷する検査表</th><th class="r">枚数</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>`;
+  document.getElementById('shp-sum').innerHTML = `印刷 <b>${total}</b> 枚（${_shp.rows.filter(r => r.on).length}行）`;
+  const btn = document.getElementById('shp-print');
+  btn.disabled = !total; btn.textContent = `まとめて印刷（${total}枚）`;
+}
+
+function shpPrint() {
+  if (!_shp) return;
+  const jobs = _shp.rows.filter(r => r.on).flatMap(r => r._jobs || []);
+  if (!jobs.length) return;
+  showInspectDialog(`出荷表（${_shp.fileName}）`, jobs.length, jobs, jobs.length);
 }
 
 // 検査表印刷: dateKey='2026-07-15'なら指定日、nullなら当月全件
@@ -20065,15 +20534,20 @@ function showInspectDialog(label, count, items, totalCount, unchecked) {
           ? `<span style="color:#d97706;">印刷対象のデータがありません</span>`
           : `<strong style="color:#111827;">${label}</strong> の検査表<br>
              <span style="font-size:22px;font-weight:800;color:#059669;display:block;margin:10px 0;">${total}件中 ${count} 枚</span>
-             を印刷します。よろしいですか？
+             を印刷します。
+             <div style="margin-top:14px;padding:10px 12px;border-radius:8px;background:#f0f9ff;border:1px solid #bae6fd;color:#0c4a6e;font-size:13px;font-weight:700;">
+               検査日に西暦（${new Date().getFullYear()}年）は入れますか？
+               <div style="font-size:11px;font-weight:500;color:#0369a1;margin-top:3px;">月・日は入れません</div>
+             </div>
              ${unchecked ? `<br><span style="font-size:11px;color:#d97706;">※印刷サーバーに接続できずファイル有無は未確認です（無いものは自動スキップされます）</span>` : (total !== count ? `<br><span style="font-size:11px;color:#9ca3af;">※${total-count}件は検査表ファイルなし</span>` : '')}`
         }
       </div>
       <div style="display:flex;gap:10px;justify-content:center;">
         ${noItems
           ? `<button onclick="document.getElementById('inspect-dialog-overlay').remove()" style="padding:9px 28px;border-radius:8px;border:1px solid #e5e7eb;background:#f9fafb;color:#374151;font-size:13px;font-weight:600;cursor:pointer;">閉じる</button>`
-          : `<button onclick="document.getElementById('inspect-dialog-overlay').remove()" style="padding:9px 28px;border-radius:8px;border:1px solid #e5e7eb;background:#f9fafb;color:#374151;font-size:13px;font-weight:600;cursor:pointer;">いいえ</button>
-             <button onclick="execPrintInspection()" style="padding:9px 28px;border-radius:8px;border:none;background:#059669;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">はい</button>`
+          : `<button onclick="document.getElementById('inspect-dialog-overlay').remove()" style="padding:9px 18px;border-radius:8px;border:1px solid #e5e7eb;background:#f9fafb;color:#374151;font-size:13px;font-weight:600;cursor:pointer;">キャンセル</button>
+             <button onclick="execPrintInspection('none')" style="padding:9px 18px;border-radius:8px;border:1px solid #059669;background:#fff;color:#047857;font-size:13px;font-weight:700;cursor:pointer;">入れないで印刷</button>
+             <button onclick="execPrintInspection('year')" style="padding:9px 18px;border-radius:8px;border:none;background:#059669;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">西暦を入れて印刷</button>`
         }
       </div>
     </div>`;
@@ -20083,7 +20557,9 @@ function showInspectDialog(label, count, items, totalCount, unchecked) {
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-async function execPrintInspection() {
+// dateMode: 'year' = 検査日に西暦だけ入れる ／ 'none' = 検査日は何も入れない（今日の月日は入れない）
+async function execPrintInspection(dateMode) {
+  dateMode = dateMode === 'year' ? 'year' : 'none';
   const items = window._pendingInspectItems || [];
   if (!items.length) return;
 
@@ -20112,7 +20588,11 @@ async function execPrintInspection() {
         body: JSON.stringify({
           ot_number: item.ot_number,
           drawingno: item.drawingno,
-          sealno:    item.sealno
+          sealno:    item.sealno,
+          // Supabaseの検査表ファイル（指定があれば印刷サーバーがダウンロードして印刷する）
+          ...(item.file_url ? { file_url: item.file_url, file_name: item.file_name || '' } : {}),
+          ...(item.shanai_no ? { shanai_no: item.shanai_no } : {}),
+          date_mode: dateMode   // 検査日：'year'=西暦のみ ／ 'none'=入れない
         })
       });
       const result = await res.json();
