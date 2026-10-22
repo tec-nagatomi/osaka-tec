@@ -20158,8 +20158,19 @@ function shpPrepare(cv, k) {
   }
   blocks.forEach(b => {
     const y0 = b.rows[0][0], y1 = b.rows[b.rows.length - 1][1];
+    // 縦罫線：スキャンのわずかな傾きで線が数px横にずれるため、左右 tol px 以内に線があればその列に数える
+    //   （縦に長い表ほどずれが大きく、1列ぴったりだと6割に届かず表を見失っていた）
+    const tol = Math.max(2, Math.round(3 * k)), cnt = new Int32Array(W), hit = new Int32Array(W).fill(-1);
+    for (let y = y0; y < y1; y++) {
+      const base = y * W;
+      for (let x = 0; x < W; x++) {
+        if (!vm[base + x]) continue;
+        const a = Math.max(0, x - tol), z = Math.min(W - 1, x + tol);
+        for (let t = a; t <= z; t++) if (hit[t] !== y) { hit[t] = y; cnt[t]++; }
+      }
+    }
     const xs = [];
-    for (let x = 0; x < W; x++) { let c = 0; for (let y = y0; y < y1; y++) c += vm[y * W + x]; if (c > (y1 - y0) * 0.6) xs.push(x); }
+    for (let x = 0; x < W; x++) if (cnt[x] > (y1 - y0) * 0.6) xs.push(x);
     b.xl = group(xs); b.y0 = y0; b.y1 = y1;
   });
   const ok = blocks.filter(b => b.xl.length >= 7);
@@ -20191,7 +20202,16 @@ var SHP_COLS = {
   qty:   { col: 4, wl: '0123456789', need: 2, vars: [['gray', 2], ['gray', 3], ['bin', 3], ['gray', 2.5], ['bin', 2]],
            norm: t => /^\d{1,3}$/.test(t) ? t : '' },
   seal:  { col: 5, wl: '0123456789-', need: 3, vars: [['gray', 2], ['gray', 2.5], ['gray', 3], ['gray', 3.5], ['bin', 2], ['bin', 2.5], ['bin', 3], ['bin', 3.5]],
-           norm: t => { t = t.replace(/[~_]/g, '-'); const m = t.match(/(\d{6})(-\d{1,3})?$/); return m ? m[1] + (m[2] || '') : ''; } },
+           norm: t => {
+             t = t.replace(/[~_]/g, '-');
+             // 「354890～891」の「～」が読めず数字がつながった場合（8〜9桁）→ 先頭6桁＋末尾を範囲として扱う
+             const d = t.replace(/[^\d]/g, '');
+             if (!/-/.test(t) && /^\d{8,9}$/.test(d)) {
+               const a = d.slice(0, 6), z = d.slice(6), end = +(a.slice(0, 6 - z.length) + z);
+               if (end > +a && end - +a <= 50) return a + '-' + z;
+             }
+             const m = t.match(/(\d{6})(-\d{1,3})?$/); return m ? m[1] + (m[2] || '') : '';
+           } },
 };
 
 // 1マスを読み方を変えて何回か読み、同じ結果が need 回そろったものを採用（そろわなければ一番多かったもの）
