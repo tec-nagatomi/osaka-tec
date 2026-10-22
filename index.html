@@ -20197,8 +20197,10 @@ var SHP_COLS = {
            norm: t => { t = t.replace(/[~_]/g, '-'); const m = t.match(/(\d{8})-?(\d{3})$/); return m ? `BJ-${m[1]}-${m[2]}` : ''; } },
   dno:   { col: 2, wl: 'H0123456789-', need: 2, vars: [['gray', 3], ['bin', 3], ['gray', 2.5]],
            norm: t => t.replace(/[~_]/g, '-').replace(/^[^H]*H/, 'H') },
-  ot:    { col: 3, wl: 'OT0123456789-,()', need: 2, vars: [['gray', 3], ['gray', 3.5], ['bin', 3], ['bin', 3.5], ['gray', 2.5]],
-           norm: t => { t = t.replace(/[~_]/g, '-').replace(/^0T/, 'OT'); const i = t.indexOf('OT-'); return i >= 0 ? t.slice(i) : ''; } },
+  ot:    { col: 3, wl: 'OT0123456789-,()~', need: 2, vars: [['gray', 3], ['gray', 3.5], ['bin', 3], ['bin', 3.5], ['gray', 2.5]],
+           // 「～」（範囲）は ~ のまま残す（OT-104050-3～54-3 → OT-104050-3~54-3）。範囲として成り立たない ~ は - に戻す
+           norm: t => { t = t.replace(/_/g, '-').replace(/^0T/, 'OT'); const i = t.indexOf('OT-'); if (i < 0) return ''; t = t.slice(i);
+                        return /^OT-\d+[^~]*~\d{2,}/.test(t) ? t : t.replace(/~/g, '-'); } },
   qty:   { col: 4, wl: '0123456789', need: 2, vars: [['gray', 2], ['gray', 3], ['bin', 3], ['gray', 2.5], ['bin', 2]],
            norm: t => /^\d{1,3}$/.test(t) ? t : '' },
   seal:  { col: 5, wl: '0123456789-', need: 3, vars: [['gray', 2], ['gray', 2.5], ['gray', 3], ['gray', 3.5], ['bin', 2], ['bin', 2.5], ['bin', 3], ['bin', 3.5]],
@@ -20266,21 +20268,41 @@ async function shpReadBlocks(worker, g, onProgress) {
 }
 
 // OT番号の書き方を展開：「OT-105989-2,90-2,91-2」→ OT-105989-2 / OT-105990-2 / OT-105991-2
+//               「OT-104050-3～54-3」→ OT-104050-3 / OT-104051-3 / … / OT-104054-3（範囲）
 function shpExpandOts(ot) {
-  const t = String(ot || '').trim();
+  const t = String(ot || '').trim().replace(/[～〜~]/g, '~');
   if (!t) return [];
   const parts = t.split(/[,、]/).map(s => s.trim()).filter(Boolean);
   const m0 = parts[0].match(/^OT-(\d+)(.*)$/);
   if (!m0) return parts;
   const base = m0[1];
-  return parts.map((p, i) => {
-    if (i === 0) return p;
-    if (/^OT-/.test(p)) return p;
-    const m = p.match(/^(\d+)(.*)$/);
-    if (!m) return p;
-    const num = m[1].length >= base.length ? m[1] : base.slice(0, base.length - m[1].length) + m[1];
-    return `OT-${num}${m[2]}`;
+  const out = [];
+  parts.forEach((p, i) => {
+    let q = p;
+    if (i > 0 && !/^OT-/.test(p)) {
+      const m = p.match(/^(\d+)(.*)$/);
+      if (m) q = `OT-${m[1].length >= base.length ? m[1] : base.slice(0, base.length - m[1].length) + m[1]}${m[2]}`;
+    }
+    const r = shpOtRange(q);
+    if (r) out.push(...r); else out.push(q.replace(/~/g, '-'));
   });
+  return out;
+}
+// 範囲表記を展開。「OT-104050-3~54-3」のほか、スキャンで「～」が消えて「OT-104050-354-3」と読めた形も範囲とみなす
+function shpOtRange(s) {
+  let m = s.match(/^OT-(\d+)([^~]*)~(?:OT-)?(\d{2,})(.*)$/);
+  if (!m) {
+    const k = s.match(/^OT-(\d{5,})(-\d{1,2})(\d{2,3})(-\d{1,2}(?:[A-Za-z]{1,2})?)$/);   // 末尾の枝番が前と同じときだけ（-3 54 -3）
+    if (k && k[2] === k[4]) m = [k[0], k[1], k[2], k[3], k[4]];
+  }
+  if (!m) return null;
+  const a = m[1], suf = m[2], z = m[3], suf2 = m[4] || suf;
+  const end = z.length >= a.length ? z : a.slice(0, a.length - z.length) + z;
+  const n0 = parseInt(a, 10), n1 = parseInt(end, 10);
+  if (!(n1 > n0) || n1 - n0 > 30) return null;
+  const r = [];
+  for (let n = n0; n <= n1; n++) r.push(`OT-${String(n).padStart(a.length, '0')}${suf2}`);
+  return r;
 }
 // シールNoを展開：「354576-577」→ 354576 / 354577
 function shpExpandSeals(seal) {
