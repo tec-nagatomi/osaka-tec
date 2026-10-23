@@ -4459,6 +4459,52 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dis
 
 const SUPABASE_URL = 'https://qmyvsuhuoikimwktfufb.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFteXZzdWh1b2lraW13a3RmdWZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNTQ3NDcsImV4cCI6MjA5NTgzMDc0N30.6NE3RDRS91gahTH1cP2dgjd0sQ7ku_7e28Jk9vPc7go';
+
+// ==================== 製品マスタの重複（同じ客先図番が複数）の扱い ====================
+// 同じ客先図番が製品マスタに複数あるときは「OT番号のレベルが一番高いもの」を正とする（全画面共通）。
+//   OT番号の体系: OT-031576-1M-a → 連番 031576 / レベル 1 / 社内大変更 M / 社内小変更 a
+//   比べる順: レベル（数字）→ 社内大変更（A〜Z）→ 社内小変更（a〜z）→ 「用」の付かない製品本体 → 品目区分カバー → 新しい登録（designidが大きい方）
+function otLevelRank(ot) {
+  const t = String(ot || '').normalize('NFKC').trim();
+  const m = t.match(/^OTP?-\d+(?:-(\d+))?([A-Z])?(?:-([a-z]))?/);
+  if (!m) return [-1, 0, 0];
+  return [m[1] ? parseInt(m[1], 10) : 0, m[2] ? m[2].charCodeAt(0) - 64 : 0, m[3] ? m[3].charCodeAt(0) - 96 : 0];
+}
+function pdIsBetter(a, b) {   // a の方を正とするなら true
+  if (!b) return true;
+  const ra = otLevelRank(a.ot_number), rb = otLevelRank(b.ot_number);
+  for (let i = 0; i < 3; i++) if (ra[i] !== rb[i]) return ra[i] > rb[i];
+  // レベルが同じなら、製品本体（OT番号に「用」が付かない＝ワイパーセット等の部品ではない）を優先
+  const ua = /用/.test(a.ot_number || ''), ub = /用/.test(b.ot_number || '');
+  if (ua !== ub) return !ua;
+  // それでも同じなら、品目区分が「カバー」の方を優先（ワイパー・ブラケット・搬送台など付属品より本体）
+  if (a.product_category !== undefined && b.product_category !== undefined) {
+    const ca = a.product_category === 'カバー', cb = b.product_category === 'カバー';
+    if (ca !== cb) return ca;
+  }
+  return (Number(a.designid) || 0) > (Number(b.designid) || 0);
+}
+// 客先図番ごとに正とする1件だけを残した配列を返す（客先図番の無い行はそのまま残す）
+function pdBest(list) {
+  const best = new Map(), out = [];
+  for (const p of (list || [])) {
+    const k = p && p.customer_drawing_no;
+    if (!k) { out.push(p); continue; }
+    if (pdIsBetter(p, best.get(k))) best.set(k, p);
+  }
+  return out.concat([...best.values()]);
+}
+// 客先図番 → 正とする1件（一覧が変わったときだけ作り直す）
+let _pdBestCache = { src: null, len: -1, map: null };
+function pdFindBest(list, dno) {
+  if (!dno) return null;
+  if (_pdBestCache.src !== list || _pdBestCache.len !== (list || []).length) {
+    const map = new Map();
+    pdBest(list).forEach(p => { if (p && p.customer_drawing_no) map.set(p.customer_drawing_no, p); });
+    _pdBestCache = { src: list, len: (list || []).length, map };
+  }
+  return _pdBestCache.map.get(dno) || null;
+}
 // Realtime購読用のSupabaseクライアント（REST呼び出し自体は従来通りfetchで行う）
 const supabaseRT = (typeof window.supabase !== 'undefined')
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
@@ -4611,9 +4657,9 @@ async function loadShipOtNumbers(rows) {
     const parentOt = new Map();   // drawingno → productdate.ot_number（子データが無い製品用）
     shipDestByDrawing.clear();    // 製品マスタ側の変更を毎回反映する
     if (drawingNos.length) {
-      const pds = await shipFetchIn(
-        `${SUPABASE_URL}/rest/v1/productdate?select=designid,customer_drawing_no,ot_number,delivery_destination`,
-        'customer_drawing_no', drawingNos);
+      const pds = pdBest(await shipFetchIn(
+        `${SUPABASE_URL}/rest/v1/productdate?select=designid,customer_drawing_no,ot_number,product_category,delivery_destination`,
+        'customer_drawing_no', drawingNos));
       for (const pd of pds) {
         if (pd.ot_number) parentOt.set(pd.customer_drawing_no, pd.ot_number);
         // 出荷場所は図番単位で決まるので、受注→図番から引けるようにしておく
@@ -4894,8 +4940,8 @@ async function swHandleScan(raw) {
       const ord = ords[0] || {};
       let pd = {};
       if (ord.drawingno) {
-        const pds = await swGetJson(`${SUPABASE_URL}/rest/v1/productdate?select=client,product_name&customer_drawing_no=eq.${encodeURIComponent(ord.drawingno)}&order=designid.desc&limit=1`);
-        pd = pds[0] || {};
+        const pds = await swGetJson(`${SUPABASE_URL}/rest/v1/productdate?select=designid,customer_drawing_no,ot_number,product_category,client,product_name&customer_drawing_no=eq.${encodeURIComponent(ord.drawingno)}`);
+        pd = pdBest(pds)[0] || {};
       }
       await loadShipOtNumbers([{ child_id: kid.id, order_id: kid.order_id }]);
       rec = { ...common, source: 'app',
@@ -8216,10 +8262,10 @@ async function loadLaserAssign() {
     if (drawingnos.length) {
       const inList = drawingnos.map(d => `"${d}"`).join(',');
       const pdRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${inList})&select=customer_drawing_no,product_name,ot_number,client,product_category,second_category,part_number,part_number_url,parts`,
+        `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${inList})&select=designid,customer_drawing_no,product_name,ot_number,client,product_category,second_category,part_number,part_number_url,parts`,
         { headers: H }
       );
-      if (pdRes.ok) (await pdRes.json()).forEach(p => pdMap.set(p.customer_drawing_no, p));
+      if (pdRes.ok) pdBest(await pdRes.json()).forEach(p => pdMap.set(p.customer_drawing_no, p));
     }
 
     // 4) 製番（productno）でグループ化
@@ -12149,7 +12195,7 @@ async function resolveMazakGenericRows(rows) {
   if (otCores.length) {
     try {
       const orExpr = otCores.map(c => `ot_number.like.*${c}*`).join(',');
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/productdate?or=(${orExpr})&select=customer_drawing_no,ot_number`, { headers: H });
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/productdate?or=(${orExpr})&select=customer_drawing_no,ot_number,product_category`, { headers: H });
       if (res.ok) otList = (await res.json()).map(p => ({ dno: p.customer_drawing_no, ot: norm(p.ot_number) }));
     } catch (e) { console.warn('[Z93照合] OT番号取得失敗', e); }
   }
@@ -13813,8 +13859,8 @@ async function planChildSync(orderId, drawingno, oldQty, newQty) {
   const plan = { orderId, drawingno, oldQty: o, newQty: n, perUnit: 0, category: null, add: 0, del: [], blocked: 0, children: [], skip: '' };
   if (o === n) { plan.skip = '数量変更なし'; return plan; }
   if (!drawingno) { plan.skip = '図番なし'; return plan; }
-  const pdRes = await fetch(`${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=eq.${encodeURIComponent(drawingno)}&select=designid,product_category&limit=1`, { headers: H });
-  const pd = pdRes.ok ? (await pdRes.json())[0] : null;
+  const pdRes = await fetch(`${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=eq.${encodeURIComponent(drawingno)}&select=designid,customer_drawing_no,product_category,ot_number`, { headers: H });
+  const pd = pdRes.ok ? (pdBest(await pdRes.json())[0] || null) : null;
   if (!pd || !pd.product_category) { plan.skip = '製品マスタ未登録のため子データは増減しません'; return plan; }
   plan.category = pd.product_category;
   if (pd.product_category === 'カバー') {
@@ -14612,11 +14658,11 @@ async function fetchClientMap(drawingNos) {
   if (list.length === 0) return map;
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${list.map(d => `"${d}"`).join(',')})&select=customer_drawing_no,client`,
+      `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${list.map(d => `"${d}"`).join(',')})&select=designid,customer_drawing_no,client,ot_number,product_category`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }
     );
     if (res.ok) {
-      for (const pd of await res.json()) map.set(pd.customer_drawing_no, pd.client);
+      for (const pd of pdBest(await res.json())) map.set(pd.customer_drawing_no, pd.client);
     }
   } catch(e) { console.warn('[storage] 販売先の取得に失敗', e); }
   return map;
@@ -14762,7 +14808,7 @@ async function doSaveNewRows(rows, silent = false) {
         // ot_number が "OT-<core>..." で始まるものをまとめて取得（like.OR で1リクエスト）
         const orExpr = cores.map(c => `ot_number.like.*${c}*`).join(',');
         const pdRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/productdate?or=(${orExpr})&select=customer_drawing_no,ot_number`,
+          `${SUPABASE_URL}/rest/v1/productdate?or=(${orExpr})&select=customer_drawing_no,ot_number,product_category`,
           { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }
         );
         if (pdRes.ok) {
@@ -14856,11 +14902,11 @@ async function doSaveNewRows(rows, silent = false) {
   if (drawingNos.length > 0) {
     try {
       const pdRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${drawingNos.map(d => `"${d}"`).join(',')})&select=designid,customer_drawing_no,product_category`,
+        `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${drawingNos.map(d => `"${d}"`).join(',')})&select=designid,customer_drawing_no,product_category,ot_number`,
         { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }
       );
       if (pdRes.ok) {
-        const pdList = await pdRes.json();
+        const pdList = pdBest(await pdRes.json());
         for (const pd of pdList) {
           categoryMap.set(pd.customer_drawing_no, pd.product_category);
           // カバー以外はシール数算出をスキップ（パーツはシールなしで別途子データのみ作成）
@@ -15036,11 +15082,11 @@ async function createChildRoutesFromBase(insertedChildren, childRows, savedOrder
   let pdMap = new Map(); // drawingno → designid
   try {
     const pdRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${inList})&select=designid,customer_drawing_no`,
+      `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${inList})&select=designid,customer_drawing_no,ot_number,product_category`,
       { headers: H }
     );
     if (pdRes.ok) {
-      (await pdRes.json()).forEach(p => { pdMap.set(p.customer_drawing_no, p.designid); });
+      pdBest(await pdRes.json()).forEach(p => { pdMap.set(p.customer_drawing_no, p.designid); });
     }
   } catch (e) { console.warn('[childRoute] productdate取得失敗', e); return; }
 
@@ -15422,11 +15468,11 @@ async function backfillPartsChildren() {
   for (let i = 0; i < drawingNos.length; i += CHUNK) {
     const chunk = drawingNos.slice(i, i + CHUNK);
     const pdRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${chunk.map(d => `"${d}"`).join(',')})&select=customer_drawing_no,product_category`,
+      `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${chunk.map(d => `"${d}"`).join(',')})&select=designid,customer_drawing_no,product_category,ot_number`,
       { headers: H }
     );
     if (pdRes.ok) {
-      (await pdRes.json()).forEach(pd => categoryMap.set(pd.customer_drawing_no, pd.product_category));
+      pdBest(await pdRes.json()).forEach(pd => categoryMap.set(pd.customer_drawing_no, pd.product_category));
     }
   }
   const partsOrders = allOrders.filter(o => categoryMap.get(o.drawingno) === 'パーツ');
@@ -15513,10 +15559,10 @@ async function backfillAllMissingChildren() {
   for (let i = 0; i < drawingNos.length; i += CHUNK) {
     const chunk = drawingNos.slice(i, i + CHUNK);
     const pdRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${chunk.map(d => `"${d}"`).join(',')})&select=customer_drawing_no,product_category`,
+      `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${chunk.map(d => `"${d}"`).join(',')})&select=designid,customer_drawing_no,product_category,ot_number`,
       { headers: H }
     );
-    if (pdRes.ok) (await pdRes.json()).forEach(pd => categoryMap.set(pd.customer_drawing_no, pd.product_category));
+    if (pdRes.ok) pdBest(await pdRes.json()).forEach(pd => categoryMap.set(pd.customer_drawing_no, pd.product_category));
   }
 
   // 既に子データを持つ order_id を洗い出す
@@ -15568,7 +15614,7 @@ async function loadOrders() {
 
     // productdateをcustomer_drawing_noでMapに変換（高速検索用）
     const pdMap = new Map();
-    for (const pd of pdList) {
+    for (const pd of pdBest(pdList)) {
       if (pd.customer_drawing_no) pdMap.set(pd.customer_drawing_no, pd);
     }
 
@@ -16230,7 +16276,7 @@ async function exportLegacyWorkOrderExcel() {
   try { childByOrder = await fetchChildrenByOrder(data.map(o => o.id).filter(v => v != null)); }
   catch (e) { alert('子データの取得に失敗しました: ' + e.message); return; }
 
-  const pdOf = (dno) => dno ? ((typeof allProductdate !== 'undefined' ? allProductdate : []).find(p => p.customer_drawing_no === dno) || null) : null;
+  const pdOf = (dno) => dno ? pdFindBest(typeof allProductdate !== 'undefined' ? allProductdate : [], dno) : null;
   const header = ['伝票番号', '注文日', '', '', '販売先', '品名', '客先図番', 'OT番号', '', '注文番号', '希望納期', '', '数量', '単位', '', 'シール番号'];
   const body = data.map(o => {
     const pd = (o.pd_client && o.pd_product_name) ? null : pdOf(o.drawingno);
@@ -16292,7 +16338,7 @@ async function exportEditableExcel() {
   // 未結合の場合のみ図番→productdateで補完する
   const pdOf = (dno) => {
     if (!dno) return null;
-    return (typeof allProductdate !== 'undefined' ? allProductdate : []).find(p => p.customer_drawing_no === dno) || null;
+    return pdFindBest(typeof allProductdate !== 'undefined' ? allProductdate : [], dno);
   };
   const rowHead = (o) => {
     const pd = (o.pd_client && o.pd_product_name && o.pd_ot_number) ? null : pdOf(o.drawingno);
@@ -16490,8 +16536,8 @@ async function importEditableExcel(ev) {
   try {
     for (let i = 0; i < dnos.length; i += 100) {
       const chunk = dnos.slice(i, i + 100);
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${chunk.map(d => `"${d}"`).join(',')})&select=customer_drawing_no,client,product_name,ot_number`, { headers: H });
-      if (res.ok) for (const p of await res.json()) if (!pdMap.has(p.customer_drawing_no)) pdMap.set(p.customer_drawing_no, p);
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${chunk.map(d => `"${d}"`).join(',')})&select=designid,customer_drawing_no,client,product_name,ot_number,product_category`, { headers: H });
+      if (res.ok) for (const p of pdBest(await res.json())) if (!pdMap.has(p.customer_drawing_no)) pdMap.set(p.customer_drawing_no, p);
     }
   } catch(e) { console.warn('[Excel取込] 製品マスタ取得失敗', e); }
 
@@ -16772,11 +16818,11 @@ async function openOrderDetail(orderId, readOnly = false) {
     let pdData = null;
     if (p.drawingno) {
       const pdRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=eq.${encodeURIComponent(p.drawingno)}&select=*&limit=1`,
+        `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=eq.${encodeURIComponent(p.drawingno)}&select=*`,
         { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }
       );
       if (pdRes.ok) {
-        const pdList = await pdRes.json();
+        const pdList = pdBest(await pdRes.json());
         if (pdList.length) {
           pdData = pdList[0];
           // productdate_childを取得してwindow._pdChildListに保存
@@ -18645,10 +18691,10 @@ async function mofLookupDrawing(drawingno) {
   }
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=eq.${encodeURIComponent(drawingno)}&select=*&limit=1`,
+      `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=eq.${encodeURIComponent(drawingno)}&select=*`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }
     );
-    const list = res.ok ? await res.json() : [];
+    const list = res.ok ? pdBest(await res.json()) : [];
     if (list.length) {
       _mofPd = list[0];
       hint.textContent = `✅ 製品マスタ一致: ${_mofPd.product_name || ''}`;
@@ -19183,10 +19229,10 @@ async function loadCalendarEvents() {
     // productdateをdrawingno(customer_drawing_no)でMap
     let pdMap = new Map();
     if (allProductdate.length) {
-      allProductdate.forEach(p => { if (p.customer_drawing_no) pdMap.set(p.customer_drawing_no, p); });
+      pdBest(allProductdate).forEach(p => { if (p.customer_drawing_no) pdMap.set(p.customer_drawing_no, p); });
     } else {
       const pl = await fetchAllRows(`${SUPABASE_URL}/rest/v1/productdate?select=designid,customer_drawing_no,product_name,client,ot_number,product_category`);
-      pl.forEach(p => { if (p.customer_drawing_no) pdMap.set(p.customer_drawing_no, p); });
+      pdBest(pl).forEach(p => { if (p.customer_drawing_no) pdMap.set(p.customer_drawing_no, p); });
     }
 
     // 子データごとのOT番号（受注詳細の子データ一覧と同じ求め方）。'-' はOT番号なし
@@ -19853,7 +19899,7 @@ document.addEventListener('keydown', e => {
 async function inspectionProductIndex() {
   const H = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
   let pds = (typeof allProductdate !== 'undefined' && allProductdate.length) ? allProductdate : null;
-  if (!pds) pds = await fetchAllRows(`${SUPABASE_URL}/rest/v1/productdate?select=designid,ot_number,maker,client,product_name,customer_drawing_no`);
+  if (!pds) pds = await fetchAllRows(`${SUPABASE_URL}/rest/v1/productdate?select=designid,ot_number,product_category,maker,client,product_name,customer_drawing_no`);
   let kids = [];
   try { kids = await fetchAllRows(`${SUPABASE_URL}/rest/v1/productdate_child?select=parent_designid,ot_number,product_name`); } catch (e) {}
   const byId = new Map(pds.map(p => [p.designid, p]));
@@ -20517,11 +20563,11 @@ async function printInspectionSheets(dateKey) {
   const pdChildMap = new Map(); // drawingno → [{ot_number, quantity, sort_order}]
   if (drawingNos.length > 0) {
     const pdRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${drawingNos.map(d=>`"${d}"`).join(',')})&select=designid,customer_drawing_no`,
+      `${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=in.(${drawingNos.map(d=>`"${d}"`).join(',')})&select=designid,customer_drawing_no,ot_number,product_category`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }
     );
     if (pdRes.ok) {
-      const pdList = await pdRes.json();
+      const pdList = pdBest(await pdRes.json());
       for (const pd of pdList) {
         const pcRes = await fetch(
           `${SUPABASE_URL}/rest/v1/productdate_child?parent_designid=eq.${pd.designid}&order=sort_order.asc&select=ot_number,quantity,sort_order`,
@@ -21477,9 +21523,9 @@ async function backfillChildrenForDrawing(drawingno, category) {
     // カバーの場合はproductdate_childの数量合計をシール数として使用（未登録なら1枚/個）
     let sealPerUnit = 1;
     if (category === 'カバー') {
-      const pdRes = await fetch(`${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=eq.${encodeURIComponent(drawingno)}&select=designid&limit=1`, { headers: H });
+      const pdRes = await fetch(`${SUPABASE_URL}/rest/v1/productdate?customer_drawing_no=eq.${encodeURIComponent(drawingno)}&select=designid,customer_drawing_no,ot_number,product_category`, { headers: H });
       if (pdRes.ok) {
-        const pdList = await pdRes.json();
+        const pdList = pdBest(await pdRes.json());
         if (pdList.length) {
           const cRes = await fetch(`${SUPABASE_URL}/rest/v1/productdate_child?parent_designid=eq.${pdList[0].designid}&select=quantity`, { headers: H });
           if (cRes.ok) {
