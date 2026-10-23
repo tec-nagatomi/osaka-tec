@@ -8496,24 +8496,25 @@ async function printLaserLabel(e, orderId) {
     delivery:   g.deliverydate || '',
     client:     g.client || '',
   };
+  const orig = btn ? btn.innerHTML : '';
   try {
-    const res = await fetch('http://localhost:8765/print_label', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok && data.success) {
+    await pqEnsureServer();
+    const ids = await pqSubmit('label', [payload]);
+    if (btn) btn.innerHTML = '発行中…';
+    const { results } = await pqWait(ids, null, 30000);
+    const r = results[0];
+    if (r && r.status === 'done') {
       if (btn) {
-        const orig = btn.innerHTML;
         btn.innerHTML = '✓ 発行済';
         setTimeout(() => { if (btn) btn.innerHTML = orig; }, 1500);
       }
     } else {
-      alert('シール発行に失敗しました: ' + (data.error || ('HTTP ' + res.status)));
+      if (btn) btn.innerHTML = orig;
+      alert(r ? ('シール発行に失敗しました: ' + (r.message || r.status)) : 'シール発行を依頼しました（印刷サーバーで処理待ちです）');
     }
   } catch (err) {
-    alert('印刷サーバーに接続できません。print_server.py が起動しているか確認してください。\n' + err.message);
+    if (btn) btn.innerHTML = orig;
+    alert(err.message);
   }
 }
 
@@ -8531,27 +8532,25 @@ async function printMachineLabels(e, machine) {
   const orig = btn ? btn.innerHTML : '';
   if (btn) { btn.disabled = true; btn.innerHTML = '発行中…'; }
   let ok = 0; const errors = [];
-  for (const g of cards) {
-    const payload = {
-      productno:   g.productNo || '',
-      productname: g.productName || '',
-      otnumber:    g.otNumber || '',
-      quantity:    (g.count != null ? g.count : (g.quantity != null ? g.quantity : '')) + (g.unit ? (' ' + g.unit) : ''),
-      delivery:    g.childDelivery || g.deliverydate || '',
-      client:      g.client || '',
-    };
-    try {
-      const res = await fetch('http://localhost:8765/print_label', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.success) ok++;
-      else errors.push(`${g.productNo || '(製番なし)'}: ${data.error || ('HTTP ' + res.status)}`);
-    } catch (err) {
-      errors.push('印刷サーバーに接続できません（print_server.py が起動しているか確認してください）');
-      break;   // 接続不可なら残りも失敗するので中断
-    }
+  const payloads = cards.map(g => ({
+    productno:   g.productNo || '',
+    productname: g.productName || '',
+    otnumber:    g.otNumber || '',
+    quantity:    (g.count != null ? g.count : (g.quantity != null ? g.quantity : '')) + (g.unit ? (' ' + g.unit) : ''),
+    delivery:    g.childDelivery || g.deliverydate || '',
+    client:      g.client || '',
+  }));
+  try {
+    await pqEnsureServer();
+    const ids = await pqSubmit('label', payloads);
+    const { results, pending } = await pqWait(ids, (d, t) => { if (btn) btn.innerHTML = `発行中… ${d}/${t}`; }, 60000);
+    results.forEach((r, i) => {
+      if (r.status === 'done') ok++;
+      else errors.push(`${payloads[ids.indexOf(r.id)]?.productno || '(製番なし)'}: ${r.message || r.status}`);
+    });
+    if (pending) errors.push(`${pending}枚は印刷サーバーで処理待ちです（このあと発行されます）`);
+  } catch (err) {
+    errors.push(err.message);
   }
   if (btn) { btn.disabled = false; btn.innerHTML = ok && !errors.length ? '✓ 発行済' : orig;
              if (ok && !errors.length) setTimeout(() => { btn.innerHTML = orig; }, 1500); }
@@ -19456,7 +19455,7 @@ function openCalDayModal(dateKey, events) {
 }
 
 // 検査表ボタン：その行（親＝表示中の子データすべて／子＝その1件）の検査表を、確認なしで複合機へ送る
-//   Supabaseに登録した検査表Excelの URL を印刷サーバー（localhost:8765/print）へ送り、
+//   Supabaseに登録した検査表Excelの URL を印刷キュー（print_jobs）に登録し、
 //   印刷サーバーがダウンロード → 図番・シールNo・日付を書き込み → PDF化して印刷する
 // その行（td.cdm-ins）の印刷ジョブ：OT番号ごとに、Supabaseに登録した検査表ファイル（分割ファイルはすべて）
 function cdmJobsFromTd(td) {
@@ -20419,6 +20418,55 @@ function shpPrint() {
   showInspectDialog(`出荷表（${_shp.fileName}）`, jobs.length, jobs, jobs.length);
 }
 
+// ==================== 印刷キュー（Supabase経由で印刷サーバーPCへ依頼） ====================
+// 画面は print_jobs に印刷依頼を登録するだけ。印刷サーバーPC（print_server.py）が数秒おきに取り出して印刷し、
+// 結果（done/skipped/error）を書き戻す。どのPCからでも同じ1台の印刷サーバーで印刷できる。
+// サーバーの稼働は print_server_status.last_seen（サーバーが数秒おきに更新）で判定する。
+const PQ_ONLINE_MS = 30000;
+function pqHeaders(extra) { return Object.assign({ apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' }, extra || {}); }
+function pqRequester() { try { return (currentUser && (currentUser.loginname || currentUser.userid)) || ''; } catch (e) { return ''; } }
+async function pqServerOnline() {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/print_server_status?select=id,last_seen,printer&order=last_seen.desc&limit=1`, { headers: pqHeaders() });
+  if (!r.ok) throw new Error('印刷サーバーの状態を取得できません（' + r.status + '）');
+  const rows = await r.json();
+  if (!rows.length) return null;
+  return (Date.now() - new Date(rows[0].last_seen).getTime()) < PQ_ONLINE_MS ? rows[0] : null;
+}
+async function pqEnsureServer() {
+  const s = await pqServerOnline();
+  if (!s) throw new Error('印刷サーバーが起動していません。印刷サーバーPCで print_server.py を起動してください。');
+  return s;
+}
+// 印刷依頼を登録して、依頼IDの配列を返す
+async function pqSubmit(kind, payloads) {
+  const by = pqRequester();
+  const body = payloads.map(p => ({ kind, payload: p, requested_by: by || null }));
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/print_jobs?select=id`, {
+    method: 'POST', headers: pqHeaders({ Prefer: 'return=representation' }), body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error('印刷依頼の登録に失敗しました: ' + r.status + ' ' + (await r.text()).slice(0, 120));
+  return (await r.json()).map(x => x.id);
+}
+// 依頼した印刷が終わるのを待つ。idleMs のあいだ1件も終わらなければ待つのをやめる（依頼は残り、サーバーがあとで印刷する）
+async function pqWait(ids, onProgress, idleMs) {
+  idleMs = idleMs || 90000;
+  const left = new Set(ids), res = new Map();
+  let lastMove = Date.now();
+  while (left.size) {
+    await new Promise(ok => setTimeout(ok, 1500));
+    try {
+      const q = [...left].slice(0, 150).join(',');
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/print_jobs?id=in.(${q})&select=id,status,message`, { headers: pqHeaders() });
+      if (r.ok) for (const j of await r.json()) {
+        if (j.status !== 'pending' && j.status !== 'printing') { left.delete(j.id); res.set(j.id, j); lastMove = Date.now(); }
+      }
+    } catch (e) { /* 一時的な通信エラーは次の回で取り直す */ }
+    if (onProgress) onProgress(ids.length - left.size, ids.length);
+    if (Date.now() - lastMove > idleMs) break;
+  }
+  return { results: ids.map(id => res.get(id)).filter(Boolean), pending: left.size };
+}
+
 // 検査表印刷: dateKey='2026-07-15'なら指定日、nullなら当月全件
 async function printInspectionSheets(dateKey) {
   closeAllCalPopovers();
@@ -20531,25 +20579,17 @@ async function printInspectionSheets(dateKey) {
     return;
   }
 
-  // サーバーにファイル存在確認
-  try {
-    const chkRes = await fetch('http://localhost:8765/check', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ot_numbers: items.map(i => i.ot_number) })
-    });
-    if (chkRes.ok) {
-      const chkData = await chkRes.json();
-      const existSet = new Set(chkData.exists || []);
-      const filteredItems = items.filter(i => existSet.has(i.ot_number));
-      showInspectDialog(label, filteredItems.length, filteredItems, totalCount);
-      return;
-    }
-  } catch(e) {
-    console.warn('[確認スキップ]', e.message);
+  // Supabaseに登録した検査表ファイルで有無を確認（分割ファイルはすべて印刷する）
+  let names = null;
+  try { names = [...(await listInspectionFiles()).keys()]; _cdmInsCache = { at: Date.now(), names }; }
+  catch (e) { console.warn('[検査表] ファイル一覧の取得に失敗', e); names = _cdmInsCache.names; }
+  if (names) {
+    const jobs = [];
+    items.forEach(i => findInspectionFiles(i.ot_number, names).forEach(n => jobs.push({ ...i, file_name: n, file_url: inspectionPublicUrl(n) })));
+    showInspectDialog(label, jobs.length, jobs, totalCount);
+    return;
   }
-  // /check が取れなかった場合：ファイル有無はサーバーの無音スキップに委ねる。
-  // 全件を対象に出すが、未確認である旨を表示する。
+  // 一覧が取れなかった場合：全件を対象に出し、ファイルが無いものは印刷サーバー側でスキップさせる
   showInspectDialog(label, totalCount, items, totalCount, true);
 }
 
@@ -20581,7 +20621,7 @@ function showInspectDialog(label, count, items, totalCount, unchecked) {
                検査日に西暦（${new Date().getFullYear()}年）は入れますか？
                <div style="font-size:11px;font-weight:500;color:#0369a1;margin-top:3px;">月・日は入れません</div>
              </div>
-             ${unchecked ? `<br><span style="font-size:11px;color:#d97706;">※印刷サーバーに接続できずファイル有無は未確認です（無いものは自動スキップされます）</span>` : (total !== count ? `<br><span style="font-size:11px;color:#9ca3af;">※${total-count}件は検査表ファイルなし</span>` : '')}`
+             ${unchecked ? `<br><span style="font-size:11px;color:#d97706;">※検査表ファイルの一覧を取得できず、有無は未確認です（無いものは自動スキップされます）</span>` : (total !== count ? `<br><span style="font-size:11px;color:#9ca3af;">※${total-count}件は検査表ファイルなし</span>` : '')}`
         }
       </div>
       <div style="display:flex;gap:10px;justify-content:center;">
@@ -20605,72 +20645,64 @@ async function execPrintInspection(dateMode) {
   const items = window._pendingInspectItems || [];
   if (!items.length) return;
 
-  const PRINT_SERVER = 'http://localhost:8765/print';
-
-  // 印刷中ダイアログを表示
   const overlay = document.getElementById('inspect-dialog-overlay');
-  if (overlay) {
-    overlay.querySelector('div').innerHTML = `
+  const box = overlay ? overlay.querySelector('div') : null;
+  const showBusy = (title, sub) => {
+    if (!box) return;
+    box.innerHTML = `
       <div style="width:48px;height:48px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
         <span class="spin" style="width:24px;height:24px;border-width:3px;border-color:#059669 transparent transparent transparent;"></span>
       </div>
-      <div style="font-size:15px;font-weight:700;color:#111827;margin-bottom:8px;">印刷中...</div>
-      <div style="font-size:13px;color:#6b7280;">${items.length}件を複合機へ送信しています</div>`;
-  }
-
-  let successCount = 0;
-  let skipCount    = 0;
-  let errorMsgs = [];
-
-  for (const item of items) {
-    try {
-      const res = await fetch(PRINT_SERVER, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ot_number: item.ot_number,
-          drawingno: item.drawingno,
-          sealno:    item.sealno,
-          // Supabaseの検査表ファイル（指定があれば印刷サーバーがダウンロードして印刷する）
-          ...(item.file_url ? { file_url: item.file_url, file_name: item.file_name || '' } : {}),
-          ...(item.shanai_no ? { shanai_no: item.shanai_no } : {}),
-          date_mode: dateMode   // 検査日：'year'=西暦のみ ／ 'none'=入れない
-        })
-      });
-      const result = await res.json();
-      if (result.success && result.skipped) {
-        // ファイルが無い等で無音スキップされたもの（エラーではない）
-        skipCount++;
-        console.log(`[スキップ] ${item.ot_number}`);
-      } else if (result.success) {
-        successCount++;
-        console.log(`[印刷OK] ${item.ot_number} / ${item.sealno}`);
-      } else {
-        errorMsgs.push(`${item.ot_number}: ${result.error}`);
-        console.error(`[印刷NG] ${result.error}`);
-      }
-    } catch(e) {
-      errorMsgs.push(`サーバー接続エラー: ${e.message}`);
-      break;
-    }
-  }
-
-  // 結果表示
-  if (overlay) {
-    const isOk = errorMsgs.length === 0;
-    overlay.querySelector('div').innerHTML = `
+      <div style="font-size:15px;font-weight:700;color:#111827;margin-bottom:8px;">${title}</div>
+      <div style="font-size:13px;color:#6b7280;">${sub}</div>`;
+  };
+  const showResult = (isOk, title, html) => {
+    if (!box) { if (!isOk) alert(title + '\n' + html.replace(/<[^>]+>/g, '')); return; }
+    box.innerHTML = `
       <div style="width:48px;height:48px;border-radius:50%;background:${isOk?'#f0fdf4':'#fef2f2'};display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
         <svg viewBox="0 0 24 24" fill="none" stroke="${isOk?'#059669':'#dc2626'}" stroke-width="2.5" style="width:26px;height:26px;">
           ${isOk ? '<polyline points="20 6 9 17 4 12"/>' : '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'}
         </svg>
       </div>
-      <div style="font-size:15px;font-weight:700;color:#111827;margin-bottom:8px;">${isOk?'印刷完了':'印刷エラー'}</div>
-      <div style="font-size:13px;color:#6b7280;margin-bottom:20px;">
-        ${isOk
-          ? `${successCount}件を複合機へ送信しました${skipCount>0?`<br><span style="font-size:11px;color:#9ca3af;">※${skipCount}件は検査表ファイルなしでスキップ</span>`:''}`
-          : `エラー: ${errorMsgs[0]}<br><small style="color:#9ca3af;">印刷サーバーが起動しているか確認してください</small>`}
-      </div>
+      <div style="font-size:15px;font-weight:700;color:#111827;margin-bottom:8px;">${title}</div>
+      <div style="font-size:13px;color:#6b7280;margin-bottom:20px;">${html}</div>
       <button onclick="document.getElementById('inspect-dialog-overlay').remove()" style="padding:9px 28px;border-radius:8px;border:1px solid #e5e7eb;background:#f9fafb;color:#374151;font-size:13px;font-weight:600;cursor:pointer;">閉じる</button>`;
+  };
+  const esc = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+  showBusy('印刷サーバーを確認中...', `${items.length}件`);
+  let ids;
+  try {
+    await pqEnsureServer();
+    ids = await pqSubmit('inspection', items.map(item => ({
+      ot_number: item.ot_number,
+      drawingno: item.drawingno,
+      sealno:    item.sealno,
+      // Supabaseの検査表ファイル（印刷サーバーがダウンロードして印刷する）
+      ...(item.file_url ? { file_url: item.file_url, file_name: item.file_name || '' } : {}),
+      ...(item.shanai_no ? { shanai_no: item.shanai_no } : {}),
+      date_mode: dateMode   // 検査日：'year'=西暦のみ ／ 'none'=入れない
+    })));
+  } catch (e) {
+    showResult(false, '印刷できません', esc(e.message));
+    return;
+  }
+
+  showBusy('印刷中...', `印刷サーバーで処理しています（0 / ${ids.length}件）`);
+  const { results, pending } = await pqWait(ids, (done, total) =>
+    showBusy('印刷中...', `印刷サーバーで処理しています（${done} / ${total}件）`));
+
+  const successCount = results.filter(r => r.status === 'done').length;
+  const skipCount    = results.filter(r => r.status === 'skipped').length;
+  const errors       = results.filter(r => r.status === 'error');
+  errors.forEach(r => console.error('[印刷NG]', r.id, r.message));
+
+  if (!errors.length && !pending) {
+    showResult(true, '印刷完了', `${successCount}件を複合機へ送信しました${skipCount>0?`<br><span style="font-size:11px;color:#9ca3af;">※${skipCount}件は検査表ファイルなしでスキップ</span>`:''}`);
+  } else if (!errors.length) {
+    showResult(true, '印刷を依頼しました', `${successCount}件 印刷済み・<b>${pending}件</b>は印刷サーバーで処理待ちです<br><span style="font-size:11px;color:#9ca3af;">このあと順番に印刷されます（画面を閉じても大丈夫です）</span>`);
+  } else {
+    showResult(false, '印刷エラー', `${successCount}件 印刷 ／ <b style="color:#dc2626;">${errors.length}件 失敗</b>${pending?` ／ ${pending}件 処理待ち`:''}<br><small style="color:#9ca3af;">${esc(errors[0].message || '')}</small>`);
   }
 }
 // カレンダー外クリックでポップオーバーを閉じる
