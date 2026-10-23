@@ -19524,7 +19524,10 @@ function cdmSetCatFilter(btn, mode) {
 var _cdmInsCache = { at: 0, names: null };
 function inspectionKey(t) {
   return String(t || '').trim().replace(/\.(xlsx|xlsm|xls|pdf)$/i, '')
-    .replace(/\//g, '_').replace(/[〜～]/g, '~').replace(/\s+/g, ' ').toUpperCase();
+    .replace(/\//g, '_').replace(/[〜～]/g, '~').replace(/\s+/g, ' ').toUpperCase()
+    // 分割番号（3枚中2枚目など）の書き方をそろえる：
+    //   「OT-081376-2 2/3」「OT-081376-2 (2_3)」「OT-081590-5(2/3)」「OT-081590-5（2/3）」→ 末尾を「(2_3)」に統一
+    .replace(/\s*[(（]?\s*(\d+)\s*_\s*(\d+)\s*[)）]?$/, '($1_$2)');
 }
 function findInspectionFiles(ot, names) {
   const k = inspectionKey(ot);
