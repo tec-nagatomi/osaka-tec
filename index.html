@@ -13851,6 +13851,9 @@ function renderPreview() {
 //  ・カバー以外（品目区分あり）：1個あたり1件、シール番号なし（空文字）
 //  ・製品マスタ未登録：子データを作らない運用のため増減しない
 // 減らす場合は、シール番号の大きい順に「未使用」の子データ（レーザー未完了・パレット/便に未積載）だけを削除する。
+// シールNoの自動採番スイッチ。false の間は、子データは作るがシールNoは空欄（''）のまま（2026-10-23 一時停止）。
+// 再開するときは true に戻す（製番の自動採番は DB 側のトリガー trg_orders_productno を ENABLE に戻す）。
+const AUTO_SEALNO = false;
 async function allocSealNos(count) {
   const H = { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
   try {
@@ -13914,7 +13917,7 @@ async function applyChildSync(plan) {
       const ds = [...new Set(plan.children.map(c => c.delivery || ''))];
       const delivery = ds.length === 1 && ds[0] ? ds[0] : null;
       const rows = [];
-      if (plan.category === 'カバー') {
+      if (plan.category === 'カバー' && AUTO_SEALNO) {
         const start = await allocSealNos(plan.add);
         if (start == null) throw new Error('シール番号の採番に失敗しました');
         for (let i = 0; i < plan.add; i++) rows.push({ order_id: plan.orderId, sealno: String(start + i), delivery, inspectionsheet: null });
@@ -14989,7 +14992,8 @@ async function doSaveNewRows(rows, silent = false) {
     // sealnoを採番（方式1: RPCシーケンス → 方式2: MAX+1フォールバック）※カバー分のみ対象
     let startNo = null;
     let sealFailed = false;
-    if (sealChildRows.length > 0) {
+    if (!AUTO_SEALNO) sealChildRows.forEach(r => { r.sealno = ''; });   // 自動採番停止中はシールNo空欄
+    if (sealChildRows.length > 0 && AUTO_SEALNO) {
       // 方式1: generate_sealNos RPC
       try {
         const seqRes = await fetch(
@@ -19137,8 +19141,8 @@ async function addChildRow() {
   const H = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
   try {
     // sealnoを1件採番（方式1: RPCシーケンス → 方式2: MAX+1フォールバック。既存の自動生成と同じ方式）
-    let sealno = null;
-    try {
+    let sealno = AUTO_SEALNO ? null : '';   // 自動採番停止中はシールNo空欄で追加
+    if (AUTO_SEALNO) try {
       const seqRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/generate_sealnos`, {
         method: 'POST',
         headers: { ...H, 'Content-Type': 'application/json' },
@@ -21818,8 +21822,9 @@ async function backfillChildrenForDrawing(drawingno, category) {
     const sealChildRows   = childRows.filter(r => r._needsSeal);
     const noSealChildRows = childRows.filter(r => !r._needsSeal);
     let sealFailed = false;
+    if (!AUTO_SEALNO) sealChildRows.forEach(r => { r.sealno = ''; });   // 自動採番停止中はシールNo空欄
 
-    if (sealChildRows.length > 0) {
+    if (sealChildRows.length > 0 && AUTO_SEALNO) {
       let startNo = null;
       try {
         const seqRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/generate_sealnos`, {
