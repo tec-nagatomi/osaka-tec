@@ -870,6 +870,10 @@
   /* 受注一覧は画面が小さくても最低14行分の表示領域を確保する（足りない場合はページ全体をスクロール） */
   .orders-layout { display: grid; grid-template-columns: 380px 1fr; gap: 20px; align-items: start; height: max(calc(100vh - 190px), 770px); }
 
+  /* 受注一覧：取込日時（受注日と見分けやすいよう小さいグレー・アイコン付き） */
+  .orders-table .ob-imp-th { color:#94a3b8; }
+  .orders-table .ob-imp { display:inline-flex; align-items:center; gap:3px; font-size:11px; color:#94a3b8; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .orders-table .ob-imp svg { width:11px; height:11px; flex:none; }
   /* Drop zone */
   .import-card { background: #fff; border-radius: 10px; border: 1px solid #e5e7eb; padding: 20px; }
   .import-title { font-size: 14px; font-weight: 600; color: #374151; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
@@ -3033,6 +3037,7 @@
                 <th onclick="sortOrders('deliverydate')">希望納期 ↕</th>
                 <th onclick="sortOrders('shippingdate')">出荷日 ↕</th>
                 <th>出荷場所</th>
+                <th class="ob-imp-th" onclick="sortOrders('created_at')" title="この受注をシステムに取り込んだ日時（受注日とは別）">取込 ↕</th>
               </tr>
             </thead>
             <tbody id="orders-tbody">
@@ -16716,6 +16721,7 @@ function renderOrdersTable() {
       <td>${r.deliverydate || '-'}</td>
       <td>${r.shippingdate || '-'}</td>
       <td>${r.pd_delivery_destination || r.delivery_destination || '-'}</td>
+      <td>${importedAtHtml(r)}</td>
     </tr>`).join('');
 
   document.getElementById('page-info').textContent = `${start+1}–${Math.min(start+PAGE_SIZE, total)} / ${total}件`;
@@ -17639,6 +17645,20 @@ function secondCategoryBadgeHtml(secondCat, partNo, partNoUrl, parts) {
 }
 
 // 注文書の原本ファイル（Storage）を開くアイコン → PDF編集画面を開く
+// 取込日時（システムに登録した日時）：受注日と見間違えないよう「10/15 13:43」（年なし・時刻つき）・小さいグレー文字・取込アイコンで表示
+//   マウスを乗せると年月日時分秒と取込元ファイル名を表示
+function importedAtHtml(r) {
+  if (!r.created_at) return '<span class="ob-imp">-</span>';
+  const d = new Date(r.created_at);
+  if (isNaN(d)) return '<span class="ob-imp">-</span>';
+  const p2 = n => String(n).padStart(2, '0');
+  const short = `${p2(d.getMonth() + 1)}/${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}`;
+  const full = `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())} 取込`
+    + (r.source_file_name ? `\n${r.source_file_name}` : '');
+  const tip = full.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  return `<span class="ob-imp" title="${tip}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg>${short}</span>`;
+}
+
 function sourceFileIconHtml(r) {
   if (!r.source_file_url) return '';
   const esc = v => String(v).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
