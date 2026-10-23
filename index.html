@@ -874,6 +874,26 @@
   .orders-table .ob-imp-th { color:#94a3b8; }
   .orders-table .ob-imp { display:inline-flex; align-items:center; gap:3px; font-size:11px; color:#94a3b8; white-space:nowrap; font-variant-numeric:tabular-nums; }
   .orders-table .ob-imp svg { width:11px; height:11px; flex:none; }
+  /* 受注一覧：表示項目の設定 */
+  .ordcols-overlay { position:fixed; inset:0; background:rgba(15,23,42,.45); z-index:10060; display:flex; align-items:center; justify-content:center; padding:16px; }
+  .ordcols-modal { background:#fff; border-radius:12px; width:min(420px,100%); max-height:88vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,.25); }
+  .ordcols-head { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; padding:16px 18px 10px; border-bottom:1px solid #e5e7eb; font-size:15px; color:#111827; }
+  .ordcols-sub { font-size:11.5px; color:#6b7280; margin-top:4px; line-height:1.5; }
+  .ordcols-x { border:none; background:none; font-size:18px; color:#6b7280; cursor:pointer; }
+  .ordcols-list { list-style:none; margin:0; padding:8px 12px; overflow:auto; flex:1; }
+  .ordcols-item { display:flex; align-items:center; gap:10px; padding:7px 8px; border:1px solid #e5e7eb; border-radius:8px; margin-bottom:6px; background:#fff; font-size:13px; color:#111827; cursor:grab; }
+  .ordcols-item.off { background:#f9fafb; color:#9ca3af; }
+  .ordcols-item.dragging { opacity:.4; }
+  .ordcols-item.drop-above { box-shadow:0 -3px 0 #1d4ed8; }
+  .ordcols-item.drop-below { box-shadow:0 3px 0 #1d4ed8; }
+  .ordcols-item label { flex:1; display:flex; align-items:center; gap:8px; cursor:pointer; }
+  .ordcols-grip { color:#9ca3af; letter-spacing:-2px; font-size:12px; }
+  .ordcols-mv button { border:1px solid #d1d5db; background:#fff; border-radius:5px; font-size:10px; width:26px; height:22px; cursor:pointer; color:#374151; }
+  .ordcols-mv button:disabled { opacity:.3; cursor:default; }
+  .ordcols-foot { display:flex; align-items:center; gap:8px; padding:10px 14px; border-top:1px solid #e5e7eb; }
+  .ordcols-status { flex:1; font-size:11.5px; }
+  .ordcols-btn { padding:7px 14px; border-radius:8px; border:1px solid #d1d5db; background:#fff; font-size:12.5px; font-weight:600; color:#374151; cursor:pointer; }
+  .ordcols-btn.primary { background:#1d4ed8; border-color:#1d4ed8; color:#fff; }
   /* Drop zone */
   .import-card { background: #fff; border-radius: 10px; border: 1px solid #e5e7eb; padding: 20px; }
   .import-title { font-size: 14px; font-weight: 600; color: #374151; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
@@ -2919,6 +2939,7 @@
                 <button type="button" class="ord-tab" data-panel="search" onclick="toggleOrdPanel('search')" title="検索（/ キーでも開けます）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>検索</button>
                 <button type="button" class="ord-tab" data-panel="filter" onclick="toggleOrdPanel('filter')" title="販売先・期間・納期・品目で絞り込み"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>絞り込み<span class="ord-tab-badge" id="ord-filter-badge"></span></button>
                 <button type="button" class="ord-tab" data-panel="io" onclick="toggleOrdPanel('io')" title="Excel出力・取込"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>出力・取込</button>
+                <button type="button" class="ord-tab" onclick="openOrdColsSettings()" title="一覧に出す項目の並び順と表示/非表示（ユーザーごとに保存）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="16" rx="1"/><rect x="17" y="4" width="4" height="16" rx="1"/></svg>表示項目</button>
               </div>
               <div class="ord-active" id="ord-active-chips"></div>
             </div>
@@ -3022,22 +3043,8 @@
         <div class="orders-table-wrap">
           <table class="orders-table">
             <thead>
-              <tr>
+              <tr id="orders-thead-row">
                 <th style="width:1%;"></th>
-                <th onclick="sortOrders('orderdate')">受注日 ↕</th>
-                <th onclick="sortOrders('pd_client')">販売先 ↕</th>
-                <th onclick="sortOrders('pd_product_name')">製品名 ↕</th>
-                <th onclick="sortOrders('pd_product_category')">品目区分 ↕</th>
-                <th onclick="sortOrders('pd_ot_number')">OT番号 ↕</th>
-                <th onclick="sortOrders('drawingno')">図番 ↕</th>
-                <th onclick="sortOrders('orderno')">受注番号 ↕</th>
-                <th onclick="sortOrders('quantity')">数量 ↕</th>
-                <th>単位</th>
-                <th onclick="sortOrders('price')">単価 ↕</th>
-                <th onclick="sortOrders('deliverydate')">希望納期 ↕</th>
-                <th onclick="sortOrders('shippingdate')">出荷日 ↕</th>
-                <th>出荷場所</th>
-                <th class="ob-imp-th" onclick="sortOrders('created_at')" title="この受注をシステムに取り込んだ日時（受注日とは別）">取込 ↕</th>
               </tr>
             </thead>
             <tbody id="orders-tbody">
@@ -16686,6 +16693,179 @@ async function importEditableExcel(ev) {
   ].filter(Boolean).join('\n'));
 }
 
+// ==================== 受注一覧の表示項目（ユーザーごとに並び順・表示/非表示を保存） ====================
+// 設定は loginuser.orders_cols（jsonb: { order:[key...], hidden:[key...] }）に保存し、次回ログイン時・別のPCでも同じ表示にする。
+// 未設定（null）なら下の ORD_COLS の順・すべて表示＝これまでどおりの表示。
+// 列を増やすときは ORD_COLS に足すだけでよい（保存済みの設定には末尾に「表示」で自動追加される）。
+const ORD_COLS = [
+  { key: 'orderdate',    label: '受注日',   sort: 'orderdate',           td: r => `<td>${r.orderdate || '-'}</td>` },
+  { key: 'client',       label: '販売先',   sort: 'pd_client',           td: r => `<td><span style="display:inline-flex;align-items:center;gap:6px;"><span class="row-logo-box">${clientLogoHtml(r.pd_client, 'row-logo')}</span><span>${r.pd_client || '-'}</span></span></td>` },
+  { key: 'product_name', label: '製品名',   sort: 'pd_product_name',     td: r => `<td>${r.pd_product_name || '-'}</td>` },
+  { key: 'category',     label: '品目区分', sort: 'pd_product_category', td: r => `<td>${categoryBadgeHtml(r.pd_product_category)}${secondCategoryBadgeHtml(r.pd_second_category, r.pd_part_number, r.pd_part_number_url, r.pd_parts)}</td>` },
+  { key: 'ot',           label: 'OT番号',   sort: 'pd_ot_number',        td: r => `<td class="mono" style="font-size:11px;color:${categoryTextColor(r.pd_product_category)};font-weight:700;">${r.pd_ot_number || '-'}</td>` },
+  { key: 'drawingno',    label: '図番',     sort: 'drawingno',           td: r => `<td class="mono" style="font-size:11px">${r.drawingno || '-'}</td>` },
+  { key: 'orderno',      label: '受注番号', sort: 'orderno',             td: r => `<td class="mono" style="font-size:11px">${r.orderno || '-'}</td>` },
+  { key: 'quantity',     label: '数量',     sort: 'quantity',            td: r => `<td style="text-align:right">${r.quantity != null ? r.quantity : '-'}</td>` },
+  { key: 'unit',         label: '単位',                                  td: r => `<td>${r.unit || '-'}</td>` },
+  { key: 'price',        label: '単価',     sort: 'price',               td: r => `<td style="text-align:right">${r.price != null ? Number(r.price).toLocaleString() : '-'}</td>` },
+  { key: 'deliverydate', label: '希望納期', sort: 'deliverydate',        td: r => `<td>${r.deliverydate || '-'}</td>` },
+  { key: 'shippingdate', label: '出荷日',   sort: 'shippingdate',        td: r => `<td>${r.shippingdate || '-'}</td>` },
+  { key: 'destination',  label: '出荷場所',                              td: r => `<td>${r.pd_delivery_destination || r.delivery_destination || '-'}</td>` },
+  { key: 'imported',     label: '取込',     sort: 'created_at', thClass: 'ob-imp-th', title: 'この受注をシステムに取り込んだ日時（受注日とは別）', td: r => `<td>${importedAtHtml(r)}</td>` },
+];
+let _ordColsPref = null;          // { order:[], hidden:[] }（null＝初期状態）
+let _ordColsLoadedFor = null;     // どのユーザーの設定を読み込んだか
+let _ordColsSaveTimer = null;
+function ordColsLsKey() { return 'osaka_orders_cols_' + ((currentUser && (currentUser.userid || currentUser.id)) || 'guest'); }
+// 保存値を、今ある列に合わせて整える（知らない列は捨て、新しい列は末尾に表示で追加）
+function ordColsNormalize(pref) {
+  const keys = ORD_COLS.map(c => c.key);
+  const order = (pref && Array.isArray(pref.order) ? pref.order : []).filter(k => keys.includes(k));
+  keys.forEach(k => { if (!order.includes(k)) order.push(k); });
+  const hidden = (pref && Array.isArray(pref.hidden) ? pref.hidden : []).filter(k => keys.includes(k));
+  return { order, hidden };
+}
+function ordColsCurrent() { return ordColsNormalize(_ordColsPref); }
+function ordColsVisible() {
+  ordColsEnsureLoaded();
+  const { order, hidden } = ordColsCurrent();
+  return order.filter(k => !hidden.includes(k)).map(k => ORD_COLS.find(c => c.key === k));
+}
+// ログイン中ユーザーの設定を読む（まず手元の控え → Supabase の最新で上書き）
+function ordColsEnsureLoaded() {
+  const who = currentUser && (currentUser.userid || currentUser.id);
+  if (!who || _ordColsLoadedFor === who) return;
+  _ordColsLoadedFor = who;
+  _ordColsPref = (currentUser && currentUser.orders_cols) || null;
+  try { const v = localStorage.getItem(ordColsLsKey()); if (v && !_ordColsPref) _ordColsPref = JSON.parse(v); } catch (e) {}
+  if (!currentUser.id) return;
+  fetch(`${SUPABASE_URL}/rest/v1/loginuser?id=eq.${currentUser.id}&select=orders_cols`,
+    { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } })
+    .then(r => r.ok ? r.json() : [])
+    .then(rows => {
+      if (_ordColsLoadedFor !== who || !rows.length) return;
+      const v = rows[0].orders_cols || null;
+      if (JSON.stringify(v) === JSON.stringify(_ordColsPref)) return;
+      _ordColsPref = v;
+      try { if (v) localStorage.setItem(ordColsLsKey(), JSON.stringify(v)); else localStorage.removeItem(ordColsLsKey()); } catch (e) {}
+      if (typeof renderOrdersTable === 'function' && document.getElementById('orders-tbody')) renderOrdersTable();
+    }).catch(() => {});
+}
+function ordColsSave(pref) {
+  _ordColsPref = pref;
+  if (currentUser) currentUser.orders_cols = pref;
+  try { if (pref) localStorage.setItem(ordColsLsKey(), JSON.stringify(pref)); else localStorage.removeItem(ordColsLsKey()); } catch (e) {}
+  renderOrdersTable();
+  clearTimeout(_ordColsSaveTimer);
+  _ordColsSaveTimer = setTimeout(async () => {
+    if (!currentUser || !currentUser.id) return;
+    const st = document.getElementById('ordcols-status');
+    try {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/loginuser?id=eq.${currentUser.id}`, {
+        method: 'PATCH',
+        headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({ orders_cols: pref })
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      if (st) { st.textContent = '✓ 保存しました（次回ログイン時もこの表示）'; st.style.color = '#059669'; }
+    } catch (e) {
+      if (st) { st.textContent = '保存に失敗しました: ' + e.message; st.style.color = '#dc2626'; }
+    }
+  }, 600);
+}
+function renderOrdersThead() {
+  const tr = document.getElementById('orders-thead-row');
+  if (!tr) return;
+  const esc = t => String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  tr.innerHTML = '<th style="width:1%;"></th>' + ordColsVisible().map(c =>
+    `<th${c.thClass ? ` class="${c.thClass}"` : ''}${c.title ? ` title="${esc(c.title)}"` : ''}${c.sort ? ` onclick="sortOrders('${c.sort}')"` : ''}>${c.label}${c.sort ? ' ↕' : ''}</th>`).join('');
+}
+
+// ---- 設定画面（項目をドラッグ／▲▼で並べ替え、チェックで表示/非表示） ----
+function openOrdColsSettings() {
+  document.getElementById('ordcols-overlay')?.remove();
+  const ov = document.createElement('div');
+  ov.id = 'ordcols-overlay';
+  ov.className = 'ordcols-overlay';
+  ov.onclick = e => { if (e.target === ov) ov.remove(); };
+  ov.innerHTML = `
+    <div class="ordcols-modal" role="dialog" aria-modal="true">
+      <div class="ordcols-head">
+        <div><b>表示項目の設定</b><div class="ordcols-sub">ドラッグまたは ▲▼ で並べ替え、チェックで表示/非表示。変更はすぐ反映・自動保存されます。</div></div>
+        <button class="ordcols-x" onclick="document.getElementById('ordcols-overlay').remove()" title="閉じる">✕</button>
+      </div>
+      <ul class="ordcols-list" id="ordcols-list"></ul>
+      <div class="ordcols-foot">
+        <span id="ordcols-status" class="ordcols-status"></span>
+        <button class="ordcols-btn" onclick="ordColsReset()">初期状態に戻す</button>
+        <button class="ordcols-btn primary" onclick="document.getElementById('ordcols-overlay').remove()">閉じる</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  ordColsRenderList();
+}
+function ordColsRenderList() {
+  const ul = document.getElementById('ordcols-list');
+  if (!ul) return;
+  const { order, hidden } = ordColsCurrent();
+  ul.innerHTML = order.map((k, i) => {
+    const c = ORD_COLS.find(x => x.key === k);
+    const on = !hidden.includes(k);
+    return `<li class="ordcols-item${on ? '' : ' off'}" draggable="true" data-key="${k}">
+      <span class="ordcols-grip" title="ドラッグで並べ替え">⋮⋮</span>
+      <label><input type="checkbox" ${on ? 'checked' : ''} onchange="ordColsToggle('${k}', this.checked)"> ${c.label}</label>
+      <span class="ordcols-mv">
+        <button ${i === 0 ? 'disabled' : ''} onclick="ordColsMove('${k}', -1)" title="上へ">▲</button>
+        <button ${i === order.length - 1 ? 'disabled' : ''} onclick="ordColsMove('${k}', 1)" title="下へ">▼</button>
+      </span>
+    </li>`;
+  }).join('');
+  // ドラッグで並べ替え
+  let dragKey = null;
+  ul.querySelectorAll('.ordcols-item').forEach(li => {
+    li.addEventListener('dragstart', e => { dragKey = li.dataset.key; li.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+    li.addEventListener('dragend', () => { li.classList.remove('dragging'); ul.querySelectorAll('.drop-above,.drop-below').forEach(x => x.classList.remove('drop-above', 'drop-below')); });
+    li.addEventListener('dragover', e => {
+      e.preventDefault();
+      const r = li.getBoundingClientRect(), below = e.clientY > r.top + r.height / 2;
+      li.classList.toggle('drop-below', below); li.classList.toggle('drop-above', !below);
+    });
+    li.addEventListener('dragleave', () => li.classList.remove('drop-above', 'drop-below'));
+    li.addEventListener('drop', e => {
+      e.preventDefault();
+      const r = li.getBoundingClientRect(), below = e.clientY > r.top + r.height / 2;
+      const target = li.dataset.key;
+      if (!dragKey || dragKey === target) return;
+      const cur = ordColsCurrent();
+      const ord = cur.order.filter(k => k !== dragKey);
+      ord.splice(ord.indexOf(target) + (below ? 1 : 0), 0, dragKey);
+      ordColsSave({ order: ord, hidden: cur.hidden });
+      ordColsRenderList();
+    });
+  });
+}
+function ordColsToggle(key, on) {
+  const cur = ordColsCurrent();
+  let hidden = cur.hidden.filter(k => k !== key);
+  if (!on) hidden.push(key);
+  if (cur.order.filter(k => !hidden.includes(k)).length === 0) { alert('少なくとも1つの項目は表示してください'); ordColsRenderList(); return; }
+  ordColsSave({ order: cur.order, hidden });
+  ordColsRenderList();
+}
+function ordColsMove(key, dir) {
+  const cur = ordColsCurrent();
+  const i = cur.order.indexOf(key), j = i + dir;
+  if (i < 0 || j < 0 || j >= cur.order.length) return;
+  const ord = cur.order.slice(); [ord[i], ord[j]] = [ord[j], ord[i]];
+  ordColsSave({ order: ord, hidden: cur.hidden });
+  ordColsRenderList();
+}
+function ordColsReset() {
+  if (!confirm('表示項目を初期状態（すべて表示・元の並び順）に戻します。よろしいですか？')) return;
+  ordColsSave(null);
+  ordColsRenderList();
+}
+
 function renderOrdersTable() {
   const total = filteredOrders.length;
   const pages = Math.ceil(total / PAGE_SIZE) || 1;
@@ -16694,11 +16874,14 @@ function renderOrdersTable() {
   const slice = filteredOrders.slice(start, start + PAGE_SIZE);
 
   if (slice.length === 0) {
-    document.getElementById('orders-tbody').innerHTML = `<tr><td colspan="6"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg><p>データがありません</p></div></td></tr>`;
+    renderOrdersThead();
+    document.getElementById('orders-tbody').innerHTML = `<tr><td colspan="${ordColsVisible().length + 1}"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg><p>データがありません</p></div></td></tr>`;
     document.getElementById('pagination').style.display = 'none';
     return;
   }
 
+  renderOrdersThead();
+  const visCols = ordColsVisible();
   document.getElementById('orders-tbody').innerHTML = slice.map(r => `
     <tr onclick="openOrderDetail(${r.id})" title="クリックして詳細を表示">
       <td class="ob-cell">
@@ -16708,20 +16891,7 @@ function renderOrdersTable() {
           <span class="ob-s-ic">${sourceFileIconHtml(r)}</span>
         </span>
       </td>
-      <td>${r.orderdate || '-'}</td>
-      <td><span style="display:inline-flex;align-items:center;gap:6px;"><span class="row-logo-box">${clientLogoHtml(r.pd_client, 'row-logo')}</span><span>${r.pd_client || '-'}</span></span></td>
-      <td>${r.pd_product_name || '-'}</td>
-      <td>${categoryBadgeHtml(r.pd_product_category)}${secondCategoryBadgeHtml(r.pd_second_category, r.pd_part_number, r.pd_part_number_url, r.pd_parts)}</td>
-      <td class="mono" style="font-size:11px;color:${categoryTextColor(r.pd_product_category)};font-weight:700;">${r.pd_ot_number || '-'}</td>
-      <td class="mono" style="font-size:11px">${r.drawingno || '-'}</td>
-      <td class="mono" style="font-size:11px">${r.orderno || '-'}</td>
-      <td style="text-align:right">${r.quantity != null ? r.quantity : '-'}</td>
-      <td>${r.unit || '-'}</td>
-      <td style="text-align:right">${r.price != null ? Number(r.price).toLocaleString() : '-'}</td>
-      <td>${r.deliverydate || '-'}</td>
-      <td>${r.shippingdate || '-'}</td>
-      <td>${r.pd_delivery_destination || r.delivery_destination || '-'}</td>
-      <td>${importedAtHtml(r)}</td>
+      ${visCols.map(c => c.td(r)).join('')}
     </tr>`).join('');
 
   document.getElementById('page-info').textContent = `${start+1}–${Math.min(start+PAGE_SIZE, total)} / ${total}件`;
@@ -16788,7 +16958,7 @@ async function doLogin() {
 
   try {
     const url = SUPABASE_URL_LOGIN
-      + '/rest/v1/loginuser?select=id,userid,loginname,department,authority,password,factory,perm_full_access,perm_catalog_manage,perm_requests_view,perm_admin,perm_orders,perm_shipping,perm_progress,perm_inventory,perm_productdate,perm_purchase,perm_outsourcing&userid=eq.'
+      + '/rest/v1/loginuser?select=id,userid,orders_cols,loginname,department,authority,password,factory,perm_full_access,perm_catalog_manage,perm_requests_view,perm_admin,perm_orders,perm_shipping,perm_progress,perm_inventory,perm_productdate,perm_purchase,perm_outsourcing&userid=eq.'
       + encodeURIComponent(userid);
     const res = await fetch(url, {
       headers: {
