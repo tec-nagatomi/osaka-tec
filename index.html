@@ -15601,6 +15601,67 @@ async function backfillAllMissingChildren() {
 }
 window.backfillAllMissingChildren = backfillAllMissingChildren;
 
+// ==================== 子データが無い受注の自動補完 ====================
+// 受注一覧を読み込んだあと（10分に1回まで）、製品マスタに品目区分があるのに子データが0件の受注を探し、
+// 品目区分に応じて子データを作る（カバー＝シールNo採番／それ以外＝シールNoなし、数量分）。
+// 製品マスタを後から登録した・データを直接修正した・作成に失敗した などで抜けたものを自動で補う。
+// 複数のPCで同時に走って子データが二重にできないよう、app_locks テーブルでロックを取ってから実行する。
+let _backfillLastCount = 0;
+let _autoBackfillAt = 0, _autoBackfillRunning = false;
+const AUTO_BACKFILL_INTERVAL_MS = 10 * 60 * 1000;
+const AUTO_BACKFILL_LOCK = 'backfill_missing_children';
+async function appLockTake(name, staleMs) {
+  const H = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' };
+  const who = (typeof currentUser !== 'undefined' && currentUser && (currentUser.loginname || currentUser.userid)) || '';
+  const tryInsert = () => fetch(`${SUPABASE_URL}/rest/v1/app_locks`, { method: 'POST', headers: { ...H, Prefer: 'return=minimal' },
+    body: JSON.stringify({ name, locked_by: who || null, locked_at: new Date().toISOString() }) });
+  let r = await tryInsert();
+  if (r.ok) return true;
+  if (r.status !== 409) return false;
+  // 前回のロックが古い（異常終了などで残った）ときだけ外して取り直す
+  const limit = new Date(Date.now() - staleMs).toISOString();
+  await fetch(`${SUPABASE_URL}/rest/v1/app_locks?name=eq.${encodeURIComponent(name)}&locked_at=lt.${encodeURIComponent(limit)}`, { method: 'DELETE', headers: H });
+  r = await tryInsert();
+  return r.ok;
+}
+async function appLockRelease(name) {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/app_locks?name=eq.${encodeURIComponent(name)}`,
+      { method: 'DELETE', headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } });
+  } catch (e) {}
+}
+async function autoBackfillMissingChildren() {
+  if (_autoBackfillRunning || Date.now() - _autoBackfillAt < AUTO_BACKFILL_INTERVAL_MS) return 0;
+  if (!Array.isArray(allOrders) || !allOrders.length) return 0;
+  _autoBackfillRunning = true; _autoBackfillAt = Date.now();
+  let locked = false;
+  try {
+    // 子データを持つ受注を洗い出す
+    const kids = await fetchAllRows(`${SUPABASE_URL}/rest/v1/orders_child?select=order_id`);
+    const has = new Set(kids.map(k => k.order_id));
+    const byDrawing = new Map();   // 図番 → 品目区分（子データが無く、品目区分のある受注だけ）
+    allOrders.forEach(o => {
+      if (has.has(o.id) || !o.drawingno || !o.pd_product_category) return;
+      byDrawing.set(o.drawingno, o.pd_product_category);
+    });
+    if (!byDrawing.size) return 0;
+    locked = await appLockTake(AUTO_BACKFILL_LOCK, 10 * 60 * 1000);
+    if (!locked) { console.log('[autoBackfill] 他のPCで実行中のためスキップ'); return 0; }
+    _backfillLastCount = 0;
+    for (const [dn, cat] of byDrawing) {
+      try { await backfillChildrenForDrawing(dn, cat); } catch (e) { console.warn('[autoBackfill]', dn, e); }
+    }
+    if (_backfillLastCount) console.log(`[autoBackfill] 子データの無い受注に ${_backfillLastCount}件の子データを作成しました（${byDrawing.size}図番）`);
+    return _backfillLastCount;
+  } catch (e) {
+    console.warn('[autoBackfill] 失敗', e);
+    return 0;
+  } finally {
+    if (locked) await appLockRelease(AUTO_BACKFILL_LOCK);
+    _autoBackfillRunning = false;
+  }
+}
+
 async function loadOrders() {
   document.getElementById('orders-tbody').innerHTML = '<tr><td colspan="12"><div class="loading-state"><span class="spin"></span>読込中...</div></td></tr>';
   document.getElementById('orders-count').textContent = '読込中...';
@@ -15710,6 +15771,8 @@ async function loadOrders() {
     updateUnregisteredBanner(); // 製品マスタ未登録の受注があれば警告バナー表示
     filterOrders(); // 現在選択中のフィルター（販売先・カバー/メンテ・未納期など）を再適用してから描画（件数表示・ページングもここで更新される）
     await loadCalendarEvents(); // allOrders確定後にカレンダー更新
+    // 子データの無い受注を自動で補完（10分に1回まで）。作った場合はカレンダーだけ再集計する
+    autoBackfillMissingChildren().then(n => { if (n) loadCalendarEvents(); }).catch(() => {});
   } catch(e) {
     document.getElementById('orders-tbody').innerHTML = `<tr><td colspan="12"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><p>データ取得エラー: ${e.message}</p></div></td></tr>`;
     document.getElementById('orders-count').textContent = 'エラー';
@@ -21501,7 +21564,7 @@ async function backfillChildrenForDrawing(drawingno, category) {
   const H = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
   try {
     const ordersRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/orders?drawingno=eq.${encodeURIComponent(drawingno)}&select=id,quantity`,
+      `${SUPABASE_URL}/rest/v1/orders?drawingno=eq.${encodeURIComponent(drawingno)}&select=id,quantity,shippingdate`,
       { headers: H }
     );
     if (!ordersRes.ok) return;
@@ -21543,7 +21606,8 @@ async function backfillChildrenForDrawing(drawingno, category) {
       const count = category === 'カバー' ? qty * sealPerUnit : qty;
       const needsSeal = category === 'カバー';
       for (let n = 1; n <= count; n++) {
-        childRows.push({ order_id: o.id, sealno: needsSeal ? null : '', delivery: null, inspectionsheet: null, _needsSeal: needsSeal, _drawingno: drawingno });
+        // 出荷日は受注の出荷日（orders.shippingdate）があれば引き継ぐ
+        childRows.push({ order_id: o.id, sealno: needsSeal ? null : '', delivery: o.shippingdate || null, inspectionsheet: null, _needsSeal: needsSeal, _drawingno: drawingno });
       }
     });
     if (!childRows.length) return;
@@ -21591,6 +21655,7 @@ async function backfillChildrenForDrawing(drawingno, category) {
     if (!insRes.ok) { console.warn('[backfillChildrenForDrawing] 子データ挿入失敗', await insRes.text()); return; }
     const inserted = await insRes.json();
     console.log(`[backfillChildrenForDrawing] ${drawingno}: 受注${targets.length}件に子データ${inserted.length}件を補完生成しました`);
+    _backfillLastCount += inserted.length;
 
     // 固有ルートも基本ルートからコピー生成
     try {
