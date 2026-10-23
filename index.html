@@ -871,8 +871,7 @@
   .orders-layout { display: grid; grid-template-columns: 380px 1fr; gap: 20px; align-items: start; height: max(calc(100vh - 190px), 770px); }
 
   /* 受注一覧：取込日時（受注日と見分けやすいよう小さいグレー・アイコン付き） */
-  .orders-table .ob-imp-th { color:#94a3b8; }
-  .orders-table .ob-imp { display:inline-flex; align-items:center; gap:3px; font-size:11px; color:#94a3b8; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .orders-table .ob-imp { display:inline-flex; align-items:center; gap:3px; font-size:11px; color:inherit; white-space:nowrap; font-variant-numeric:tabular-nums; }
   .orders-table .ob-imp svg { width:11px; height:11px; flex:none; }
   /* 受注一覧：表示項目の設定 */
   .ordcols-overlay { position:fixed; inset:0; background:rgba(15,23,42,.45); z-index:10060; display:flex; align-items:center; justify-content:center; padding:16px; }
@@ -17815,7 +17814,7 @@ function secondCategoryBadgeHtml(secondCat, partNo, partNoUrl, parts) {
 }
 
 // 注文書の原本ファイル（Storage）を開くアイコン → PDF編集画面を開く
-// 取込日時（システムに登録した日時）：受注日と見間違えないよう「10/15 13:43」（年なし・時刻つき）・小さいグレー文字・取込アイコンで表示
+// 取込日時（システムに登録した日時）：受注日と見間違えないよう「10/15 13:43」（年なし・時刻つき）・小さめの文字・取込アイコンで表示
 //   マウスを乗せると年月日時分秒と取込元ファイル名を表示
 function importedAtHtml(r) {
   if (!r.created_at) return '<span class="ob-imp">-</span>';
