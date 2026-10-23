@@ -4133,7 +4133,7 @@
 <div class="pd-modal-overlay" id="delivery-overlay" onclick="if(event.target===this)closeDeliveryDialog()" style="z-index:500;">
   <div class="pd-modal" style="width:min(560px,96vw);max-height:90vh;display:flex;flex-direction:column;">
     <div class="pd-modal-header" style="background:#2563eb;border-bottom:none;">
-      <span class="pd-modal-title" style="color:#fff;">納期登録<span id="delivery-subtitle" style="font-size:12px;color:#dbeafe;font-weight:400;margin-left:8px;"></span></span>
+      <span class="pd-modal-title" style="color:#fff;">出荷日登録<span id="delivery-subtitle" style="font-size:12px;color:#dbeafe;font-weight:400;margin-left:8px;"></span></span>
       <button class="pd-modal-close" onclick="closeDeliveryDialog()" style="color:#fff;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
@@ -4141,7 +4141,7 @@
     <div class="pd-modal-body" style="overflow-y:auto;flex:1;">
       <div style="display:flex;flex-direction:column;gap:14px;">
         <div>
-          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px;">納期</label>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px;">出荷日</label>
           <input type="date" id="delivery-date" class="pd-form-input" style="height:38px;font-size:14px;" onchange="renderDeliveryPreview()">
         </div>
         <div id="delivery-batch-wrap" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;">
@@ -4155,7 +4155,7 @@
           </div>
           <label style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12px;color:#374151;cursor:pointer;">
             <input type="checkbox" id="delivery-include-set" onchange="resetDeliverySelection()">
-            登録済みの納期も上書き対象に含める
+            登録済みの出荷日も上書き対象に含める
           </label>
         </div>
         <div>
@@ -4167,7 +4167,7 @@
     </div>
     <div class="pd-modal-footer">
       <button class="pd-cancel-btn" onclick="closeDeliveryDialog()">キャンセル</button>
-      <button class="pd-save-btn" style="background:#ef4444;" id="delivery-save-btn" onclick="saveDelivery()">納期を登録</button>
+      <button class="pd-save-btn" style="background:#ef4444;" id="delivery-save-btn" onclick="saveDelivery()">出荷日を登録</button>
     </div>
   </div>
 </div>
@@ -16833,7 +16833,7 @@ function renderDetailModal(p, children) {
     ? '<span class="dm-tag amber">分納</span>'
     : '<span class="dm-tag green">全納</span>';
   const unsetBadge = hasUnsetDelivery
-    ? '<span class="dm-tag gray">未納期あり</span>'
+    ? '<span class="dm-tag gray">出荷日未設定あり</span>'
     : '';
   const deliveryStatusHtml = totalCount > 0 ? (splitBadge + unsetBadge) : '';
 
@@ -16886,7 +16886,7 @@ function renderDetailModal(p, children) {
         ${f('数量', p.quantity != null ? `<b>${esc(p.quantity)}</b>${p.unit ? ' <small>' + esc(p.unit) + '</small>' : ''}` : dash(null), 'big')}
         ${f('単価', p.price != null ? '¥' + Number(p.price).toLocaleString() : dash(null), 'num')}
         ${f('希望納期', p.deliverydate ? esc(p.deliverydate) + (near ? ' <span class="dm-warn-tag">間近</span>' : '') : dash(null), near ? 'warn' : '')}
-        ${f('納期（子データ）', childDeliveryDatesHtml)}
+        ${f('出荷日（子データ）', childDeliveryDatesHtml)}
         ${f('出荷場所', dash(p.delivery_destination))}
         ${f('注文書原本', sourceHtml, '', 1)}
         ${f('検査表', '<span id="dm-inspection-files" class="dm-muted">確認中…</span>', '', 1)}
@@ -16912,7 +16912,7 @@ function renderDetailModal(p, children) {
             <tr>
               <th style="width:36px;">#</th>
               <th>シールNo</th>
-              <th>納期</th>
+              <th>出荷日</th>
               <th>製品名</th>
               <th>OT番号</th>
               <th style="width:1%;">操作</th>
@@ -17017,7 +17017,7 @@ function renderEditContent(p, children) {
     + '<div style="display:grid;grid-template-columns:40px 120px 1fr 1fr;gap:10px;padding:6px 0 8px;border-bottom:1px solid #d1fae5;margin-bottom:4px;">'
     + '<div style="font-size:10px;font-weight:700;color:#059669;text-align:center;">#</div>'
     + '<div style="font-size:10px;font-weight:700;color:#059669;">シールNo</div>'
-    + '<div style="font-size:10px;font-weight:700;color:#059669;">納期</div>'
+    + '<div style="font-size:10px;font-weight:700;color:#059669;">出荷日</div>'
     + '<div style="font-size:10px;font-weight:700;color:#059669;">検査シート</div>'
     + '</div>'
     + '<div class="child-edit-scroll">' + childRows + '</div>'
@@ -17477,7 +17477,7 @@ function printWorkOrder() {
 
 // 納期未登録バッジ（子データに納期未設定がある親に表示）
 function deliveryBadgeHtml() {
-  return '<span class="ob-dl unset" title="納期未登録の子データあり">未納期</span>';
+  return '<span class="ob-dl unset" title="出荷日未登録の子データあり">出荷日未定</span>';
 }
 
 // 登録から12時間以内かどうか判定（created_at 基準）
@@ -18784,9 +18784,9 @@ function buildChildRows(children) {
     if (c.id == null) {
       deliveryCell = '<span class="dm-muted">' + (c.delivery || '未設定') + '</span>';
     } else if (c.delivery) {
-      deliveryCell = '<button class="ct-date" onclick="openDeliveryDialog(' + c.id + ')" title="クリックで納期を再設定">' + c.delivery + '</button>';
+      deliveryCell = '<button class="ct-date" onclick="openDeliveryDialog(' + c.id + ')" title="クリックで出荷日を再設定">' + c.delivery + '</button>';
     } else {
-      deliveryCell = '<button class="ct-date unset" onclick="openDeliveryDialog(' + c.id + ')" title="クリックで納期を登録">＋ 納期登録</button>';
+      deliveryCell = '<button class="ct-date unset" onclick="openDeliveryDialog(' + c.id + ')" title="クリックで出荷日を登録">＋ 出荷日登録</button>';
     }
     return '<tr>'
       + '<td class="seq-num">' + (i + 1) + '</td>'
@@ -19433,7 +19433,7 @@ function openCalDayModal(dateKey, events) {
                   </tr>${o.kids.length ? `
                   <tr class="cdm-sub" style="display:none;"><td colspan="6">
                     <table class="cdm-kid-table">
-                      <thead><tr><th>製品名</th><th>OT番号</th><th>納期</th><th>シールNo</th><th></th></tr></thead>
+                      <thead><tr><th>製品名</th><th>OT番号</th><th>出荷日</th><th>シールNo</th><th></th></tr></thead>
                       <tbody>${o.kids.map(kd => `
                         <tr>
                           <td class="kn">${escH(kd.name)}</td>
@@ -21956,7 +21956,7 @@ function openDeliveryDialog(childId) {
     batchWrap.style.display = 'block';
     const unset = _deliverySiblings.filter(x => !x.delivery).length;
     document.getElementById('delivery-batch-info').textContent =
-      '同製品 全' + _deliverySiblings.length + '件（納期未設定 ' + unset + '件 / 設定済み ' + (_deliverySiblings.length - unset) + '件）';
+      '同製品 全' + _deliverySiblings.length + '件（出荷日未設定 ' + unset + '件 / 設定済み ' + (_deliverySiblings.length - unset) + '件）';
     // 既定の適用件数：未設定があればその件数、なければ1
     document.getElementById('delivery-count').value = unset > 0 ? unset : 1;
   } else {
@@ -22088,7 +22088,7 @@ async function saveDelivery() {
   if (!targets.length) { alert('登録対象にチェックを入れてください'); return; }
   // 日付が空 = 納期をクリアする意図。確認してから進める
   if (!date) {
-    if (!confirm('納期を空（未設定）にして保存します。よろしいですか？')) return;
+    if (!confirm('出荷日を空（未設定）にして保存します。よろしいですか？')) return;
   }
   const value = date || null;  // 空なら null でクリア
 
@@ -22111,9 +22111,9 @@ async function saveDelivery() {
     const tbody = document.querySelector('.child-table tbody');
     if (tbody && _detailChildren) tbody.innerHTML = buildChildRows(_detailChildren);
   } catch (e) {
-    alert('納期の登録に失敗しました: ' + e.message);
+    alert('出荷日の登録に失敗しました: ' + e.message);
   } finally {
-    btn.disabled = false; btn.textContent = '納期を登録';
+    btn.disabled = false; btn.textContent = '出荷日を登録';
   }
 }
 
@@ -22134,7 +22134,7 @@ async function openChildRoute(childId) {
   document.getElementById('route-editor-title').textContent = '進捗ステータス';
   document.getElementById('route-editor-subtitle').textContent =
     'シールNo:' + (routeChildInfo.sealno || '-') + ' / ' + routeChildInfo.productName +
-    (routeChildInfo.delivery ? '（納期 ' + fmtRouteDate(routeChildInfo.delivery) + '）' : '');
+    (routeChildInfo.delivery ? '（出荷日 ' + fmtRouteDate(routeChildInfo.delivery) + '）' : '');
 
   buildRoutePaletteUI();
   routeSteps = [];
