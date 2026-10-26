@@ -5089,6 +5089,7 @@ async function importSealShipdates(ev) {
     for (const c of children) { if (!kids.has(c.order_id)) kids.set(c.order_id, []); kids.get(c.order_id).push(c); }
 
     const pOrders = [], pChildren = [], pNew = [], unmatched = [], used = new Set();
+    const dOrders = [], dChildren = [], dNew = [], dFewer = [];   // 結果Excel用の明細（変更前の値も控える）
     let matched = 0, fewer = 0;
     for (const o of orders) {
       const on = normO(o.orderno), dn = normO(o.drawingno);
@@ -5100,18 +5101,25 @@ async function importSealShipdates(ev) {
       }
       if (!g) { unmatched.push(o); continue; }
       matched++; used.add(g);
-      if (g.slip && String(o.productno || '') !== g.slip) pOrders.push({ id: o.id, productno: g.slip });
+      if (g.slip && String(o.productno || '') !== g.slip) {
+        pOrders.push({ id: o.id, productno: g.slip });
+        dOrders.push([o.id, o.orderno, o.drawingno, o.productno || '', g.slip]);
+      }
       const ks = kids.get(o.id) || [];
       g.rows.forEach((x, i) => {
         if (i < ks.length) {
           const c = ks[i];
           const chSeal = x.seal && x.seal !== c.sealno, chShip = x.ship && x.ship !== c.delivery;
-          if (chSeal || chShip) pChildren.push({ id: c.id, sealno: chSeal ? x.seal : null, delivery: chShip ? x.ship : null });
+          if (chSeal || chShip) {
+            pChildren.push({ id: c.id, sealno: chSeal ? x.seal : null, delivery: chShip ? x.ship : null });
+            dChildren.push([o.orderno, o.drawingno, c.id, c.sealno || '', chSeal ? x.seal : (c.sealno || ''), c.delivery || '', chShip ? x.ship : (c.delivery || '')]);
+          }
         } else {
           pNew.push({ order_id: o.id, sealno: x.seal || '', delivery: x.ship });
+          dNew.push([o.orderno, o.drawingno, x.seal || '', x.ship || '']);
         }
       });
-      if (g.rows.length < ks.length) fewer++;
+      if (g.rows.length < ks.length) { fewer++; dFewer.push([o.orderno, o.drawingno, ks.length, g.rows.length]); }
     }
     showStatus('success', '照合が終わりました。内容を確認してください。', 100);
     const msg = [
@@ -5143,7 +5151,37 @@ async function importSealShipdates(ev) {
       const r = await res.json();
       total.orders += r.orders || 0; total.children += r.children || 0; total.new_children += r.new_children || 0;
     }
-    showStatus('success', `登録しました：製番 ${total.orders}件／子データ ${total.children}件更新・${total.new_children}件追加${unmatched.length ? `（照合できなかった受注 ${unmatched.length}件はコンソールに一覧）` : ''}`, 100);
+    showStatus('success', `登録しました：製番 ${total.orders}件／子データ ${total.children}件更新・${total.new_children}件追加。結果をExcelでダウンロードしました`, 100);
+    // 実行結果の詳細をExcelにしてダウンロード
+    try {
+      const out = XLSX.utils.book_new();
+      const now = new Date();
+      const sheet = (name, head, data, widths) => {
+        const w = XLSX.utils.aoa_to_sheet([head, ...data]);
+        w['!cols'] = widths.map(wch => ({ wch }));
+        if (data.length) w['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: data.length, c: head.length - 1 } }) };
+        XLSX.utils.book_append_sheet(out, w, name);
+      };
+      sheet('概要', ['項目', '件数'], [
+        ['実行日時', now.toLocaleString('ja-JP')],
+        ['取込ファイル', file.name],
+        ['実行者', (typeof currentUser !== 'undefined' && currentUser) ? (currentUser.loginname || currentUser.userid || '') : ''],
+        ['登録済みの受注', orders.length],
+        ['照合できた受注', matched],
+        ['照合できなかった受注', unmatched.length],
+        ['製番（伝票番号）を登録/変更', total.orders],
+        ['子データのシールNo・出荷日を登録/変更', total.children],
+        ['子データを追加', total.new_children],
+        ['Excelの行より子データが多い受注', fewer],
+      ], [34, 40]);
+      sheet('製番', ['受注ID', '注文番号', '図番', '変更前の製番', '登録した製番'], dOrders, [9, 18, 22, 14, 14]);
+      sheet('子データ更新', ['注文番号', '図番', '子データID', '変更前シールNo', '登録したシールNo', '変更前出荷日', '登録した出荷日'], dChildren, [18, 22, 11, 15, 15, 13, 13]);
+      sheet('子データ追加', ['注文番号', '図番', 'シールNo', '出荷日'], dNew, [18, 22, 12, 12]);
+      sheet('照合できなかった受注', ['受注ID', '注文番号', '図番', '製番'], unmatched.map(o => [o.id, o.orderno, o.drawingno, o.productno || '']), [9, 18, 22, 14]);
+      sheet('子データが多い受注', ['注文番号', '図番', '子データ数', 'Excelの行数'], dFewer, [18, 22, 11, 11]);
+      const p2 = n => String(n).padStart(2, '0');
+      XLSX.writeFile(out, `シール製番出荷日_取込結果_${now.getFullYear()}${p2(now.getMonth() + 1)}${p2(now.getDate())}_${p2(now.getHours())}${p2(now.getMinutes())}.xlsx`);
+    } catch (e) { console.warn('[シール取込] 結果Excelの作成に失敗', e); }
     if (typeof loadOrders === 'function') loadOrders();
   } catch (e) {
     console.error('[シール取込] 失敗', e);
