@@ -5079,7 +5079,9 @@ async function importSealShipdates(ev) {
       const k = ono + '|' + dno;
       let g = groups.get(k);
       if (!g) { g = { ono, dno, slip: swXlText(r[C.slip]), rows: [] }; groups.set(k, g); if (!byOrder.has(ono)) byOrder.set(ono, []); byOrder.get(ono).push(g); }
-      g.rows.push({ seal: validSeal(r[C.seal]), ship: C.ship >= 0 ? swXlDate(r[C.ship]) : null });
+      let seal = validSeal(r[C.seal]);
+      if (seal && g.rows.some(x => x.seal === seal)) seal = null;   // 同じ受注内で同じシールNoが2回出てきたら2回目は登録しない（受注内で一意の制約）
+      g.rows.push({ seal, ship: C.ship >= 0 ? swXlDate(r[C.ship]) : null });
     }
 
     prog('登録済みの受注と子データを取得中…');
