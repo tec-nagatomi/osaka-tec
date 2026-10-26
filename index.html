@@ -2629,6 +2629,41 @@
   .pd-fmode { display:inline-flex; align-self:center; margin-right:6px; border:1px solid #cbd5e1; border-radius:999px; overflow:hidden; background:#fff; }
   .pd-fmode button { border:0; background:transparent; font-size:11px; padding:3px 10px; color:#64748b; cursor:pointer; font-weight:600; }
   .pd-fmode button.active { background:#1e40af; color:#fff; }
+
+  /* ===== 製品詳細: 製品写真ギャラリー（左）＋ 製品情報（右） ===== */
+  .pdd-info { display:flex; align-items:stretch; }
+  .pdd-info-side { flex:1; min-width:0; display:flex; flex-direction:column; }
+  .pdd-info-side .dm-grid { flex:1; align-content:start; }
+  .pdg { flex:0 0 42%; max-width:440px; min-width:260px; padding:12px; border-right:1px solid #f3f4f6; box-sizing:border-box; background:linear-gradient(180deg,#f8fafc,#fff); }
+  .pdg-main { position:relative; aspect-ratio:4/3; border-radius:10px; overflow:hidden; background:#0f172a; display:flex; align-items:center; justify-content:center; box-shadow:inset 0 0 0 1px rgba(15,23,42,.06); }
+  .pdg-main img { width:100%; height:100%; object-fit:contain; cursor:zoom-in; transition:opacity .2s; }
+  .pdg-main.dragover { outline:3px dashed #3b82f6; outline-offset:-6px; }
+  .pdg-empty { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:#94a3b8; background:#f8fafc; border:2px dashed #cbd5e1; border-radius:10px; font-size:12px; font-weight:600; text-align:center; padding:12px; }
+  .pdg-empty svg { width:38px; height:38px; opacity:.7; }
+  .pdg-empty.can { cursor:pointer; }
+  .pdg-empty.can:hover { border-color:#3b82f6; color:#1d4ed8; background:#eff6ff; }
+  .pdg-count { position:absolute; left:8px; bottom:8px; font-size:11px; font-weight:700; color:#fff; background:rgba(15,23,42,.6); border-radius:999px; padding:2px 9px; }
+  .pdg-nav { position:absolute; top:50%; transform:translateY(-50%); width:30px; height:30px; border-radius:50%; border:0; background:rgba(255,255,255,.85); color:#111827; font-size:16px; font-weight:800; cursor:pointer; opacity:0; transition:opacity .15s; display:flex; align-items:center; justify-content:center; }
+  .pdg-nav.prev { left:8px; } .pdg-nav.next { right:8px; }
+  .pdg-main:hover .pdg-nav, .pdg-main:hover .pdg-tools { opacity:1; }
+  .pdg-tools { position:absolute; right:8px; top:8px; display:flex; gap:5px; opacity:0; transition:opacity .15s; }
+  .pdg-tools button { border:0; border-radius:6px; background:rgba(255,255,255,.9); color:#111827; font-size:11px; font-weight:700; padding:4px 8px; cursor:pointer; }
+  .pdg-tools button.del { color:#dc2626; }
+  .pdg-tools button:hover { background:#fff; }
+  .pdg-thumbs { display:flex; gap:6px; margin-top:8px; overflow-x:auto; padding-bottom:2px; }
+  .pdg-thumb { flex:0 0 58px; height:44px; border-radius:6px; overflow:hidden; border:2px solid transparent; cursor:pointer; background:#e5e7eb; padding:0; }
+  .pdg-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+  .pdg-thumb.active { border-color:#1d4ed8; }
+  .pdg-add { flex:0 0 58px; height:44px; border-radius:6px; border:2px dashed #cbd5e1; background:#fff; color:#64748b; font-size:20px; font-weight:700; cursor:pointer; }
+  .pdg-add:hover { border-color:#3b82f6; color:#1d4ed8; }
+  .pdg-status { font-size:11px; color:#2563eb; font-weight:700; margin-top:6px; min-height:14px; }
+  .pdg-lightbox { position:fixed; inset:0; z-index:7000; background:rgba(2,6,23,.92); display:flex; align-items:center; justify-content:center; }
+  .pdg-lightbox img { max-width:92vw; max-height:86vh; object-fit:contain; border-radius:6px; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+  .pdg-lightbox .lb-close { position:absolute; top:14px; right:18px; border:0; background:rgba(255,255,255,.15); color:#fff; width:38px; height:38px; border-radius:50%; font-size:20px; cursor:pointer; }
+  .pdg-lightbox .lb-nav { position:absolute; top:50%; transform:translateY(-50%); border:0; background:rgba(255,255,255,.15); color:#fff; width:46px; height:46px; border-radius:50%; font-size:22px; cursor:pointer; }
+  .pdg-lightbox .lb-nav.prev { left:18px; } .pdg-lightbox .lb-nav.next { right:18px; }
+  .pdg-lightbox .lb-cap { position:absolute; bottom:14px; left:0; right:0; text-align:center; color:#cbd5e1; font-size:12px; }
+  @media (max-width: 900px) { .pdd-info { flex-direction:column; } .pdg { flex:none; max-width:none; border-right:0; border-bottom:1px solid #f3f4f6; } }
 </style>
 </head>
 <body>
@@ -22361,6 +22396,139 @@ function pdGotoPage(p) {
 }
 
 // ---- 詳細画面 ----
+// ==================== 製品詳細: 製品写真（Supabase Storage: product-photos／productdate.photos） ====================
+// photos = [{ path, url, at, by }]（先頭が代表写真）。写真はブラウザで長辺1600pxのJPEGに縮小してから保存する。
+const PDG_BUCKET = 'product-photos';
+let pdgIndex = 0;
+function pdgCanEdit() { try { return typeof canEditPage === 'function' ? canEditPage('productdate') : true; } catch (_) { return true; } }
+function pdgPhotos(rec) { return Array.isArray(rec && rec.photos) ? rec.photos : []; }
+function pdgRec() { return allProductdate.find(r => r.designid === pdDetailCurrentId); }
+function pdgRender(rec) {
+  const box = document.getElementById('pdg');
+  if (!box || !rec) return;
+  const ph = pdgPhotos(rec), can = pdgCanEdit();
+  if (pdgIndex >= ph.length) pdgIndex = Math.max(0, ph.length - 1);
+  const cur = ph[pdgIndex];
+  const camera = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
+  box.innerHTML = `
+    <div class="pdg-main" id="pdg-main">
+      ${cur
+        ? `<img src="${esc(cur.url)}" alt="製品写真" onclick="pdgOpenLightbox(${pdgIndex})" loading="lazy">
+           ${ph.length > 1 ? `<button class="pdg-nav prev" type="button" onclick="pdgGo(-1)">‹</button><button class="pdg-nav next" type="button" onclick="pdgGo(1)">›</button>` : ''}
+           <span class="pdg-count">${pdgIndex + 1} / ${ph.length}</span>
+           ${can ? `<div class="pdg-tools">${pdgIndex > 0 ? `<button type="button" onclick="pdgMakeMain(${pdgIndex})" title="一覧の先頭（代表写真）にする">★ 代表にする</button>` : ''}<button type="button" class="del" onclick="pdgDelete(${pdgIndex})">削除</button></div>` : ''}`
+        : `<div class="pdg-empty${can ? ' can' : ''}" ${can ? `onclick="document.getElementById('pdg-file').click()"` : ''}>${camera}
+             <div>${can ? '製品写真をドラッグ＆ドロップ<br>またはクリックして追加' : '製品写真はまだ登録されていません'}</div></div>`}
+    </div>
+    ${(ph.length > 1 || (can && ph.length)) ? `<div class="pdg-thumbs">${ph.map((p, i) => `<button type="button" class="pdg-thumb${i === pdgIndex ? ' active' : ''}" onclick="pdgSelect(${i})"><img src="${esc(p.url)}" alt="" loading="lazy"></button>`).join('')}${can ? `<button type="button" class="pdg-add" title="写真を追加" onclick="document.getElementById('pdg-file').click()">＋</button>` : ''}</div>` : ''}
+    <div class="pdg-status" id="pdg-status"></div>
+    <input type="file" id="pdg-file" accept="image/*" multiple style="display:none" onchange="pdgUpload(this.files);this.value=''">`;
+  if (can) {
+    const main = document.getElementById('pdg-main');
+    main.addEventListener('dragover', e => { e.preventDefault(); main.classList.add('dragover'); });
+    main.addEventListener('dragleave', () => main.classList.remove('dragover'));
+    main.addEventListener('drop', e => { e.preventDefault(); main.classList.remove('dragover'); pdgUpload(e.dataTransfer.files); });
+  }
+}
+function pdgSelect(i) { pdgIndex = i; pdgRender(pdgRec()); }
+function pdgGo(d) { const n = pdgPhotos(pdgRec()).length; if (!n) return; pdgIndex = (pdgIndex + d + n) % n; pdgRender(pdgRec()); }
+function pdgStatus(msg) { const el = document.getElementById('pdg-status'); if (el) el.textContent = msg || ''; }
+// 画像を長辺1600px・JPEGに縮小
+function pdgResize(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob(b => b ? resolve(b) : reject(new Error('画像の変換に失敗しました')), 'image/jpeg', 0.85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('画像として読み込めませんでした: ' + file.name)); };
+    img.src = url;
+  });
+}
+async function pdgSavePhotos(rec, photos) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/productdate?designid=eq.${rec.designid}`, {
+    method: 'PATCH', headers: { ...sbHeaders(), 'Prefer': 'return=minimal' }, body: JSON.stringify({ photos })
+  });
+  if (!res.ok) throw new Error('製品マスタの更新に失敗しました (HTTP ' + res.status + ')');
+  rec.photos = photos;
+}
+async function pdgUpload(files) {
+  const rec = pdgRec();
+  if (!rec || !files || !files.length) return;
+  if (!pdgCanEdit()) { alert('製品写真の登録には製品登録の編集権限が必要です'); return; }
+  const list = [...files].filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|gif|webp|bmp|heic)$/i.test(f.name));
+  if (!list.length) { alert('画像ファイルを選んでください'); return; }
+  const photos = [...pdgPhotos(rec)];
+  const by = (typeof currentUser !== 'undefined' && currentUser) ? (currentUser.loginname || currentUser.userid || '') : '';
+  try {
+    for (let i = 0; i < list.length; i++) {
+      pdgStatus(`写真を保存中… ${i + 1}/${list.length}`);
+      const blob = await pdgResize(list[i]);
+      const path = `${rec.designid}/${Date.now()}_${i}.jpg`;
+      const up = await fetch(`${SUPABASE_URL}/storage/v1/object/${PDG_BUCKET}/${path}`, {
+        method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'image/jpeg', 'x-upsert': 'true' }, body: blob
+      });
+      if (!up.ok) throw new Error('写真のアップロードに失敗しました (HTTP ' + up.status + ') ' + (await up.text().catch(() => '')).slice(0, 120));
+      photos.push({ path, url: `${SUPABASE_URL}/storage/v1/object/public/${PDG_BUCKET}/${path}`, at: new Date().toISOString(), by });
+    }
+    await pdgSavePhotos(rec, photos);
+    pdgIndex = photos.length - 1;
+    pdgRender(rec);
+    pdgStatus(`${list.length}枚の写真を登録しました`);
+    setTimeout(() => pdgStatus(''), 2500);
+  } catch (e) {
+    console.error('[製品写真] 登録失敗', e);
+    pdgStatus('');
+    alert(e.message);
+  }
+}
+async function pdgDelete(i) {
+  const rec = pdgRec(); const ph = pdgPhotos(rec); const p = ph[i];
+  if (!p || !confirm('この写真を削除しますか？')) return;
+  try {
+    await fetch(`${SUPABASE_URL}/storage/v1/object/${PDG_BUCKET}/${p.path}`, { method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }).catch(() => {});
+    await pdgSavePhotos(rec, ph.filter((_, k) => k !== i));
+    pdgRender(rec);
+  } catch (e) { alert(e.message); }
+}
+async function pdgMakeMain(i) {
+  const rec = pdgRec(); const ph = [...pdgPhotos(rec)];
+  if (!ph[i]) return;
+  const [p] = ph.splice(i, 1); ph.unshift(p);
+  try { await pdgSavePhotos(rec, ph); pdgIndex = 0; pdgRender(rec); } catch (e) { alert(e.message); }
+}
+// 拡大表示（← → で切替、Esc で閉じる）
+function pdgOpenLightbox(i) {
+  const rec = pdgRec(); const ph = pdgPhotos(rec);
+  if (!ph.length) return;
+  let k = i;
+  const lb = document.createElement('div');
+  lb.className = 'pdg-lightbox';
+  const draw = () => {
+    lb.innerHTML = `<img src="${esc(ph[k].url)}" alt="">
+      <button class="lb-close" type="button" title="閉じる (Esc)">×</button>
+      ${ph.length > 1 ? '<button class="lb-nav prev" type="button">‹</button><button class="lb-nav next" type="button">›</button>' : ''}
+      <div class="lb-cap">${esc(rec.product_name || '')}　${esc(rec.ot_number || '')}　${k + 1} / ${ph.length}</div>`;
+    lb.querySelector('.lb-close').onclick = close;
+    lb.querySelector('.prev') && (lb.querySelector('.prev').onclick = e => { e.stopPropagation(); k = (k - 1 + ph.length) % ph.length; draw(); });
+    lb.querySelector('.next') && (lb.querySelector('.next').onclick = e => { e.stopPropagation(); k = (k + 1) % ph.length; draw(); });
+  };
+  const key = e => {
+    if (e.key === 'Escape') { e.stopPropagation(); close(); }
+    else if (e.key === 'ArrowLeft' && ph.length > 1) { k = (k - 1 + ph.length) % ph.length; draw(); }
+    else if (e.key === 'ArrowRight' && ph.length > 1) { k = (k + 1) % ph.length; draw(); }
+  };
+  function close() { document.removeEventListener('keydown', key, true); lb.remove(); }
+  lb.addEventListener('click', e => { if (e.target === lb) close(); });
+  document.addEventListener('keydown', key, true);
+  draw();
+  document.body.appendChild(lb);
+}
+
 function openPdDetail(id) {
   const rec = allProductdate.find(r => r.designid === id);
   if (!rec) return;
@@ -22392,6 +22560,9 @@ function openPdDetail(id) {
             <span class="dm-card-title">製品情報</span>
             <span class="dm-urls">${urlPills || '<span class="dm-muted" style="font-size:11px;">関連URLなし</span>'}</span>
           </div>
+          <div class="pdd-info">
+          <div class="pdg" id="pdg"></div>
+          <div class="pdd-info-side">
           <div class="dm-hero">
             <div class="dm-hero-name">${dash(rec.product_name)}</div>
             <div class="dm-hero-tags">${categoryBadgeHtml(rec.product_category)}${secondCategoryBadgeHtml(rec.second_category, rec.part_number, rec.part_number_url, rec.parts)}</div>
@@ -22408,6 +22579,8 @@ function openPdDetail(id) {
             ${f('検査表', '<span id="pdd-inspection-files" class="dm-muted">確認中…</span>')}
             ${f('納入先', dash(rec.delivery_destination), '', 2)}
             ${rec.remarks ? f('備考', esc(rec.remarks), 'note', 4) : ''}
+          </div>
+          </div>
           </div>
         </section>
 
@@ -22437,6 +22610,9 @@ function openPdDetail(id) {
       <div class="pdd-memo" id="pd-detail-memo-panel"></div>
     </div>`;
 
+  // 製品写真ギャラリー
+  pdgIndex = 0;
+  pdgRender(rec);
   // 進捗ステータス（基本ルート）を読み込んで表示
   renderDetailRoute(id);
   // 変更履歴を読み込んで表示
@@ -22488,7 +22664,7 @@ function exportProductdateExcel(ev) {
   const present = new Set();
   rows.forEach(r => Object.keys(r).forEach(k => present.add(k)));
   const keys = PD_EXPORT_ORDER.filter(k => present.has(k))
-    .concat([...present].filter(k => !PD_EXPORT_ORDER.includes(k) && !k.startsWith('_')).sort());
+    .concat([...present].filter(k => !PD_EXPORT_ORDER.includes(k) && !k.startsWith('_') && k !== 'photos').sort());
   const extraLabels = { created_at: '登録日時', updated_at: '更新日時' };
   const header = keys.map(k => PD_FIELD_LABELS[k] || extraLabels[k] || k);
   const toCell = (k, v) => {
