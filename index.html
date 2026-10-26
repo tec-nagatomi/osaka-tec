@@ -13188,6 +13188,80 @@ function takisawaParseSegment(lines) {
   return { orderno, orderdate, qty, price, amount, drawingno, deliverydate, name, otRead };
 }
 
+// ---- フォーマット8: 日機株式会社「注文書」（スキャン画像） ----
+// 印字が罫線（あらかじめ印刷された枠）とずれていることがあるため、マスの位置には頼らず、
+// ページ全体の文字から「単位 数量 単価 金額 備考」の並びを探して読む。
+//   発注No(例 008078 → 8078) / 発注日 / 納期 / 商品名欄(OT番号・客先図番) / 数量 / 単価 / 備考(→原番) / 納入場所(→納入先)
+function isNikkiText(t) {
+  const u = String(t || '').replace(/\s/g, '');
+  return /日機株/.test(u) || (/京町堀/.test(u) && /発注No/.test(u));
+}
+async function extractNikkiRows(text) {
+  const lines = String(text || '').split('\n').map(l => l.replace(/[_「」\[\]]/g, ' ').replace(/[〜~ー―−－](?=\d)/g, '-'));
+  const flat = lines.join('\n');
+  const dateOf = re => { const m = flat.match(re); return m ? `${m[1]}/${m[2].padStart(2, '0')}/${m[3].padStart(2, '0')}` : ''; };
+  const orderdate = dateOf(/発\s*注\s*日\s*(20\d{2})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})/);
+  const deliverydate = dateOf(/納\s*期\s*[:：]?\s*(20\d{2})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})/);
+  const om = flat.match(/発\s*注\s*N\s*[oO0]\.?\s*([0-9OoQ]{4,8})/);
+  const orderno = om ? String(parseInt(om[1].replace(/[OoQ]/g, '0'), 10)) : '';
+  // 納入場所 → 納入先（会社名だけ。例: 株式会社山崎技研 資材部(土佐山田工場) 御中 → 山崎技研）
+  let dest = '';
+  const di = lines.findIndex(l => /納\s*入\s*場\s*所/.test(l));
+  if (di >= 0) {
+    for (let i = di; i < Math.min(lines.length, di + 4); i++) {
+      if (!/(株式会社|[(（]\s*株\s*[)）]|有限会社)/.test(lines[i])) continue;
+      dest = lines[i].replace(/^.*?(株式会社|[(（]\s*株\s*[)）]|有限会社)\s*/, '').replace(/(株式会社|[(（]\s*株\s*[)）])/g, '').trim().split(/\s+/)[0].split(/(?:資材|購買|調達|受入|部品|御中|様|[(（])/)[0].trim();
+      break;
+    }
+  }
+  // 明細: 「…商品名…  set  1  135,000  135,000  130221-0」
+  const N = String.raw`\d{1,3}(?:\s?[,.]{1,2}\s?\d{3})+|\d+`;
+  const ITEM = new RegExp(String.raw`(?:^|[\s|])(set|SET|Set|ｾｯﾄ|セット|個|本|式|台|枚|組|PC|pc|EA)\s+(\d{1,5})\s+(${N})\s+(${N})\s*[|\[]?\s*([0-9A-Z][0-9A-Z\-]{3,})?`);
+  const items = [];
+  for (const l of lines) {
+    const m = l.match(ITEM);
+    if (!m) continue;
+    const head = ocrNormalize(l.slice(0, m.index));
+    const num = v => parseInt(String(v).replace(/[^\d]/g, ''), 10) || 0;
+    let qty = num(m[2]), price = num(m[3]), amount = num(m[4]);
+    if (amount && qty && price * qty !== amount && amount % qty === 0) price = amount / qty;
+    const o = head.match(/[0O]T\s?-\s?(\d{6})(?!\d)(?:\s?-\s?(\d{1,2})(?!\d))?/);
+    const ot = o ? `OT-${o[1]}${o[2] ? '-' + o[2] : ''}` : '';
+    const rest = o ? head.slice(0, o.index) + ' ' + head.slice(o.index + o[0].length) : head;
+    const cands = (rest.toUpperCase().match(/[0-9A-Z][0-9A-Z\-]{5,}/g) || []).filter(t => /\d/.test(t) && /[-A-Z]/.test(t));
+    items.push({ ot, cands, qty, price, amount, remark: m[5] || '', name: head.replace(/[|]/g, ' ').trim() });
+  }
+  console.log('[日機]', { orderno, orderdate, deliverydate, dest, items });
+  if (!items.length) return [];
+  let list = [];
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/productdate?client=like.*${encodeURIComponent('日機')}*&select=customer_drawing_no,ot_number,product_name&limit=2000`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } });
+    if (res.ok) list = await res.json();
+  } catch (e) { console.warn('[日機] 製品マスタ取得失敗', e); }
+  const norm = v => String(v || '').toUpperCase().replace(/O/g, '0');   // O/0 の読み違いを同一視
+  return items.map(it => {
+    // 客先図番: 商品名欄の英数字（例 3207-T010-27A0）を製品マスタと照合（1文字違いまで補正）
+    let p = null;
+    for (const c of it.cands) {
+      p = list.find(x => norm(x.customer_drawing_no) === norm(c));
+      if (!p) { const near = list.filter(x => x.customer_drawing_no && Math.abs(x.customer_drawing_no.length - c.length) <= 1 && ocrEditDistance(norm(x.customer_drawing_no), norm(c)) <= 1); if (near.length === 1) p = near[0]; }
+      if (p) break;
+    }
+    // 図番が書かれていない注文（例 YZ-501 OT-041254-3）→ OT番号で製品マスタを探す（OT番号そのものが図番の製品を優先）
+    if (!p && it.ot) {
+      const hits = list.filter(x => x.ot_number === it.ot);
+      p = hits.find(x => x.customer_drawing_no === it.ot) || (hits.length === 1 ? hits[0] : null);
+    }
+    if (!p) console.warn('[日機] 製品マスタと照合できませんでした', it);
+    return {
+      orderdate, orderno, drawingno: p ? p.customer_drawing_no : (it.cands[0] || it.ot), quantity: it.qty || 1, unit: 'set', price: it.price,
+      originalno: it.remark, deliverydate, productno: null, delivery_destination: dest || null, shippingdate: null,
+      _otNumber: (p && p.ot_number) || it.ot || undefined, _productName: (p && p.product_name) || it.name || undefined, _ocr: true,
+    };
+  });
+}
+
 // ---- PDF Parser ----
 async function parsePDF(file) {
   const buf = await file.arrayBuffer();
@@ -13261,6 +13335,9 @@ async function parsePDF(file) {
         } else if (/野村製作所/.test(t) && /(注文No|発注書|0000\d{6})/.test(t)) {
           console.log('[PDF] → フォーマット4b: 野村製作所（スキャン画像・OCR）');
           rows.push(...await extractNomuraOcrRows(ocr, ocrWorker, page));
+        } else if (isNikkiText(t)) {
+          console.log('[PDF] → フォーマット8: 日機（スキャン画像・OCR）');
+          rows.push(...await extractNikkiRows(t));
         } else if (isTakisawaText(t)) {
           console.log('[PDF] → フォーマット7: TAKISAWA（スキャン画像・OCR）');
           rows.push(...await extractTakisawaRows(t));
@@ -22246,6 +22323,7 @@ function openEditFromDetail() {
 const PD_MAKER_RULES = [
   { match: /ユアサネオテック/, list: ['ブラザー工業株式会社', '株式会社ジェイテクト', 'DMG森精機株式会社', 'コマツNTC株式会社', '株式会社カシフジ', '株式会社アマダマシナリー', '高松機械工業株式会社'] },
   { match: /IZUSHI|ＩＺＵＳＨＩ/i, list: ['DMG森精機株式会社'] },
+  { match: /日機/, list: ['株式会社カシフジ', 'エンシュウ株式会社', '株式会社ツガミ', '株式会社山崎技研'] },
 ];
 function pdMakerRule(client) {
   if (!client) return null;
