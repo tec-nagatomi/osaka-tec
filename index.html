@@ -12959,7 +12959,7 @@ function yasdaConfirm(cv, g, head, items) {
 //   0001492857  A400005117                       1 2026/10/29   137,760 00573761-37   ← 上位手配番号 / 品目番号(客先図番) / 数量 / 納期 / 単価 / 引当
 //   9001014490  ﾃﾚｽｺｶﾊﾞｰ(YBM-950Vi、Y軸、左右)                                        ← 手配番号(=注文No) / 品目名称
 // 発注日はページ右上の日付（例: 2026/07/03）。印字がきれいなのでページ全体のOCRで読める。
-async function extractYasudaLdenRows(text) {
+async function extractYasudaLdenRows(text, ocr) {
   const lines = String(text || '').split('\n').map(l => l.replace(/[_|「」\[\]]/g, ' ').replace(/[〜~ー―−－](?=\d)/g, '-'));
   const ITEM = /(?:^|\s)(\d{10})\s+([A-Z0-9][A-Z0-9\-]{5,})\s+(\d{1,4})\s+(20\d{2})\s?\/\s?(\d{1,2})\s?\/\s?(\d{1,2})\s+(\d{1,3}(?:\s?[,.]\s?\d{3})+|\d{1,9})(?![\d,.])(?:\s+(\d{6,10}-\d{1,3}))?/;
   // 発注日: 明細より上にある最初の日付
@@ -12985,6 +12985,37 @@ async function extractYasudaLdenRows(text) {
       deliverydate: `${m[4]}/${m[5].padStart(2, '0')}/${m[6].padStart(2, '0')}`,
       price: parseInt(m[7].replace(/[^\d]/g, ''), 10) || 0, hikiate: m[8] || '', orderno, name,
     });
+  }
+  // 手配番号の行は直下の点線と重なってページ全体のOCRで崩れることがある →
+  // 明細1行目（上位手配番号の行）の位置から、すぐ下の手配番号の部分だけを切り出して英数字モデルで読み直す
+  const miss = items.filter(it => !it.orderno);
+  if (miss.length && ocr && ocr.canvas && ocr.lines) {
+    let ew = null;
+    try {
+      const T = await loadTesseract();
+      ew = await T.createWorker('eng', 1, { workerPath: OCR_WORKER_PATH, corePath: OCR_CORE_PATH, langPath: YASDA_ENG_LANG_PATH });
+      for (const it of miss) {
+        const lnText = l => ocrNormalize(l.text).replace(/O/g, '0');
+        const ln = ocr.lines.find(l => l.bbox && lnText(l).includes(it.upper) && lnText(l).includes(it.drawingno))
+                || ocr.lines.find(l => l.bbox && lnText(l).includes(it.drawingno));
+        if (!ln) continue;
+        const bb = ln.bbox, h = bb.y1 - bb.y0;
+        const found = [];
+        // 文字の高さ・位置の見込み違いに備え、切り出し範囲を少しずつ変えて読み、多数決
+        for (const [dy, hh] of [[0.2, 1.4], [0.3, 1.3], [0.1, 1.5], [0.35, 1.2]]) {
+          const c = yasdaCrop(ocr.canvas, { x: bb.x0 - 6, y: bb.y1 + h * dy, w: h * 7.5, h: h * hh }, false);
+          for (const wl of ['0123456789', '']) {
+            await ew.setParameters({ tessedit_pageseg_mode: '7', tessedit_char_whitelist: wl });
+            const r = await ew.recognize(c);
+            const m = (r.data.text || '').replace(/[oO]/g, '0').replace(/\s/g, '').match(/(\d{10})/);
+            if (m) found.push(m[1]);
+          }
+        }
+        it.orderno = ocrVote(found);
+        console.log(`[安田L伝票] 手配番号を再読取 ${it.upper}/${it.drawingno} → ${it.orderno || '(読めず)'}`, found);
+      }
+    } catch (e) { console.warn('[安田L伝票] 手配番号の再読取に失敗', e); }
+    finally { if (ew) { try { await ew.terminate(); } catch (_) {} } }
   }
   console.log('[安田L伝票]', { orderdate, items });
   return yasdaFinalizeListRows(orderdate, items);
@@ -13114,7 +13145,7 @@ async function parsePDF(file) {
           rows.push(...await extractYasudaKobaiRows(t));
         } else if (/伝\s*票\s*明\s*細\s*表/.test(t) || (/取引先コ.?ード\s*[0O]S[0O]10/.test(t) && /手配番号/.test(t))) {
           console.log('[PDF] → フォーマット6b: 安田工業 L伝票明細表（スキャン画像・OCR）');
-          rows.push(...await extractYasudaLdenRows(t));
+          rows.push(...await extractYasudaLdenRows(t, ocr));
         } else if (/安田工業/.test(t) || (/注\s*文\s*書/.test(t) && /機種号機/.test(t))) {
           console.log('[PDF] → フォーマット6: 安田工業（スキャン画像・OCR）');
           showStatus('processing', `安田工業の注文書を文字認識(OCR)しています… ${file.name}（${p}/${pdf.numPages}ページ）`);
