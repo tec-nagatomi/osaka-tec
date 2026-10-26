@@ -13034,7 +13034,11 @@ async function yasdaFinalizeListRows(orderdate, items) {
   for (const it of items) {
     let p = list.find(x => x.customer_drawing_no === it.drawingno);
     if (!p && list.length) {
-      const near = list.filter(x => x.customer_drawing_no && x.customer_drawing_no.length === it.drawingno.length && ocrEditDistance(x.customer_drawing_no, it.drawingno) <= 1);
+      // ① 読み取り値の中に登録図番がそのまま含まれる（例: 4A400005205 ← 前に余計な文字）
+      // ② 1文字違い（置き換え・余計な文字・抜け）
+      let near = list.filter(x => x.customer_drawing_no && x.customer_drawing_no.length >= 6 && it.drawingno.includes(x.customer_drawing_no));
+      if (near.length > 1) near = near.filter(x => x.customer_drawing_no.length === Math.max(...near.map(y => y.customer_drawing_no.length)));
+      if (near.length !== 1) near = list.filter(x => x.customer_drawing_no && Math.abs(x.customer_drawing_no.length - it.drawingno.length) <= 1 && ocrEditDistance(x.customer_drawing_no, it.drawingno) <= 1);
       if (near.length === 1) { console.log(`[安田L伝票] 図番補正 ${it.drawingno} → ${near[0].customer_drawing_no}`); p = near[0]; it.drawingno = p.customer_drawing_no; }
     }
     if (!p) console.warn(`[安田L伝票] 製品マスタ未登録の図番: ${it.drawingno}`);
