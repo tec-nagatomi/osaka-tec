@@ -2664,6 +2664,23 @@
   .pdg-lightbox .lb-nav.prev { left:18px; } .pdg-lightbox .lb-nav.next { right:18px; }
   .pdg-lightbox .lb-cap { position:absolute; bottom:14px; left:0; right:0; text-align:center; color:#cbd5e1; font-size:12px; }
   @media (max-width: 900px) { .pdd-info { flex-direction:column; } .pdg { flex:none; max-width:none; border-right:0; border-bottom:1px solid #f3f4f6; } }
+
+  /* 製品詳細: 変更履歴ポップアップ */
+  .pd-cl-count:not(:empty) { margin-left:5px; font-size:10px; font-weight:800; color:#fff; background:#64748b; border-radius:999px; padding:1px 6px; }
+  .pd-cl-overlay { position:fixed; inset:0; z-index:5200; background:rgba(15,23,42,.45); display:flex; align-items:center; justify-content:center; padding:16px; }
+  .pd-cl-modal { background:#fff; border-radius:12px; width:min(720px,96vw); max-height:86vh; display:flex; flex-direction:column; box-shadow:0 24px 60px rgba(0,0,0,.3); overflow:hidden; }
+  .pd-cl-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:14px 16px 12px; border-bottom:1px solid #e5e7eb; }
+  .pd-cl-title { display:flex; align-items:center; gap:7px; font-size:15px; font-weight:800; color:#111827; }
+  .pd-cl-title svg { width:17px; height:17px; color:#1d4ed8; }
+  .pd-cl-sub { font-size:11.5px; color:#64748b; margin-top:3px; }
+  .pd-cl-sub .mono { font-family:ui-monospace,Consolas,monospace; font-weight:700; color:#334155; }
+  .pd-cl-body { padding:12px 16px; overflow-y:auto; flex:1; background:#f8fafc; }
+  .pd-cl-body > div > div { background:#fff; }
+  .pd-cl-foot { font-size:10.5px; color:#9ca3af; padding:8px 16px; border-top:1px solid #f1f5f9; text-align:right; }
+
+  /* 受注詳細: 中央カラムが狭いので写真はやや小さめ */
+  .odd-info .pdg { flex:0 0 38%; min-width:220px; max-width:360px; }
+  @media (max-width: 1200px) { .odd-info { flex-direction:column; } .odd-info .pdg { flex:none; max-width:none; border-right:0; border-bottom:1px solid #f3f4f6; } .odd-info .pdg-main { aspect-ratio:16/9; } }
 </style>
 </head>
 <body>
@@ -4133,6 +4150,9 @@
         <span class="dm-head-meta" id="pd-detail-head-meta"></span>
       </div>
       <div class="dm-actions">
+        <button class="dm-btn" onclick="openPdChangelogPopup()" title="この製品の変更履歴（誰が・いつ・どの項目を変更したか）">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3 3 9 9 9"/><polyline points="12 7 12 12 15 14"/></svg>変更履歴<span class="pd-cl-count" id="pd-cl-count"></span>
+        </button>
         <button class="dm-btn" onclick="openRouteEditor()" title="進捗ステータス（基本ルート）を編集">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>進捗ステータス
         </button>
@@ -18248,8 +18268,10 @@ function renderDetailModal(p, children) {
     <section class="dm-card">
       <div class="dm-card-head">
         <span class="dm-card-title">受注情報</span>
-        <span id="changelog-btn-area"></span>
       </div>
+      <div class="pdd-info odd-info">
+      <div class="pdg" id="odg"></div>
+      <div class="pdd-info-side">
       <div class="dm-hero">
         <div class="dm-hero-name">${pd ? esc(pd.product_name || '-') : '<span class="dm-muted">製品マスタ未登録</span>'}</div>
         <div class="dm-hero-tags">${pd ? categoryBadgeHtml(pd.product_category) + secondCategoryBadgeHtml(pd.second_category, pd.part_number, pd.part_number_url, pd.parts) : ''}</div>
@@ -18268,6 +18290,8 @@ function renderDetailModal(p, children) {
         ${f('出荷場所', dash(p.delivery_destination))}
         ${f('注文書原本', sourceHtml, '', 1)}
         ${f('検査表', '<span id="dm-inspection-files" class="dm-muted">確認中…</span>', '', 1)}
+      </div>
+      </div>
       </div>
     </section>
 
@@ -18325,6 +18349,8 @@ function renderDetailModal(p, children) {
   `;
   // 検査表ファイル（受注のOT番号＋子データのOT番号で照合）
   dmFillInspectionFiles([pd && pd.ot_number, ...children.map(c => c._otNumber)]);
+  // 製品写真（製品マスタの写真を表示。ここからも追加・削除できる）
+  pdgMount('odg', () => _detailProductdate || null);
 
   // 編集モードのコンテンツも生成
   renderEditContent(p, children);
@@ -20298,8 +20324,8 @@ async function checkOrderChangelog(orderno, orderId) {
       area.innerHTML = ''; // 重複防止のためリセット
       if (list.length > 0) {
         const btn = document.createElement('button');
-        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>変更履歴';
-        btn.className = 'dm-btn sm amber';
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3 3 9 9 9"/><polyline points="12 7 12 12 15 14"/></svg>変更履歴';
+        btn.className = 'dm-btn';
         btn.title = '変更前の内容を見る';
         btn.onclick = function() { showOrderChangelog(orderno, orderId); };
         area.appendChild(btn);
@@ -22396,51 +22422,60 @@ function pdGotoPage(p) {
 }
 
 // ---- 詳細画面 ----
-// ==================== 製品詳細: 製品写真（Supabase Storage: product-photos／productdate.photos） ====================
+// ==================== 製品写真ギャラリー（Supabase Storage: product-photos／productdate.photos） ====================
 // photos = [{ path, url, at, by }]（先頭が代表写真）。写真はブラウザで長辺1600pxのJPEGに縮小してから保存する。
+// 製品詳細（key='pdg'）と受注詳細（key='odg'）で共用。key ごとに「対象の製品レコードを返す関数」と表示中の番号を持つ。
 const PDG_BUCKET = 'product-photos';
-let pdgIndex = 0;
+const PDG = {};   // key → { get: () => rec, idx }
+let pdgIndex = 0; // （互換用）
 function pdgCanEdit() { try { return typeof canEditPage === 'function' ? canEditPage('productdate') : true; } catch (_) { return true; } }
 function pdgPhotos(rec) { return Array.isArray(rec && rec.photos) ? rec.photos : []; }
-function pdgRec() { return allProductdate.find(r => r.designid === pdDetailCurrentId); }
-function pdgRender(rec) {
-  const box = document.getElementById('pdg');
-  if (!box || !rec) return;
+function pdgRec(k = 'pdg') { const c = PDG[k]; return c ? c.get() : null; }
+function pdgMount(k, getRec) { PDG[k] = { get: getRec, idx: 0 }; pdgRender(k); }
+function pdgRender(k = 'pdg') {
+  if (typeof k !== 'string') k = 'pdg';   // 旧呼び出し pdgRender(rec) 対策
+  const box = document.getElementById(k), ctx = PDG[k];
+  if (!box || !ctx) return;
+  const rec = ctx.get();
+  if (!rec) {   // 製品マスタ未登録
+    box.innerHTML = `<div class="pdg-main"><div class="pdg-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><div>製品マスタ未登録のため<br>写真はありません</div></div></div>`;
+    return;
+  }
   const ph = pdgPhotos(rec), can = pdgCanEdit();
-  if (pdgIndex >= ph.length) pdgIndex = Math.max(0, ph.length - 1);
-  const cur = ph[pdgIndex];
+  if (ctx.idx >= ph.length) ctx.idx = Math.max(0, ph.length - 1);
+  const i0 = ctx.idx, cur = ph[i0];
   const camera = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
   box.innerHTML = `
-    <div class="pdg-main" id="pdg-main">
+    <div class="pdg-main" id="${k}-main">
       ${cur
-        ? `<img src="${esc(cur.url)}" alt="製品写真" onclick="pdgOpenLightbox(${pdgIndex})" loading="lazy">
-           ${ph.length > 1 ? `<button class="pdg-nav prev" type="button" onclick="pdgGo(-1)">‹</button><button class="pdg-nav next" type="button" onclick="pdgGo(1)">›</button>` : ''}
-           <span class="pdg-count">${pdgIndex + 1} / ${ph.length}</span>
-           ${can ? `<div class="pdg-tools">${pdgIndex > 0 ? `<button type="button" onclick="pdgMakeMain(${pdgIndex})" title="一覧の先頭（代表写真）にする">★ 代表にする</button>` : ''}<button type="button" class="del" onclick="pdgDelete(${pdgIndex})">削除</button></div>` : ''}`
-        : `<div class="pdg-empty${can ? ' can' : ''}" ${can ? `onclick="document.getElementById('pdg-file').click()"` : ''}>${camera}
+        ? `<img src="${esc(cur.url)}" alt="製品写真" onclick="pdgOpenLightbox(${i0},'${k}')" loading="lazy">
+           ${ph.length > 1 ? `<button class="pdg-nav prev" type="button" onclick="pdgGo(-1,'${k}')">‹</button><button class="pdg-nav next" type="button" onclick="pdgGo(1,'${k}')">›</button>` : ''}
+           <span class="pdg-count">${i0 + 1} / ${ph.length}</span>
+           ${can ? `<div class="pdg-tools">${i0 > 0 ? `<button type="button" onclick="pdgMakeMain(${i0},'${k}')" title="一番最初に表示する写真にする">★ 代表にする</button>` : ''}<button type="button" class="del" onclick="pdgDelete(${i0},'${k}')">削除</button></div>` : ''}`
+        : `<div class="pdg-empty${can ? ' can' : ''}" ${can ? `onclick="document.getElementById('${k}-file').click()"` : ''}>${camera}
              <div>${can ? '製品写真をドラッグ＆ドロップ<br>またはクリックして追加' : '製品写真はまだ登録されていません'}</div></div>`}
     </div>
-    ${(ph.length > 1 || (can && ph.length)) ? `<div class="pdg-thumbs">${ph.map((p, i) => `<button type="button" class="pdg-thumb${i === pdgIndex ? ' active' : ''}" onclick="pdgSelect(${i})"><img src="${esc(p.url)}" alt="" loading="lazy"></button>`).join('')}${can ? `<button type="button" class="pdg-add" title="写真を追加" onclick="document.getElementById('pdg-file').click()">＋</button>` : ''}</div>` : ''}
-    <div class="pdg-status" id="pdg-status"></div>
-    <input type="file" id="pdg-file" accept="image/*" multiple style="display:none" onchange="pdgUpload(this.files);this.value=''">`;
+    ${(ph.length > 1 || (can && ph.length)) ? `<div class="pdg-thumbs">${ph.map((p, i) => `<button type="button" class="pdg-thumb${i === i0 ? ' active' : ''}" onclick="pdgSelect(${i},'${k}')"><img src="${esc(p.url)}" alt="" loading="lazy"></button>`).join('')}${can ? `<button type="button" class="pdg-add" title="写真を追加" onclick="document.getElementById('${k}-file').click()">＋</button>` : ''}</div>` : ''}
+    <div class="pdg-status" id="${k}-status"></div>
+    <input type="file" id="${k}-file" accept="image/*" multiple style="display:none" onchange="pdgUpload(this.files,'${k}');this.value=''">`;
   if (can) {
-    const main = document.getElementById('pdg-main');
+    const main = document.getElementById(k + '-main');
     main.addEventListener('dragover', e => { e.preventDefault(); main.classList.add('dragover'); });
     main.addEventListener('dragleave', () => main.classList.remove('dragover'));
-    main.addEventListener('drop', e => { e.preventDefault(); main.classList.remove('dragover'); pdgUpload(e.dataTransfer.files); });
+    main.addEventListener('drop', e => { e.preventDefault(); main.classList.remove('dragover'); pdgUpload(e.dataTransfer.files, k); });
   }
 }
-function pdgSelect(i) { pdgIndex = i; pdgRender(pdgRec()); }
-function pdgGo(d) { const n = pdgPhotos(pdgRec()).length; if (!n) return; pdgIndex = (pdgIndex + d + n) % n; pdgRender(pdgRec()); }
-function pdgStatus(msg) { const el = document.getElementById('pdg-status'); if (el) el.textContent = msg || ''; }
+function pdgSelect(i, k = 'pdg') { if (PDG[k]) { PDG[k].idx = i; pdgRender(k); } }
+function pdgGo(d, k = 'pdg') { const n = pdgPhotos(pdgRec(k)).length; if (!n || !PDG[k]) return; PDG[k].idx = (PDG[k].idx + d + n) % n; pdgRender(k); }
+function pdgStatus(msg, k = 'pdg') { const el = document.getElementById(k + '-status'); if (el) el.textContent = msg || ''; }
 // 画像を長辺1600px・JPEGに縮小
 function pdgResize(file) {
   return new Promise((resolve, reject) => {
     const img = new Image(), url = URL.createObjectURL(file);
     img.onload = () => {
-      const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const r = Math.min(1, 1600 / Math.max(img.width, img.height));
       const c = document.createElement('canvas');
-      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.width = Math.round(img.width * r); c.height = Math.round(img.height * r);
       c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
       URL.revokeObjectURL(url);
       c.toBlob(b => b ? resolve(b) : reject(new Error('画像の変換に失敗しました')), 'image/jpeg', 0.85);
@@ -22455,9 +22490,14 @@ async function pdgSavePhotos(rec, photos) {
   });
   if (!res.ok) throw new Error('製品マスタの更新に失敗しました (HTTP ' + res.status + ')');
   rec.photos = photos;
+  // 同じ製品の別の控え（製品一覧の allProductdate／受注詳細の _detailProductdate）にも反映
+  const other = (typeof allProductdate !== 'undefined' ? allProductdate : []).find(r => r.designid === rec.designid);
+  if (other && other !== rec) other.photos = photos;
+  if (typeof _detailProductdate !== 'undefined' && _detailProductdate && _detailProductdate.designid === rec.designid && _detailProductdate !== rec) _detailProductdate.photos = photos;
+  if (pdDetailCurrentId === rec.designid) setTimeout(() => pdChangelogCount(rec.designid), 500);   // 変更履歴ボタンの件数を更新
 }
-async function pdgUpload(files) {
-  const rec = pdgRec();
+async function pdgUpload(files, k = 'pdg') {
+  const rec = pdgRec(k);
   if (!rec || !files || !files.length) return;
   if (!pdgCanEdit()) { alert('製品写真の登録には製品登録の編集権限が必要です'); return; }
   const list = [...files].filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|gif|webp|bmp|heic)$/i.test(f.name));
@@ -22466,7 +22506,7 @@ async function pdgUpload(files) {
   const by = (typeof currentUser !== 'undefined' && currentUser) ? (currentUser.loginname || currentUser.userid || '') : '';
   try {
     for (let i = 0; i < list.length; i++) {
-      pdgStatus(`写真を保存中… ${i + 1}/${list.length}`);
+      pdgStatus(`写真を保存中… ${i + 1}/${list.length}`, k);
       const blob = await pdgResize(list[i]);
       const path = `${rec.designid}/${Date.now()}_${i}.jpg`;
       const up = await fetch(`${SUPABASE_URL}/storage/v1/object/${PDG_BUCKET}/${path}`, {
@@ -22476,51 +22516,51 @@ async function pdgUpload(files) {
       photos.push({ path, url: `${SUPABASE_URL}/storage/v1/object/public/${PDG_BUCKET}/${path}`, at: new Date().toISOString(), by });
     }
     await pdgSavePhotos(rec, photos);
-    pdgIndex = photos.length - 1;
-    pdgRender(rec);
-    pdgStatus(`${list.length}枚の写真を登録しました`);
-    setTimeout(() => pdgStatus(''), 2500);
+    PDG[k].idx = photos.length - 1;
+    pdgRender(k);
+    pdgStatus(`${list.length}枚の写真を登録しました`, k);
+    setTimeout(() => pdgStatus('', k), 2500);
   } catch (e) {
     console.error('[製品写真] 登録失敗', e);
-    pdgStatus('');
+    pdgStatus('', k);
     alert(e.message);
   }
 }
-async function pdgDelete(i) {
-  const rec = pdgRec(); const ph = pdgPhotos(rec); const p = ph[i];
+async function pdgDelete(i, k = 'pdg') {
+  const rec = pdgRec(k); const ph = pdgPhotos(rec); const p = ph[i];
   if (!p || !confirm('この写真を削除しますか？')) return;
   try {
     await fetch(`${SUPABASE_URL}/storage/v1/object/${PDG_BUCKET}/${p.path}`, { method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }).catch(() => {});
-    await pdgSavePhotos(rec, ph.filter((_, k) => k !== i));
-    pdgRender(rec);
+    await pdgSavePhotos(rec, ph.filter((_, j) => j !== i));
+    pdgRender(k);
   } catch (e) { alert(e.message); }
 }
-async function pdgMakeMain(i) {
-  const rec = pdgRec(); const ph = [...pdgPhotos(rec)];
+async function pdgMakeMain(i, k = 'pdg') {
+  const rec = pdgRec(k); const ph = [...pdgPhotos(rec)];
   if (!ph[i]) return;
   const [p] = ph.splice(i, 1); ph.unshift(p);
-  try { await pdgSavePhotos(rec, ph); pdgIndex = 0; pdgRender(rec); } catch (e) { alert(e.message); }
+  try { await pdgSavePhotos(rec, ph); PDG[k].idx = 0; pdgRender(k); } catch (e) { alert(e.message); }
 }
 // 拡大表示（← → で切替、Esc で閉じる）
-function pdgOpenLightbox(i) {
-  const rec = pdgRec(); const ph = pdgPhotos(rec);
+function pdgOpenLightbox(i, k = 'pdg') {
+  const rec = pdgRec(k); const ph = pdgPhotos(rec);
   if (!ph.length) return;
-  let k = i;
+  let n = i;
   const lb = document.createElement('div');
   lb.className = 'pdg-lightbox';
   const draw = () => {
-    lb.innerHTML = `<img src="${esc(ph[k].url)}" alt="">
+    lb.innerHTML = `<img src="${esc(ph[n].url)}" alt="">
       <button class="lb-close" type="button" title="閉じる (Esc)">×</button>
       ${ph.length > 1 ? '<button class="lb-nav prev" type="button">‹</button><button class="lb-nav next" type="button">›</button>' : ''}
-      <div class="lb-cap">${esc(rec.product_name || '')}　${esc(rec.ot_number || '')}　${k + 1} / ${ph.length}</div>`;
+      <div class="lb-cap">${esc(rec.product_name || '')}　${esc(rec.ot_number || '')}　${n + 1} / ${ph.length}</div>`;
     lb.querySelector('.lb-close').onclick = close;
-    lb.querySelector('.prev') && (lb.querySelector('.prev').onclick = e => { e.stopPropagation(); k = (k - 1 + ph.length) % ph.length; draw(); });
-    lb.querySelector('.next') && (lb.querySelector('.next').onclick = e => { e.stopPropagation(); k = (k + 1) % ph.length; draw(); });
+    lb.querySelector('.prev') && (lb.querySelector('.prev').onclick = e => { e.stopPropagation(); n = (n - 1 + ph.length) % ph.length; draw(); });
+    lb.querySelector('.next') && (lb.querySelector('.next').onclick = e => { e.stopPropagation(); n = (n + 1) % ph.length; draw(); });
   };
   const key = e => {
     if (e.key === 'Escape') { e.stopPropagation(); close(); }
-    else if (e.key === 'ArrowLeft' && ph.length > 1) { k = (k - 1 + ph.length) % ph.length; draw(); }
-    else if (e.key === 'ArrowRight' && ph.length > 1) { k = (k + 1) % ph.length; draw(); }
+    else if (e.key === 'ArrowLeft' && ph.length > 1) { n = (n - 1 + ph.length) % ph.length; draw(); }
+    else if (e.key === 'ArrowRight' && ph.length > 1) { n = (n + 1) % ph.length; draw(); }
   };
   function close() { document.removeEventListener('keydown', key, true); lb.remove(); }
   lb.addEventListener('click', e => { if (e.target === lb) close(); });
@@ -22594,16 +22634,6 @@ function openPdDetail(id) {
           </div>
         </section>
 
-        <!-- ③ 変更履歴 -->
-        <section class="dm-card sub">
-          <div class="dm-card-head">
-            <span class="dm-card-title">変更履歴</span>
-            <span style="font-size:10.5px;color:#9ca3af;margin-left:auto;">直近5回分を保存（それより古い履歴は自動で削除）</span>
-          </div>
-          <div class="dm-card-body">
-            <div id="pd-detail-changelog" style="font-size:12px;color:#9ca3af;">読み込み中...</div>
-          </div>
-        </section>
       </div>
 
       <!-- 右: 製品マスタメモ -->
@@ -22611,12 +22641,11 @@ function openPdDetail(id) {
     </div>`;
 
   // 製品写真ギャラリー
-  pdgIndex = 0;
-  pdgRender(rec);
+  pdgMount('pdg', () => allProductdate.find(r => r.designid === id));
   // 進捗ステータス（基本ルート）を読み込んで表示
   renderDetailRoute(id);
-  // 変更履歴を読み込んで表示
-  loadPdChangelog(id);
+  // 変更履歴はヘッダーの「変更履歴」ボタンからポップアップで表示（ここでは件数だけ取得）
+  pdChangelogCount(id);
   // 検査表ファイル（製品のOT番号＋構成品のOT番号で照合）
   (async () => {
     let childOts = [];
@@ -22641,7 +22670,7 @@ const PD_FIELD_LABELS = {
   delivery_destination: '納入先', remarks: '備考', approved_url: '承認図URL', drawing_url: '図面URL',
   old_drawing_url: '旧図面URL', component_url: '構成パーツURL',
   width_mm: '幅(mm)', depth_mm: '奥行(mm)', height_mm: '高さ(mm)', weight_kg: '重量(kg)', rotatable: '回転可',
-  stroke_mm: 'ストローク(mm)', sliding_resistance: '摺動抵抗', designid: 'ID',
+  stroke_mm: 'ストローク(mm)', sliding_resistance: '摺動抵抗', designid: 'ID', photos: '製品写真',
 };
 // ---- 製品マスタのExcel出力 ----
 // 表示中（検索・販売先フィルター適用後）のデータを出力。Shift+クリック、または絞り込みなしの場合は全件。
@@ -22695,6 +22724,72 @@ function exportProductdateExcel(ev) {
   catch (err) { alert('Excel出力に失敗しました: ' + err.message); }
 }
 
+// 変更履歴: 製品写真（photos の JSON）の変更を「何枚追加／削除／代表写真を変更」の文章＋サムネイルで表示
+function pdPhotoChangeHtml(oldV, newV) {
+  const parse = v => { try { const a = typeof v === 'string' ? JSON.parse(v) : v; return Array.isArray(a) ? a : []; } catch (_) { return []; } };
+  const o = parse(oldV), n = parse(newV);
+  const op = new Set(o.map(x => x.path)), np = new Set(n.map(x => x.path));
+  const added = n.filter(x => !op.has(x.path)), removed = o.filter(x => !np.has(x.path));
+  const parts = [];
+  if (added.length) parts.push(`<b style="color:#059669;">${added.length}枚を追加</b>`);
+  if (removed.length) parts.push(`<b style="color:#dc2626;">${removed.length}枚を削除</b>`);
+  if (!added.length && !removed.length && o.length && n.length && o[0].path !== n[0].path) parts.push('<b style="color:#1d4ed8;">代表写真を変更</b>');
+  if (!parts.length) parts.push('並び順を変更');
+  const thumb = (x, del) => `<img src="${esc(x.url)}" alt="" loading="lazy" title="${del ? '削除した写真' : '追加した写真'}" style="width:46px;height:34px;object-fit:cover;border-radius:4px;border:1px solid ${del ? '#fecaca' : '#e5e7eb'};${del ? 'opacity:.45;filter:grayscale(1);' : ''}" onerror="this.style.display='none'">`;
+  const changedMain = (!added.length && !removed.length && n.length) ? [n[0]] : [];
+  return `${parts.join('・')}<span style="color:#94a3b8;">（${o.length}枚 → ${n.length}枚）</span>`
+    + ((added.length || changedMain.length) ? `<div style="display:flex;gap:4px;margin:3px 0 2px 82px;flex-wrap:wrap;">${[...added, ...changedMain].map(x => thumb(x, false)).join('')}</div>` : '')
+    + (removed.length ? `<div style="display:flex;gap:4px;margin:3px 0 2px 82px;flex-wrap:wrap;">${removed.map(x => thumb(x, true)).join('')}</div>` : '');
+}
+
+// ---- 製品詳細: 変更履歴ポップアップ ----
+async function pdChangelogCount(designid) {
+  const el = document.getElementById('pd-cl-count');
+  if (el) el.textContent = '';
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/productdate_changelog?designid=eq.${designid}&select=changed_at,changed_by,action&limit=300`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } });
+    if (!res.ok || pdDetailCurrentId !== designid) return;
+    // 保存操作（同時刻・同じ人）の回数を件数として表示
+    const n = new Set((await res.json()).map(l => `${l.changed_at}|${l.changed_by || ''}|${l.action}`)).size;
+    if (el && n) el.textContent = n;
+  } catch (_) {}
+}
+function openPdChangelogPopup() {
+  const rec = allProductdate.find(r => r.designid === pdDetailCurrentId);
+  if (!rec) return;
+  closePdChangelogPopup();
+  const ov = document.createElement('div');
+  ov.id = 'pd-cl-overlay';
+  ov.className = 'pd-cl-overlay';
+  ov.innerHTML = `
+    <div class="pd-cl-modal" role="dialog" aria-label="変更履歴">
+      <div class="pd-cl-head">
+        <div>
+          <div class="pd-cl-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3 3 9 9 9"/><polyline points="12 7 12 12 15 14"/></svg>
+            変更履歴
+          </div>
+          <div class="pd-cl-sub"><span class="mono">${esc(rec.customer_drawing_no || '-')}</span>　${esc(rec.product_name || '')}　<span class="mono">${esc(rec.ot_number || '')}</span></div>
+        </div>
+        <button class="detail-modal-close" type="button" onclick="closePdChangelogPopup()" title="閉じる（Esc）">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="pd-cl-body"><div id="pd-detail-changelog" style="font-size:12px;color:#9ca3af;">読み込み中...</div></div>
+      <div class="pd-cl-foot">直近5回分を保存（それより古い履歴は自動で削除）</div>
+    </div>`;
+  ov.addEventListener('click', e => { if (e.target === ov) closePdChangelogPopup(); });
+  document.body.appendChild(ov);
+  document.addEventListener('keydown', pdChangelogEsc, true);
+  loadPdChangelog(rec.designid);
+}
+function pdChangelogEsc(e) { if (e.key === 'Escape') { e.stopPropagation(); closePdChangelogPopup(); } }
+function closePdChangelogPopup() {
+  document.getElementById('pd-cl-overlay')?.remove();
+  document.removeEventListener('keydown', pdChangelogEsc, true);
+}
+
 async function loadPdChangelog(designid) {
   const el = document.getElementById('pd-detail-changelog');
   if (!el) return;
@@ -22721,7 +22816,7 @@ async function loadPdChangelog(designid) {
   };
   const val = (v) => (v == null || v === '') ? '<span style="color:#9ca3af;">（空）</span>' : esc(String(v));
   const badge = { '追加': '#059669', '変更': '#1d4ed8', '削除': '#dc2626' };
-  el.innerHTML = `<div style="max-height:260px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:8px;">` + groups.map(g => `
+  el.innerHTML = `<div style="border:1px solid #e5e7eb;border-radius:8px;">` + groups.map(g => `
     <div style="padding:8px 10px;border-bottom:1px solid #f1f5f9;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;color:#111827;">
         <span style="font-size:10px;font-weight:700;color:#fff;background:${badge[g.action] || '#64748b'};border-radius:4px;padding:1px 6px;">${esc(g.action)}</span>
@@ -22730,7 +22825,7 @@ async function loadPdChangelog(designid) {
       </div>
       ${g.action === '変更'
         ? g.items.map(l => `<div style="font-size:11.5px;color:#111827;padding-left:4px;line-height:1.6;word-break:break-all;">
-            <span style="display:inline-block;min-width:78px;color:#475569;">${esc(PD_FIELD_LABELS[l.field] || l.field || '')}</span>${val(l.old_value)} <span style="color:#94a3b8;">→</span> ${val(l.new_value)}</div>`).join('')
+            <span style="display:inline-block;min-width:78px;color:#475569;">${esc(PD_FIELD_LABELS[l.field] || l.field || '')}</span>${l.field === 'photos' ? pdPhotoChangeHtml(l.old_value, l.new_value) : `${val(l.old_value)} <span style="color:#94a3b8;">→</span> ${val(l.new_value)}`}</div>`).join('')
         : `<div style="font-size:11.5px;color:#111827;padding-left:4px;word-break:break-all;">${val(g.action === '削除' ? g.items[0].old_value : g.items[0].new_value)}</div>`}
     </div>`).join('') + `</div>`;
 }
@@ -22762,6 +22857,7 @@ function renderPdDetailMemoPanel(rec) {
 }
 
 function closePdDetail() {
+  closePdChangelogPopup();
   document.getElementById('pd-detail-overlay').classList.remove('open');
 }
 
@@ -24077,6 +24173,7 @@ async function saveRoute() {
         <span class="dm-head-meta" id="detail-head-meta"></span>
       </div>
       <div class="dm-actions">
+        <span id="changelog-btn-area"></span>
         <button id="work-order-toggle-btn" class="dm-btn toggle on" onclick="toggleWorkOrder()" title="左の作業指示書パネルの表示/非表示">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18"/><rect x="14" y="3" width="7" height="18"/></svg>
           指示書
