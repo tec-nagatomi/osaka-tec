@@ -13556,6 +13556,144 @@ async function extractNakamuraRows(text, ocr) {
   });
 }
 
+// ---- フォーマット2b: ユアサネオテック「注文書」（DocuWorks等でスキャンした画像PDF） ----
+// 表の罫線が文字に重なってページ全体のOCRでは明細が読めないため、罫線から表の位置を求めてマスごとに読む。
+//   注文No（例 WAWZ0962）・発行日はページ全体の文字から。
+//   明細 1行 = 上段「大阪ﾃｯｸ 品名」/ 下段「OT-044216-5」、数量 / 単位(＊) / 単価 / 金額 / 希望納期 / 回答納期 / 客先注文No
+//   客先図番は OT番号 で製品マスタ（販売先＝ユアサネオテック）から引く。
+function isYuasaScanText(t) {
+  const u = String(t || '').replace(/\s/g, '');
+  return /ユアサネオテック/.test(u) && /注文N[oO0]/.test(u);
+}
+// 列の境界（表の左端=0・右端=1）: No | 品名・型式 | 数量 | 単位 | 単価 | 金額 | 希望納期 | 回答納期 | 客先注文No
+const YUASA_SCAN_COLS = [0, 0.025, 0.385, 0.470, 0.507, 0.601, 0.684, 0.758, 0.829, 1];
+function yuasaScanFindGrid(cv) {
+  const W = cv.width, H = cv.height;
+  const px = cv.getContext('2d').getImageData(0, 0, W, H).data;
+  const dark = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) { const j = i * 4; dark[i] = (px[j] * 0.299 + px[j + 1] * 0.587 + px[j + 2] * 0.114) < 170 ? 1 : 0; }
+  const lines = [];
+  for (let y = 0; y < H; y++) {
+    let s = 0; const o = y * W;
+    for (let x = 0; x < W; x++) s += dark[o + x];
+    if (s > W * 0.5) { const l = lines[lines.length - 1]; if (l && y - l.y1 <= 3) l.y1 = y; else lines.push({ y0: y, y1: y }); }
+  }
+  const ys = lines.map(l => (l.y0 + l.y1) / 2);
+  // 明細6行 = 等間隔に並ぶ7本の横線。見出し行も同じくらいの高さなので、等間隔の並びの「最後の7本」を明細とする
+  let k = -1;
+  for (let i = 0; i + 6 < ys.length; i++) {
+    const g = []; for (let j = 0; j < 6; j++) g.push(ys[i + j + 1] - ys[i + j]);
+    const m = g.reduce((a, b) => a + b) / 6;
+    if (m > H * 0.025 && g.every(v => Math.abs(v - m) < m * 0.15)) {
+      k = i;
+      while (k + 7 < ys.length && Math.abs((ys[k + 7] - ys[k + 6]) - m) < m * 0.15) k++;
+      break;
+    }
+  }
+  if (k < 0) return null;
+  const rowsY = ys.slice(k, k + 7);
+  const y0 = Math.round(rowsY[0]), y1 = Math.round(rowsY[6]), bh = y1 - y0;
+  const vx = [];
+  for (let x = 0; x < W; x++) {
+    let s = 0; for (let y = y0; y < y1; y++) s += dark[y * W + x];
+    if (s > bh * 0.6) { const l = vx[vx.length - 1]; if (l && x - l.x1 <= 3) l.x1 = x; else vx.push({ x0: x, x1: x }); }
+  }
+  const xs = vx.map(v => (v.x0 + v.x1) / 2);
+  if (xs.length < 2) return null;
+  const left = xs[0], right = xs[xs.length - 1], Wt = right - left;
+  if (Wt < W * 0.5) return null;
+  const cols = YUASA_SCAN_COLS.map(r => {
+    const t = left + Wt * r;
+    let best = t, bd = Wt * 0.02;
+    for (const x of xs) { const d = Math.abs(x - t); if (d < bd) { bd = d; best = x; } }
+    return best;
+  });
+  return { rowsY, left, right, Wt, cols, rowH: bh / 6 };
+}
+async function extractYuasaScanRows(ocr, text) {
+  const t = String(text || '');
+  const flat = t.replace(/[ \t]/g, '');
+  // 注文No（例 WAWZ0962）: 右隣の文字とくっつかないよう、空白を残した文字で読む
+  const om = t.match(/注\s*文\s*N\s*[oO0]\s*\.?\s*([A-Z]{2,6})\s?([0-9O]{3,6})(?![0-9A-Z])/);
+  const orderno = om ? om[1] + om[2].replace(/O/g, '0') : '';
+  const dm = flat.match(/発行日(20\d{2})[\/年](\d{1,2})[\/月](\d{1,2})/);
+  const orderdate = dm ? `${dm[1]}/${dm[2].padStart(2, '0')}/${dm[3].padStart(2, '0')}` : '';
+  let cv = ocr.canvas;
+  let g = yuasaScanFindGrid(cv);
+  if (!g) { cv = yasdaDeskew(cv); g = yuasaScanFindGrid(cv); }
+  if (!g) { console.warn('[ユアサOCR] 表の罫線が見つかりませんでした'); return []; }
+  console.log('[ユアサOCR] 表', { orderno, orderdate, rows: g.rowsY.map(Math.round), cols: g.cols.map(Math.round) });
+  const T = await loadTesseract();
+  const ew = await T.createWorker('eng', 1, { workerPath: OCR_WORKER_PATH, corePath: OCR_CORE_PATH, langPath: YASDA_ENG_LANG_PATH });
+  const read = async (c, psm, wl) => { await ew.setParameters({ tessedit_pageseg_mode: psm, tessedit_char_whitelist: wl || '' }); const r = await ew.recognize(c); return (r.data.text || '').replace(/\n/g, ' ').trim(); };
+  const num = s => { const d = String(s).replace(/[^\d]/g, ''); return d ? parseInt(d, 10) : 0; };
+  const C = g.cols, pad = 5;
+  const cell = (ci, ri, part) => {   // part: 'all' | 'top' | 'bot'
+    const yA = g.rowsY[ri], yB = g.rowsY[ri + 1], h = yB - yA;
+    const y = part === 'bot' ? yA + h * 0.48 : yA + pad, hh = part === 'all' ? h - pad * 2 : h * 0.5 - pad;
+    return yasdaCrop(cv, { x: C[ci] + pad, y, w: C[ci + 1] - C[ci] - pad * 2, h: hh }, true);
+  };
+  const items = [];
+  try {
+    for (let ri = 0; ri < 6; ri++) {
+      const cQty = cell(2, ri, 'all'), cAmt = cell(5, ri, 'all');
+      if (cQty._ink < 0.004 && cAmt._ink < 0.004) continue;   // 空欄の行
+      const D = '0123456789,';
+      const qs = [await read(cQty, '7', '0123456789'), await read(cQty, '7', '')].map(num).filter(Boolean);
+      const cPr = cell(4, ri, 'all');
+      const ps = [await read(cPr, '7', D), await read(cPr, '7', '')].map(num).filter(Boolean);
+      const as = [await read(cAmt, '7', D), await read(cAmt, '7', '')].map(num).filter(Boolean);
+      // 数量×単価＝金額 となる組み合わせを優先
+      let qty = 0, price = 0, amount = 0;
+      for (const q of qs) for (const p of ps) for (const a of as) if (!qty && q * p === a) { qty = q; price = p; amount = a; }
+      if (!qty) {
+        qty = ocrVote(qs) || 1; amount = ocrVote(as) || 0; price = ocrVote(ps) || 0;
+        if (amount && qty && amount % qty === 0 && price * qty !== amount) price = amount / qty;
+      }
+      const cDl = cell(6, ri, 'all');
+      const dl = [await read(cDl, '7', '0123456789/'), await read(cDl, '7', '')]
+        .map(s => { const m = s.replace(/\s/g, '').match(/(20\d{2})\/?(\d{2})\/?(\d{2})/); return m ? `${m[1]}/${m[2]}/${m[3]}` : ''; });
+      const deliverydate = ocrVote(dl);
+      const cOt = cell(1, ri, 'bot');
+      const ots = [await read(cOt, '7', 'OT-0123456789'), await read(cOt, '7', '')]
+        .map(s => { const m = s.replace(/\s/g, '').toUpperCase().replace(/^0T/, 'OT').match(/[O0]T-?(\d{6})(?:-?(\d{1,2}))?/); return m ? `OT-${m[1]}${m[2] ? '-' + m[2] : ''}` : ''; });
+      const otRead = ocrVote(ots);
+      const name = (await read(cell(1, ri, 'top'), '7', '')).replace(/^[^A-Z]*(?=[A-Z])/, '').trim();
+      const cNo = cell(8, ri, 'top');
+      const custNo = cNo._ink > 0.004 ? (await read(cNo, '7', '')).replace(/\s/g, '') : '';
+      // 罫線の切れ端などを明細と誤認しないよう、OT番号が読めた行か、数量×単価＝金額が合う行だけを採用
+      if (!otRead && !(amount && qty * price === amount)) { console.log('[ユアサOCR] 明細ではない行をスキップ', ri + 1, { qs, ps, as, ots }); continue; }
+      items.push({ otRead, otCands: ots.filter(Boolean), name, qty, price, amount, deliverydate, custNo });
+    }
+  } finally {
+    try { await ew.terminate(); } catch (_) {}
+  }
+  console.log('[ユアサOCR] 明細', items);
+  if (!items.length) return [];
+  let list = [];
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/productdate?client=like.*${encodeURIComponent('ユアサネオテック')}*&select=customer_drawing_no,ot_number,product_name&limit=3000`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } });
+    if (res.ok) list = await res.json();
+  } catch (e) { console.warn('[ユアサOCR] 製品マスタ取得失敗', e); }
+  const norm = v => String(v || '').normalize('NFKC').replace(/\s/g, '').toUpperCase();
+  const isFor = p => /用/.test(p.ot_number || '') || /用/.test(p.customer_drawing_no || '');
+  return items.map(it => {
+    // OT番号で製品マスタを引く（読み違いに備え、読めた候補を順に試す）。同じOT番号が複数あるときは「用」以外・図番の若いものを採用
+    let p = null;
+    for (const o of [...new Set([it.otRead, ...it.otCands].filter(Boolean))]) {
+      const hits = list.filter(x => norm(x.ot_number) === norm(o) && !isFor(x)).sort((a, b) => String(a.customer_drawing_no).localeCompare(String(b.customer_drawing_no)));
+      if (hits.length) { p = hits[0]; if (hits.length > 1) console.warn(`[ユアサOCR] ${o} は製品マスタに${hits.length}件あります → ${p.customer_drawing_no} を採用`, hits); break; }
+    }
+    if (!p) console.warn('[ユアサOCR] 製品マスタと照合できませんでした', it);
+    return {
+      orderdate, orderno, drawingno: p ? p.customer_drawing_no : '', quantity: it.qty, unit: '', price: it.price,
+      originalno: it.custNo || '', deliverydate: it.deliverydate, productno: null, delivery_destination: null, shippingdate: null,
+      _otNumber: (p && p.ot_number) || it.otRead || undefined, _productName: (p && p.product_name) || it.name || undefined, _ocr: true,
+    };
+  });
+}
+
 // ---- PDF Parser ----
 async function parsePDF(file) {
   const buf = await file.arrayBuffer();
@@ -13616,6 +13754,10 @@ async function parsePDF(file) {
             nomuraSpecs.push({ seiban: km ? km[1] : '', ot, tails });
             console.log('[PDF] → 野村製作所 購入仕様書: 貴社図番', ot, '候補', tails, '工事番号', km ? km[1] : '-');
           }
+        } else if (isYuasaScanText(t)) {
+          console.log('[PDF] → フォーマット2b: ユアサネオテック（スキャン画像・OCR）');
+          showStatus('processing', `ユアサネオテックの注文書を文字認識(OCR)しています… ${file.name}（${p}/${pdf.numPages}ページ）`);
+          rows.push(...await extractYuasaScanRows(ocr, t));
         } else if (/購\s*買\s*品\s*納\s*入\s*予\s*定\s*連\s*絡\s*表/.test(t) || /ZPAP0200/.test(t)) {
           console.log('[PDF] → フォーマット6c: 安田工業 購買品納入予定連絡表（スキャン画像・OCR）');
           rows.push(...await extractYasudaKobaiRows(t));
