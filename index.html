@@ -4572,6 +4572,23 @@ function pdIsBetter(a, b) {   // a の方を正とするなら true
   return (Number(a.designid) || 0) > (Number(b.designid) || 0);
 }
 // 客先図番ごとに正とする1件だけを残した配列を返す（客先図番の無い行はそのまま残す）
+// ---- 子データ → 構成品（productdate_child）の対応位置 ----
+// シールNoがある子データは「シールNo − 受注内の最小シールNo」で位置を決める（従来どおり）。
+// シールNoが空欄の子データ（自動採番停止後に作成されたもの）は、
+// 子データの登録順（id昇順）で、採番済みの子データの後ろに順番に割り当てる。
+function childSlotIndex(c, siblings) {
+  const sibs = (siblings && siblings.length) ? siblings : [c];
+  const nums = sibs.map(x => parseInt(x.sealno)).filter(n => !isNaN(n));
+  const n = parseInt(c.sealno);
+  const min = nums.length ? Math.min(...nums) : 0;
+  if (!isNaN(n)) return n - min;
+  const offset = nums.length ? (Math.max(...nums) - min + 1) : 0;
+  const unsealed = sibs.filter(x => isNaN(parseInt(x.sealno)))
+    .sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
+  const i = unsealed.findIndex(x => x === c || (x.id != null && x.id === c.id));
+  return offset + Math.max(0, i);
+}
+
 function pdBest(list) {
   const best = new Map(), out = [];
   for (const p of (list || [])) {
@@ -4781,8 +4798,8 @@ async function loadShipOtNumbers(rows) {
       let ot = parentOt.get(order.drawingno) || '';
       const pdc = pdChildMap.get(order.drawingno);
       if (pdc && pdc.length) {
-        const b = base.get(c.order_id) ?? parseInt(c.sealno);
-        const idx = (parseInt(c.sealno) - b) % pdc.length;
+        const sibs = children.filter(x => x.order_id === c.order_id);
+        const idx = childSlotIndex(c, sibs) % pdc.length;
         ot = pdc[idx]?.ot_number || ot;
       }
       if (ot) shipOtMap.set(c.id, ot);
@@ -20341,11 +20358,10 @@ function buildChildRows(children) {
 
   return children.map(function(c, i) {
     const pdChildren = window._pdChildList || [];
-    const sealNum = parseInt(c.sealno);
     let productName = _detailProductdate?.product_name || '-';
     let otNumber = _detailProductdate?.ot_number || '-';
-    if (pdChildren.length > 0 && !isNaN(sealNum)) {
-      const pdIdx = (sealNum - sealBase) % pdChildren.length;
+    if (pdChildren.length > 0) {
+      const pdIdx = childSlotIndex(c, children) % pdChildren.length;
       if (pdChildren[pdIdx]) {
         productName = pdChildren[pdIdx].product_name;
         otNumber = pdChildren[pdIdx].ot_number || '-';
@@ -20785,11 +20801,10 @@ async function loadCalendarEvents() {
       const nums = kids.map(c => parseInt(c.sealno)).filter(n => !isNaN(n));
       const base = nums.length ? Math.min(...nums) : 0;
       const list = kids.map(c => {
-        const n = parseInt(c.sealno);
         let name = ownName, ot = ownOt;
-        if (pdc.length && !isNaN(n)) { const k = pdc[(n - base) % pdc.length]; if (k) { name = k.product_name || ownName; ot = k.ot_number || '-'; } }
+        if (pdc.length) { const k = pdc[childSlotIndex(c, kids) % pdc.length]; if (k) { name = k.product_name || ownName; ot = k.ot_number || '-'; } }
         return { id: c.id, seal: c.sealno || '', delivery: c.delivery ? String(c.delivery).substring(0, 10) : '', name, ot };
-      }).sort((a, b) => (parseInt(a.seal) || 0) - (parseInt(b.seal) || 0) || a.id - b.id);
+      }).sort((a, b) => (parseInt(a.seal) || Infinity) - (parseInt(b.seal) || Infinity) || a.id - b.id);
       kidDetailCache.set(orderId, list);
       return list;
     };
@@ -22142,8 +22157,8 @@ async function printInspectionSheets(dateKey) {
     const pdChildren = pdChildMap.get(order.drawingno);
     let ot_number = order.pd_ot_number || '';
     if (pdChildren && pdChildren.length > 0) {
-      const base = orderSealBase.get(c.order_id) || parseInt(c.sealno);
-      const idx = (parseInt(c.sealno) - base) % pdChildren.length;
+      const sibs = children.filter(x => x.order_id === c.order_id);
+      const idx = childSlotIndex(c, sibs) % pdChildren.length;
       ot_number = pdChildren[idx]?.ot_number || ot_number;
     }
 
