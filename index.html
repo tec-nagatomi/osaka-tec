@@ -11509,7 +11509,7 @@ async function puBuildOrderRows(groups) {
     const groupDefaultDest = (factory ? factory + '_' : '') + g.requester;
     rows = rows.concat(g.items.map(it => {
       const totalQty = it.qty * (it.amount || 1);
-      return { name: it.product_name, amount: it.amount, unit: it.unit, qty: it.qty, totalQty, box: it.box || '', destination: it.destination || groupDefaultDest };
+      return { name: it.product_name, amount: it.amount, unit: it.unit, qty: it.qty, totalQty, box: it.box || '', desiredDate: it.desired_date || '', destination: it.destination || groupDefaultDest };
     }));
   }
   return rows;
@@ -11533,20 +11533,23 @@ function puRenderOrderPreviewModal(company, rows) {
       + '<div style="font-size:15px;font-weight:700;">' + puEsc(company) + '　御中</div>'
       + '<div style="font-size:13px;">' + dateStr + '</div>'
     + '</div>'
+    // 品名は折り返し可（2行表示OK）、それ以外の列は折り返さない
     + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
     + '<tr style="background:#f1f5f9;"><th style="border:1px solid #cbd5e1;padding:5px 8px;">商品名</th>'
-      + '<th style="border:1px solid #cbd5e1;padding:5px 8px;">入数</th>'
-      + '<th style="border:1px solid #cbd5e1;padding:5px 8px;">単位</th>'
-      + '<th style="border:1px solid #cbd5e1;padding:5px 8px;">注文数</th>'
-      + '<th style="border:1px solid #cbd5e1;padding:5px 8px;">荷姿</th>'
-      + '<th style="border:1px solid #cbd5e1;padding:5px 8px;">宛先</th></tr>'
+      + '<th style="border:1px solid #cbd5e1;padding:5px 8px;white-space:nowrap;">入数</th>'
+      + '<th style="border:1px solid #cbd5e1;padding:5px 8px;white-space:nowrap;">単位</th>'
+      + '<th style="border:1px solid #cbd5e1;padding:5px 8px;white-space:nowrap;">注文数</th>'
+      + '<th style="border:1px solid #cbd5e1;padding:5px 8px;white-space:nowrap;">荷姿</th>'
+      + '<th style="border:1px solid #cbd5e1;padding:5px 8px;white-space:nowrap;">希望納期</th>'
+      + '<th style="border:1px solid #cbd5e1;padding:5px 8px;white-space:nowrap;">宛先</th></tr>'
     + rows.map(r => '<tr>'
-        + '<td style="border:1px solid #e2e8f0;padding:5px 8px;">' + puEsc(r.name) + '</td>'
-        + '<td style="border:1px solid #e2e8f0;padding:5px 8px;text-align:center;">' + (r.amount != null ? r.amount : '') + '</td>'
-        + '<td style="border:1px solid #e2e8f0;padding:5px 8px;text-align:center;">' + puEsc(r.unit || '') + '</td>'
-        + '<td style="border:1px solid #e2e8f0;padding:5px 8px;text-align:center;">' + r.qty + '</td>'
-        + '<td style="border:1px solid #e2e8f0;padding:5px 8px;text-align:center;">' + puEsc(r.box) + '</td>'
-        + '<td style="border:1px solid #e2e8f0;padding:5px 8px;text-align:center;">' + puEsc(r.destination) + '</td>'
+        + '<td style="border:1px solid #e2e8f0;padding:5px 8px;word-break:break-all;">' + puEsc(r.name) + '</td>'
+        + '<td style="border:1px solid #e2e8f0;padding:5px 8px;text-align:center;white-space:nowrap;">' + (r.amount != null ? r.amount : '') + '</td>'
+        + '<td style="border:1px solid #e2e8f0;padding:5px 8px;text-align:center;white-space:nowrap;">' + puEsc(r.unit || '') + '</td>'
+        + '<td style="border:1px solid #e2e8f0;padding:5px 8px;text-align:center;white-space:nowrap;">' + r.qty + '</td>'
+        + '<td style="border:1px solid #e2e8f0;padding:5px 8px;text-align:center;white-space:nowrap;">' + puEsc(r.box) + '</td>'
+        + '<td style="border:1px solid #e2e8f0;padding:5px 8px;text-align:center;white-space:nowrap;">' + (r.desiredDate ? puEsc(r.desiredDate.replace(/-/g, '/')) : '') + '</td>'
+        + '<td style="border:1px solid #e2e8f0;padding:5px 8px;text-align:center;white-space:nowrap;">' + puEsc(r.destination) + '</td>'
       + '</tr>').join('')
     + '</table>'
     + '<div style="margin-top:24px;display:flex;justify-content:flex-end;">'
