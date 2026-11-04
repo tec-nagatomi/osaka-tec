@@ -14306,9 +14306,10 @@ function extractYuasaRows(full, rawItems) {
       const upper = near.filter(t => t.y >= rn.y + 3);   // 品名・型式／客先注文Ｎｏの段
       const lower = near.filter(t => t.y <= rn.y - 3);   // 英名・明細備考の段
       // 型式（客先図番）: 品名・型式欄の英数字コード。「3S02527800 1」のような途中の空白は詰める
+      // 「3049493800 1」のように数字だけの型式もある（8桁以上の数字なら型式とみなす）
       const codeItem = near.filter(t => t.x >= 120 && t.x < 340)
         .map(t => ({ t, c: t.text.replace(/\s+/g, '') }))
-        .find(o => /^[A-Z0-9][A-Z0-9\-]{4,}$/i.test(o.c) && /\d/.test(o.c) && /[A-Z]/i.test(o.c));
+        .find(o => /^[A-Z0-9][A-Z0-9\-]{4,}$/i.test(o.c) && /\d/.test(o.c) && (/[A-Z]/i.test(o.c) || /^\d{8,}$/.test(o.c)));
       if (!codeItem) continue;
       // 「3S02527800 1」のように末尾が空白で区切られているときだけ 3S025278-001 の形に直す。
       // 「9U69024700」のように1かたまりで書かれた型式は、そのまま使う
