@@ -2258,6 +2258,15 @@
   .shp-table .c { text-align:center; width:28px; }
   .shp-table .r { text-align:right; white-space:nowrap; }
   .shp-table .files { font-size:11.5px; color:#047857; font-family:'SF Mono','Consolas',monospace; }
+  .shp-job { display:flex; align-items:center; gap:6px; min-height:20px; }
+  .shp-job-seal { color:#475569; margin-left:6px; }
+  .shp-pbtn { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; padding:0; border:1px solid #d1d5db; border-radius:4px; background:#fff; color:#475569; cursor:pointer; flex-shrink:0; }
+  .shp-pbtn:hover { background:#ecfdf5; border-color:#059669; color:#059669; }
+  .shp-pbtn svg { width:12px; height:12px; }
+  .shp-rowbtn { display:inline-flex; align-items:center; gap:4px; margin-top:6px; padding:3px 8px; border:1px solid #059669; border-radius:6px; background:#fff; color:#059669; font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap; }
+  .shp-rowbtn:hover { background:#ecfdf5; }
+  .shp-rowbtn svg { width:12px; height:12px; }
+  .shp-table tr.off .shp-pbtn, .shp-table tr.off .shp-rowbtn { pointer-events:auto; }
   .shp-in { border:1px solid #d1d5db; border-radius:6px; padding:4px 6px; font-size:12px; font-family:'SF Mono','Consolas',monospace; }
   .shp-in.ot { width:250px; } .shp-in.qty { width:44px; text-align:right; } .shp-in.seal { width:110px; }
   .shp-ng { display:block; color:#dc2626; font-weight:700; }
@@ -22075,7 +22084,6 @@ function shpRender() {
     if (r.on) total += jobs.length;
     const head = r.title !== lastTitle ? `<tr class="shp-sec"><td colspan="8">${r.title ? e(r.title) + ' 出荷' : '出荷'}</td></tr>` : '';
     lastTitle = r.title;
-    const files = [...new Set(jobs.map(j => j.file_name))];
     const st = missing.length
       ? `<span class="shp-ng">検査表なし: ${missing.map(e).join(', ')}</span>`
       : '';
@@ -22089,8 +22097,8 @@ function shpRender() {
       <td><input class="shp-in ot" value="${e(r.ot)}" onchange="_shp.rows[${i}].ot=this.value.trim();shpRender()"></td>
       <td><input class="shp-in qty" value="${e(r.qty)}" onchange="_shp.rows[${i}].qty=this.value.trim();shpRender()"></td>
       <td><input class="shp-in seal" value="${e(r.seal)}" placeholder="なし" onchange="_shp.rows[${i}].seal=this.value.trim();shpResolveSealOts(shpAllSeals()).then(shpRender)"></td>
-      <td class="files">${files.length ? files.map(n => `<div>${e(n)}</div>`).join('') : ''}${st}${gs}</td>
-      <td class="r"><b>${jobs.length}</b>枚</td>
+      <td class="files">${jobs.map((j, k) => `<div class="shp-job"><span>${e(j.file_name)}${j.sealno ? `<span class="shp-job-seal">${e(j.sealno)}</span>` : ''}</span><button type="button" class="shp-pbtn" onclick="shpPrintOne(${i},${k})" title="この1枚だけ印刷">${SHP_PRINT_ICON}</button></div>`).join('')}${st}${gs}</td>
+      <td class="r"><b>${jobs.length}</b>枚${jobs.length ? `<div><button type="button" class="shp-rowbtn" onclick="shpPrintRow(${i})" title="この行の検査表を印刷">${SHP_PRINT_ICON}この行を印刷</button></div>` : ''}</td>
     </tr>`;
   }).join('');
   document.getElementById('shp-body').innerHTML = `
@@ -22101,6 +22109,17 @@ function shpRender() {
   document.getElementById('shp-sum').innerHTML = `印刷 <b>${total}</b> 枚（${_shp.rows.filter(r => r.on).length}行）`;
   const btn = document.getElementById('shp-print');
   btn.disabled = !total; btn.textContent = `まとめて印刷（${total}枚）`;
+}
+
+// 個別印刷（行ごと／1枚ごと）
+var SHP_PRINT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>';
+function shpPrintRow(i) {
+  const r = _shp && _shp.rows[i]; if (!r || !(r._jobs || []).length) return;
+  showInspectDialog(r.order || r.ot || '出荷表', r._jobs.length, r._jobs, r._jobs.length);
+}
+function shpPrintOne(i, k) {
+  const r = _shp && _shp.rows[i]; const j = r && (r._jobs || [])[k]; if (!j) return;
+  showInspectDialog(`${j.ot_number}${j.sealno ? '（' + j.sealno + '）' : ''}`, 1, [j], 1);
 }
 
 function shpPrint() {
