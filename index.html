@@ -2262,6 +2262,7 @@
   .shp-in.ot { width:250px; } .shp-in.qty { width:44px; text-align:right; } .shp-in.seal { width:110px; }
   .shp-ng { display:block; color:#dc2626; font-weight:700; }
   .shp-warn { color:#b45309; font-weight:700; }
+  .shp-src { color:#0369a1; font-size:11px; }
   .shp-foot { display:flex; align-items:center; gap:10px; padding:12px 18px; border-top:1px solid #e5e7eb; }
   .shp-sum { margin-right:auto; font-size:13px; color:#374151; }
   .shp-btn { padding:8px 18px; border-radius:8px; border:1px solid #e5e7eb; background:#f9fafb; color:#374151; font-size:13px; font-weight:700; cursor:pointer; }
@@ -13509,11 +13510,17 @@ function isNakamuraText(t) { return /中\s*村\s*留/.test(String(t || '')); }
 async function extractNakamuraRows(text, ocr) {
   const lines = String(text || '').split('\n').map(l => l.replace(/[「」\[\]]/g, ' ').replace(/[〜~ー―−－](?=\d)/g, '-'));
   // 品番の行（品番＋版＋…＋注文日）ごとに1枚の注文書として区切る（「品番」見出しは読み落とすことがあるため使わない）
-  const ITEM_LINE = /([A-Z]\d{2}\s?\*\s?\d{5,9}|[A-Z0-9][A-Z0-9*]{5,})\s+[A-Z]{1,3}[^A-Z0-9\s]*\s+.*20\d{2}\s?\//;
+  // 版の前に罫線などの読み違い（例「:CF」）が付くことがあるため、記号1文字は許容する
+  const ITEM_LINE = /([A-Z]\d{2}\s?\*\s?\d{5,9}|[A-Z0-9][A-Z0-9*]{5,})\s+[^A-Z0-9\s]?[A-Z]{1,3}[^A-Z0-9\s]*\s+.*20\d{2}\s?\//;
   const heads = lines.map((l, i) => ITEM_LINE.test(l.replace(/[|｜_]/g, ' ')) ? i : -1).filter(i => i >= 0);
   const segs = heads.length ? heads.map((st, k) => lines.slice(st, k + 1 < heads.length ? heads[k + 1] : lines.length)) : [lines];
   const DATE = /(20\d{2})\s?\/\s?(\d{1,2})\s?\/\s?(\d{1,2})(?!\d)/g;
   const ymd = m => `${m[1]}/${m[2].padStart(2, '0')}/${m[3].padStart(2, '0')}`;
+  // 実在する日付か（OCRで 30→80 のように化けた日付を弾く）
+  const validYmd = m => { const mo = +m[2], d = +m[3]; return mo >= 1 && mo <= 12 && d >= 1 && d <= new Date(+m[1], mo, 0).getDate(); };
+  // 注文日が読めなかったときの代わり：右下の「[Output] Time: 2026/10/30 …」（注文書の発行日）
+  let outputDate = '';
+  { const om = String(text || '').match(/Output\]?\s*Time\s*[:：]?\s*(20\d{2})\s?\/\s?(\d{1,2})\s?\/\s?(\d{1,2})(?!\d)/i); if (om && validYmd(om)) outputDate = ymd(om); }
   const items = [];
   for (const seg of segs) {
     // 注文No: P＋8桁（OCRで P0→PO になりやすい）
@@ -13525,14 +13532,17 @@ async function extractNakamuraRows(text, ocr) {
     const orderno = ocrVote(nos);
     // 品番の行（例: J21*4017102  AC  HHH  2026/12/16  5 個  2026/10/19）
     let base = '', rev = '', pj = '', orderdate = '', deliverydate = '', qty = 0;
-    for (const l0 of seg.slice(0, 4)) {
+    // 品番の行が見つからず区切れなかったときは、ページ全体から日付を含む品番の行を探す
+    for (const l0 of (heads.length ? seg.slice(0, 4) : seg)) {
       const l = l0.replace(/[|｜_]/g, ' ');
-      const m = l.match(/([A-Z]\d{2}\s?\*\s?\d{5,9}|[A-Z0-9][A-Z0-9*]{5,})\s+([A-Z]{1,3})(?:[^A-Z0-9\s]*)\s+(?:([A-Z0-9]{2,12})\s+)?/);
+      if (!heads.length && !/20\d{2}\s?\//.test(l)) continue;
+      const m = l.match(/([A-Z]\d{2}\s?\*\s?\d{5,9}|[A-Z0-9][A-Z0-9*]{5,})\s+[^A-Z0-9\s]?([A-Z]{1,3})(?:[^A-Z0-9\s]*)\s+(?:([A-Z0-9]{2,12})\s+)?/);
       if (!m) continue;
       base = m[1].replace(/\s/g, ''); rev = m[2]; pj = m[3] && !/^20\d{2}/.test(m[3]) ? m[3] : '';   // 版は通常2文字（「ACG」のように余分な文字が付くことがある→照合時に補正）
       const ds = [...l.matchAll(DATE)];
-      if (ds.length) orderdate = ymd(ds[ds.length - 1]);
-      if (ds.length >= 2) deliverydate = ymd(ds[0]);
+      // 行の並びは「納期 … 注文日」。読み違いで実在しない日付になったものは使わない
+      if (ds.length && validYmd(ds[ds.length - 1])) orderdate = ymd(ds[ds.length - 1]);
+      if (ds.length >= 2 && validYmd(ds[0])) deliverydate = ymd(ds[0]);
       const q = l.match(/(\d{1,5})\s*(?:個|箇|本|台|式|セット|ｾｯﾄ|set|SET|枚|組)/);
       if (q) qty = parseInt(q[1], 10);
       break;
@@ -13540,32 +13550,52 @@ async function extractNakamuraRows(text, ocr) {
     // 金額（例 557,500）。単価は金額÷数量
     let amount = 0;
     for (const l of seg) {
-      if (!/金\s*額/.test(l) && !/[\d],\d{3}(?![\d,])\s*$/.test(l)) continue;
+      if (!/金\s*額/.test(l) && !/\d\s?,\s?\d{3}(?![\d,])\s*$/.test(l)) continue;   // OCRで「116, 900」のようにカンマ後に空白が入ることがある
       const nums = (l.match(/\d{1,3}(?:\s?,\s?\d{3})+(?![\d,])/g) || []).map(v => parseInt(v.replace(/[^\d]/g, ''), 10));
       if (nums.length) { amount = nums[nums.length - 1]; if (/金\s*額/.test(l) && !amount) continue; }
       if (amount) break;
     }
     if (!qty) qty = 1;
+    if (!orderdate) orderdate = outputDate;
     const price = amount && amount % qty === 0 ? amount / qty : 0;
     let otRead = '';
     for (const l of seg) { const o = ocrNormalize(l).match(/[0O]T\s?-\s?(\d{6})(?!\d)(?:\s?-\s?(\d{1,2})(?!\d))?/); if (o) { otRead = `OT-${o[1]}${o[2] ? '-' + o[2] : ''}`; break; } }
     if (!orderno && !base) continue;
-    items.push({ orderno, base, rev, pj, orderdate, deliverydate, qty, price, amount, otRead });
+    // 品名が「5ﾀﾞﾝｼｷﾌﾟﾛﾃｸﾀｰ」か（＝カバー本体）。それ以外はワイパーセット（パーツ）として扱う。
+    // 品名は半角カナでOCRではほぼ読めない（例「5ゲル科多-」）ため、品名欄の先頭が段数の「5」かでも判定する
+    let protector = seg.some(l => /ﾌﾟﾛﾃｸ|プロテク|ﾀﾞﾝｼｷ|ダンシキ/.test(l));
+    if (!protector) {
+      const hi = seg.findIndex(l => /品\s*名/.test(l));
+      const nameLine = hi >= 0 && seg[hi + 1] ? seg[hi + 1].replace(/^[\s|｜\[\]_]+/, '') : '';
+      if (/^5\s*[^\d\s,.\/]/.test(nameLine)) protector = true;
+    }
+    // 製品マスタの客先図番は「*」なし（例 J21*4089401 → J214089401）
+    base = base.replace(/\*/g, '');
+    items.push({ orderno, base, rev, pj, orderdate, deliverydate, qty, price, amount, otRead, protector });
   }
   // 納期の印字に手書きの訂正（取り消し線＋書き込み）が重なると日付が読めない。誤った日付を入れないよう、その場合は空欄のまま（プレビュー後に手入力）
   console.log('[中村留]', items);
   if (!items.length) return [];
   let list = [];
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/productdate?client=like.*${encodeURIComponent('中村留')}*&select=customer_drawing_no,ot_number,product_name&limit=2000`,
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/productdate?client=like.*${encodeURIComponent('中村留')}*&select=customer_drawing_no,ot_number,product_name,product_category&limit=2000`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } });
     if (res.ok) list = await res.json();
   } catch (e) { console.warn('[中村留] 製品マスタ取得失敗', e); }
   return items.map(it => {
     // 客先図番 = 品番-版。版の読み違いに備え、同じ品番の登録が1件ならそれ、複数なら版の一致するものを使う
-    const cands = list.filter(x => String(x.customer_drawing_no || '').startsWith(it.base + '-') && !/WIPER/i.test(x.customer_drawing_no));
-    let p = cands.find(x => x.customer_drawing_no === `${it.base}-${it.rev}`) || cands.find(x => x.customer_drawing_no === `${it.base}-${it.rev.slice(0, 2)}`) || (cands.length === 1 ? cands[0] : null);
-    if (!p && it.otRead) { const h = list.filter(x => x.ot_number === it.otRead && !/WIPER/i.test(x.customer_drawing_no)); if (h.length === 1) p = h[0]; }
+    // 同じ品番にカバー本体とワイパーセット（パーツ）が登録されていることがある。
+    //   品名が 5ﾀﾞﾝｼｷﾌﾟﾛﾃｸﾀｰ → カバー本体（客先図番に WIPER なし／品目区分パーツ以外）
+    //   それ以外             → ワイパーセット（客先図番に WIPER あり／品目区分パーツ）
+    //   該当側の登録が無い品番は、登録されている方をそのまま使う
+    const isW = x => /WIPER/i.test(x.customer_drawing_no || '') || x.product_category === 'パーツ';
+    const fits = x => it.protector ? !isW(x) : isW(x);
+    const all = list.filter(x => String(x.customer_drawing_no || '').startsWith(it.base + '-'));
+    const pref = all.filter(fits);
+    const cands = pref.length ? pref : all;
+    const sameDno = cands.length && cands.every(x => x.customer_drawing_no === cands[0].customer_drawing_no);
+    let p = cands.find(x => x.customer_drawing_no === `${it.base}-${it.rev}`) || cands.find(x => x.customer_drawing_no === `${it.base}-${it.rev.slice(0, 2)}`) || (sameDno ? cands[0] : null);
+    if (!p && it.otRead) { const h = list.filter(x => x.ot_number === it.otRead && fits(x)); if (h.length === 1) p = h[0]; }
     if (!p) console.warn('[中村留] 製品マスタと照合できませんでした', it);
     return {
       orderdate: it.orderdate, orderno: it.orderno, drawingno: p ? p.customer_drawing_no : (it.base ? `${it.base}${it.rev ? '-' + it.rev.slice(0, 2) : ''}` : ''),
@@ -16102,7 +16132,9 @@ async function doSaveNewRows(rows, silent = false) {
             if (c && pd.customer_drawing_no && !byCore.has(c)) byCore.set(c, pd.customer_drawing_no);
           }
           for (const r of otOnlyRows) {
-            const dno = byCore.get(otCore(r._otNumber));
+            // OT番号が完全一致するものを優先（例 OT-041153 と OT-041153-9(ワイパー) の取り違え防止）
+            const exact = pdList.find(pd => pd.ot_number === r._otNumber && pd.customer_drawing_no);
+            const dno = exact ? exact.customer_drawing_no : byCore.get(otCore(r._otNumber));
             if (dno) {
               console.log(`[OT逆引き] ${r._otNumber} → 図番 ${dno} を割り当て`);
               r.drawingno = dno;
@@ -21931,11 +21963,60 @@ function shpFindFiles(ot, names) {
   return { hits: [], used: ot, guess: false };
 }
 
+// シールNo → 子データ（orders_child）のOT番号 を引く。
+// 子データにはOT番号の列が無いため、受注詳細・出荷管理と同じ方法（製品マスタの構成品 productdate_child の並び順）で求める。
+// 結果は _shp.sealOt（sealno → OT番号、見つからなければ ''）にためる。
+async function shpResolveSealOts(seals) {
+  if (!_shp) return;
+  const need = [...new Set(seals.filter(s => /^\d{4,}$/.test(s) && !_shp.sealOt.has(s)))];
+  if (!need.length) return;
+  need.forEach(s => _shp.sealOt.set(s, ''));
+  try {
+    const hit = await shipFetchIn(`${SUPABASE_URL}/rest/v1/orders_child?select=id,order_id,sealno`, 'sealno', need.map(s => `"${s}"`));
+    const orderIds = [...new Set(hit.map(c => c.order_id).filter(v => v != null))];
+    if (!orderIds.length) return;
+    // 何番目の子データかを出すため、受注ごとの子データをすべて取る
+    const children = await shipFetchIn(`${SUPABASE_URL}/rest/v1/orders_child?select=id,order_id,sealno`, 'order_id', orderIds);
+    const orders = await shipFetchIn(`${SUPABASE_URL}/rest/v1/orders?select=id,drawingno`, 'id', orderIds);
+    const orderById = new Map(orders.map(o => [o.id, o]));
+    const dnos = [...new Set(orders.map(o => o.drawingno).filter(Boolean))].map(d => `"${String(d).replace(/"/g, '')}"`);
+    const parentOt = new Map(), pdChildMap = new Map();
+    if (dnos.length) {
+      const pds = pdBest(await shipFetchIn(`${SUPABASE_URL}/rest/v1/productdate?select=designid,customer_drawing_no,ot_number,product_category`, 'customer_drawing_no', dnos));
+      pds.forEach(pd => { if (pd.ot_number) parentOt.set(pd.customer_drawing_no, pd.ot_number); });
+      const ids = pds.map(p => p.designid).filter(v => v != null);
+      if (ids.length) {
+        const pcs = await shipFetchIn(`${SUPABASE_URL}/rest/v1/productdate_child?select=parent_designid,ot_number,sort_order`, 'parent_designid', ids, '&order=sort_order.asc');
+        pds.forEach(pd => { const l = pcs.filter(c => c.parent_designid === pd.designid); if (l.length) pdChildMap.set(pd.customer_drawing_no, l); });
+      }
+    }
+    for (const c of hit) {
+      const o = orderById.get(c.order_id); if (!o) continue;
+      let ot = parentOt.get(o.drawingno) || '';
+      const pdc = pdChildMap.get(o.drawingno);
+      if (pdc && pdc.length) {
+        const sibs = children.filter(x => x.order_id === c.order_id);
+        ot = pdc[childSlotIndex(c, sibs) % pdc.length]?.ot_number || ot;
+      }
+      _shp.sealOt.set(String(c.sealno), ot);
+    }
+  } catch (e) { console.warn('[出荷表] 子データからOT番号を取得できませんでした', e); }
+}
+function shpAllSeals() { return _shp ? _shp.rows.flatMap(r => shpExpandSeals(r.seal)) : []; }
+
 // 1行分の印刷ジョブ（OT番号とシールNoの組み合わせ）
 function shpJobsForRow(r, names) {
   const ots = shpExpandOts(r.ot), seals = shpExpandSeals(r.seal), qty = Math.max(1, parseInt(r.qty) || 1);
   const pairs = [];
-  if (ots.length > 1) {
+  // シールNoがすべて子データで見つかれば、シールNoごとに子データのOT番号の検査表へ入れる（1シール＝1枚）
+  //   例) 354665〜672：354665→OT-102818-3、354666→OT-102819-2、354667→OT-102818-3 …
+  const sealOts = (_shp && _shp.sealOt) ? seals.map(s => _shp.sealOt.get(s) || '') : [];
+  const fromChild = seals.length > 0 && sealOts.every(Boolean);
+  r._fromChild = fromChild;
+  r._otDiff = fromChild && ots.length ? [...new Set(sealOts.filter(o => !ots.includes(o)))] : [];
+  if (fromChild) {
+    seals.forEach((s, i) => pairs.push({ ot: sealOts[i], seal: s }));
+  } else if (ots.length > 1) {
     ots.forEach((ot, i) => pairs.push({ ot, seal: seals.length === ots.length ? seals[i] : (r.seal || '') }));
   } else if (ots.length === 1) {
     if (seals.length === qty) seals.forEach(s => pairs.push({ ot: ots[0], seal: s }));
@@ -21956,7 +22037,11 @@ async function shpOpenReview(fileName, rows) {
   if (!names || Date.now() - _cdmInsCache.at > 60 * 1000) {
     try { names = [...(await listInspectionFiles()).keys()]; _cdmInsCache = { at: Date.now(), names }; } catch (e) { names = names || []; }
   }
-  _shp = { fileName, rows: rows.map(r => ({ ...r, on: true })), names };
+  _shp = { fileName, rows: rows.map(r => ({ ...r, on: true })), names, sealOt: new Map() };
+  shpProgress('子データ（シールNo）を照合中…', 99);
+  await shpResolveSealOts(shpAllSeals());
+  shpProgressDone();
+  if (!_shp) return;
   document.getElementById('shp-overlay')?.remove();
   const ov = document.createElement('div');
   ov.id = 'shp-overlay';
@@ -21994,14 +22079,16 @@ function shpRender() {
     const st = missing.length
       ? `<span class="shp-ng">検査表なし: ${missing.map(e).join(', ')}</span>`
       : '';
-    const gs = guessed.length ? `<div class="shp-warn">要確認: ${guessed.map(e).join(', ')}</div>` : '';
+    const gs = (guessed.length ? `<div class="shp-warn">要確認: ${guessed.map(e).join(', ')}</div>` : '')
+      + (r._fromChild ? `<div class="shp-src">子データのOT番号で振り分け</div>` : (shpExpandSeals(r.seal).length ? `<div class="shp-warn">子データに無いシールNoあり（出荷表のOT番号で印刷）</div>` : ''))
+      + (r._otDiff && r._otDiff.length ? `<div class="shp-warn">出荷表に無いOT番号: ${r._otDiff.map(e).join(', ')}</div>` : '');
     return head + `<tr class="${r.on ? '' : 'off'}">
       <td class="c"><input type="checkbox" ${r.on ? 'checked' : ''} onchange="_shp.rows[${i}].on=this.checked;shpRender()"></td>
       <td class="mono">${e(r.order) || '<span class="muted">—</span>'}</td>
       <td class="mono">${e(r.dno) || '<span class="muted">—</span>'}</td>
       <td><input class="shp-in ot" value="${e(r.ot)}" onchange="_shp.rows[${i}].ot=this.value.trim();shpRender()"></td>
       <td><input class="shp-in qty" value="${e(r.qty)}" onchange="_shp.rows[${i}].qty=this.value.trim();shpRender()"></td>
-      <td><input class="shp-in seal" value="${e(r.seal)}" placeholder="なし" onchange="_shp.rows[${i}].seal=this.value.trim();shpRender()"></td>
+      <td><input class="shp-in seal" value="${e(r.seal)}" placeholder="なし" onchange="_shp.rows[${i}].seal=this.value.trim();shpResolveSealOts(shpAllSeals()).then(shpRender)"></td>
       <td class="files">${files.length ? files.map(n => `<div>${e(n)}</div>`).join('') : ''}${st}${gs}</td>
       <td class="r"><b>${jobs.length}</b>枚</td>
     </tr>`;
