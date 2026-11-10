@@ -20663,14 +20663,14 @@ function renderPdMemoPanel(pd) {
       ${pd.product_name || ''}<br>
       <span style="font-family:monospace;">${pd.ot_number || ''}</span>
     </div>
-    <div id="pd-memo-list" style="min-height:120px;max-height:260px;overflow-y:auto;margin-bottom:8px;display:flex;flex-direction:column;gap:5px;">
+    <div class="pd-memo-list" data-designid="${pd.designid}" style="min-height:120px;max-height:260px;overflow-y:auto;margin-bottom:8px;display:flex;flex-direction:column;gap:5px;">
       <div style="text-align:center;color:#9ca3af;font-size:11px;padding:10px 0;">読込中...</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:4px;">
-      <textarea id="pd-memo-input" placeholder="製品マスタへのメモ... (Enterで送信)" maxlength="1000" rows="2"
+      <textarea class="pd-memo-input" placeholder="製品マスタへのメモ... (Enterで送信)" maxlength="1000" rows="2"
         style="width:100%;font-size:11px;padding:6px 8px;border:1px solid #fde68a;border-radius:6px;outline:none;resize:none;font-family:inherit;box-sizing:border-box;line-height:1.5;background:#fffdf0;"
         onkeydown="handlePdMemoKeydown(event, ${pd.designid})"></textarea>
-      <button onclick="postPdMemo(${pd.designid})"
+      <button onclick="postPdMemo(${pd.designid}, this)"
         style="align-self:flex-end;padding:5px 14px;background:#d97706;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">送信</button>
     </div>`;
 
@@ -20688,13 +20688,17 @@ function handlePdMemoKeydown(e, designid) {
   }
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
-    postPdMemo(designid);
+    postPdMemo(designid, e.target);
   }
 }
 
+// 製品マスタメモは「受注詳細」と「製品詳細」の2か所にある。製品詳細は閉じても画面に残る（非表示）ため、
+// id で探すと非表示側をつかんでしまい、送信しても反応しない・「読込中...」のままになっていた。
+// 同じ製品のメモ欄をすべて更新し、送信は押されたメモ欄の入力欄を使う。
 async function loadPdMemos(designid) {
-  const list = document.getElementById('pd-memo-list');
-  if (!list) return;
+  const lists = [...document.querySelectorAll(`.pd-memo-list[data-designid="${designid}"]`)];
+  if (!lists.length) return;
+  const setAll = html => lists.forEach(l => { l.innerHTML = html; l.scrollTop = l.scrollHeight; });
   try {
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/productdate_memos?designid=eq.${designid}&order=created_at.asc&select=*`,
@@ -20702,10 +20706,10 @@ async function loadPdMemos(designid) {
     );
     const memos = res.ok ? await res.json() : [];
     if (!memos.length) {
-      list.innerHTML = '<div style="text-align:center;color:#9ca3af;font-size:11px;padding:12px 0;">メモはまだありません</div>';
+      setAll('<div style="text-align:center;color:#9ca3af;font-size:11px;padding:12px 0;">メモはまだありません</div>');
       return;
     }
-    list.innerHTML = memos.map(m => {
+    setAll(memos.map(m => {
       const dt = new Date(m.created_at);
       const dtStr = `${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
       const bodyHtml = m.body.replace(/</g,'&lt;').replace(/\n/g,'<br>');
@@ -20720,15 +20724,17 @@ async function loadPdMemos(designid) {
         </div>
         <div style="font-size:11px;color:#111827;line-height:1.5;word-break:break-all;">${bodyHtml}</div>
       </div>`;
-    }).join('');
-    list.scrollTop = list.scrollHeight;
+    }).join(''));
   } catch(e) {
-    list.innerHTML = '<div style="text-align:center;color:#ef4444;font-size:11px;">読込エラー</div>';
+    setAll('<div style="text-align:center;color:#ef4444;font-size:11px;">読込エラー</div>');
   }
 }
 
-async function postPdMemo(designid) {
-  const input = document.getElementById('pd-memo-input');
+async function postPdMemo(designid, srcEl) {
+  // 押されたボタン（またはEnterを押した入力欄）と同じメモ欄の入力欄を使う
+  const box = srcEl && srcEl.parentElement;
+  const input = (box && box.querySelector('.pd-memo-input'))
+    || [...document.querySelectorAll('.pd-memo-input')].find(t => t.offsetParent && t.value.trim());
   const body = input?.value.trim();
   if (!body) return;
   rtSuppress();  // 自分のメモ送信による再読込を抑制
@@ -21106,7 +21112,8 @@ function cdmJobsFromTd(td) {
   try { items = JSON.parse(td.dataset.items || '[]'); } catch (e) {}
   const names = (_cdmInsCache && _cdmInsCache.names) || [];
   const jobs = [];
-  items.filter(i => i.ot_number && i.ot_number !== '-').forEach(i => {
+  // シールNoの無いもの（ワイパー等のパーツ）は検査表を印刷しない
+  items.filter(i => i.ot_number && i.ot_number !== '-' && String(i.sealno || '').trim()).forEach(i => {
     findInspectionFiles(i.ot_number, names).forEach(n => jobs.push({ ...i, file_name: n, file_url: inspectionPublicUrl(n) }));
   });
   return jobs;
@@ -21115,6 +21122,7 @@ function cdmJobsFromTd(td) {
 function cdmPrintGroup(btn) {
   const sec = btn.closest('.cdm-group');
   if (!sec) return;
+  // シールNoの無いもの（ワイパー等のパーツ）は cdmJobsFromTd で除外済み
   const jobs = [];
   sec.querySelectorAll('tr.cdm-row').forEach(tr => {
     if (tr.style.display === 'none') return;
@@ -21184,6 +21192,10 @@ async function cdmFillInspectionButtons(root) {
   catch (e) { console.warn('[検査表] ファイル一覧の取得に失敗', e); if (!names) return; }
   // 子データのOT番号ごとに検査表を探し、1つでも見つからない（またはOT番号なし）ならボタンを出さない
   root.querySelectorAll('td.cdm-ins').forEach(td => {
+    // シールNoの無い行（ワイパー等のパーツ）は検査表を印刷しないのでボタンを出さない
+    let items = [];
+    try { items = JSON.parse(td.dataset.items || '[]'); } catch (e) {}
+    if (!items.some(i => String(i.sealno || '').trim())) { td.innerHTML = ''; return; }
     let ots = [];
     try { ots = JSON.parse(td.dataset.ots || '[]'); } catch (e) {}
     const hits = [];
@@ -23290,14 +23302,14 @@ function renderPdDetailMemoPanel(rec) {
       ${rec.product_name || ''}<br>
       <span style="font-family:monospace;">${rec.ot_number || ''}</span>
     </div>
-    <div id="pd-memo-list" style="min-height:120px;max-height:340px;overflow-y:auto;margin-bottom:8px;display:flex;flex-direction:column;gap:5px;">
+    <div class="pd-memo-list" data-designid="${rec.designid}" style="min-height:120px;max-height:340px;overflow-y:auto;margin-bottom:8px;display:flex;flex-direction:column;gap:5px;">
       <div style="text-align:center;color:#9ca3af;font-size:11px;padding:10px 0;">読込中...</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:4px;">
-      <textarea id="pd-memo-input" placeholder="製品マスタへのメモ... (Enterで送信)" maxlength="1000" rows="2"
+      <textarea class="pd-memo-input" placeholder="製品マスタへのメモ... (Enterで送信)" maxlength="1000" rows="2"
         style="width:100%;font-size:11px;padding:6px 8px;border:1px solid #fde68a;border-radius:6px;outline:none;resize:none;font-family:inherit;box-sizing:border-box;line-height:1.5;background:#fffdf0;"
         onkeydown="handlePdMemoKeydown(event, ${rec.designid})"></textarea>
-      <button onclick="postPdMemo(${rec.designid})"
+      <button onclick="postPdMemo(${rec.designid}, this)"
         style="align-self:flex-end;padding:5px 14px;background:#d97706;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">送信</button>
     </div>`;
   loadPdMemos(rec.designid);
