@@ -2145,6 +2145,83 @@
   #page-orders .ord-side { display:flex; flex-direction:column; gap:12px; min-width:0; }
   #page-orders .ord-side-title { display:flex; align-items:center; gap:10px; background:#f1f5f9; border-radius:8px; padding:14px 16px; font-size:22px; font-weight:800; color:#111827; letter-spacing:.04em; flex-shrink:0; }
   #page-orders .ord-side-title svg { width:24px; height:24px; color:#1d4ed8; flex-shrink:0; }
+  /* 各社メニュー */
+  #page-orders .cm-toggle-btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:10px 14px; border:1px solid #bfdbfe; border-radius:8px; background:#eff6ff; color:#1d4ed8; font-size:14px; font-weight:800; letter-spacing:.04em; cursor:pointer; flex-shrink:0; }
+  #page-orders .cm-toggle-btn:hover { background:#dbeafe; }
+  #page-orders .cm-toggle-btn svg { width:18px; height:18px; }
+  #page-orders .ord-side.cm-mode .cm-toggle-btn { background:#1d4ed8; color:#fff; border-color:#1d4ed8; }
+  #page-orders .ord-side.cm-mode > .import-card,
+  #page-orders .ord-side.cm-mode > .calendar-card { display:none !important; }
+  /* 各社メニュー表示中は受注一覧を隠し、左欄を画面全体に広げる */
+  #page-orders .orders-layout.cm-mode { grid-template-columns:minmax(0,1fr) !important; }
+  #page-orders .orders-layout.cm-mode > .orders-list-card { display:none !important; }
+  #page-orders .orders-layout.cm-mode > .ord-side { display:flex !important; flex-direction:column; }
+  #page-orders .orders-layout.cm-mode .cm-toggle-btn { width:auto; align-self:flex-start; }
+  /* 各社メニューから会社を選んで表示した受注一覧：検索・絞り込み等のタブ、条件の表示、製品マスタ未登録の案内を隠す */
+  #page-orders .cm-client-head { display:none; }
+  #page-orders.cm-client-view .cm-client-head { display:flex; align-items:center; gap:10px; }
+  #page-orders.cm-client-view .ord-tabs,
+  #page-orders.cm-client-view #ord-active-chips,
+  #page-orders.cm-client-view .ord-panel,
+  #page-orders.cm-client-view #unregistered-banner { display:none !important; }
+  #page-orders .cm-client-name { display:flex; align-items:center; gap:8px; font-size:15px; font-weight:800; color:#111827; }
+  /* 子データ一覧 */
+  #page-orders .cm-child-wrap { display:none; }
+  #page-orders.cm-client-view .orders-table-wrap,
+  #page-orders.cm-client-view #pagination { display:none !important; }
+  #page-orders.cm-client-view .cm-child-wrap { display:flex; flex-direction:column; flex:1 1 auto; min-height:0; }
+  #page-orders .cmc-bar { display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding:8px 12px; border-bottom:1px solid #e5e7eb; background:#f8fafc; }
+  #page-orders .cmc-count { font-size:12.5px; color:#374151; margin-right:6px; }
+  #page-orders .cmc-btn { padding:4px 10px; border:1px solid #d1d5db; border-radius:6px; background:#fff; color:#374151; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; }
+  #page-orders .cmc-btn:hover:not(:disabled) { background:#eff6ff; border-color:#93c5fd; }
+  #page-orders .cmc-btn:disabled { opacity:.45; cursor:default; }
+  #page-orders .cmc-sep { width:1px; height:20px; background:#e5e7eb; margin:0 4px; }
+  #page-orders .cmc-status { font-size:12px; font-weight:700; }
+  #page-orders .cmc-hint { margin-left:auto; font-size:11px; color:#9ca3af; }
+  #page-orders .cmc-scroll { flex:1 1 auto; min-height:0; overflow:auto; }
+  #page-orders .cmc-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  #page-orders .cmc-table th { position:sticky; top:0; z-index:1; background:#f1f5f9; color:#475569; font-size:11.5px; font-weight:700; text-align:left; padding:7px 8px; border-bottom:1px solid #e2e8f0; white-space:nowrap; }
+  #page-orders .cmc-table td { padding:6px 8px; border-bottom:1px solid #f1f5f9; white-space:nowrap; }
+  #page-orders .cmc-table .r { text-align:right; } #page-orders .cmc-table .c { text-align:center; }
+  #page-orders .cmc-table .mono { font-family:'SF Mono','Consolas',monospace; }
+  #page-orders .cmc-name { max-width:260px; overflow:hidden; text-overflow:ellipsis; }
+  #page-orders .cmc-chk { width:28px; text-align:center; }
+  #page-orders .cmc-handle { width:18px; color:#cbd5e1; cursor:grab; user-select:none; letter-spacing:-2px; }
+  #page-orders .cmc-row:hover .cmc-handle { color:#64748b; }
+  #page-orders .cmc-row.sel td { background:rgba(59,130,246,.10); }
+  #page-orders .cmc-row.dragging { opacity:.4; }
+  #page-orders .cmc-row.drop-above td { box-shadow:inset 0 2px 0 #1d4ed8; }
+  #page-orders .cmc-row.drop-below td { box-shadow:inset 0 -2px 0 #1d4ed8; }
+  #page-orders .cmc-grp { width:32px; }
+  #page-orders .cmc-gbadge { display:inline-block; padding:1px 6px; border-radius:8px; color:#fff; font-size:10px; font-weight:800; }
+  #page-orders .cmc-edit { cursor:text; }
+  #page-orders .cmc-edit:hover { outline:1px dashed #93c5fd; outline-offset:-2px; }
+  #page-orders .cmc-input { width:100%; min-width:90px; box-sizing:border-box; padding:3px 5px; border:1px solid #3b82f6; border-radius:4px; font-size:12.5px; }
+  #page-orders .cmc-none { color:#9ca3af; }
+  #page-orders .cmc-ok { color:#059669; font-weight:700; }
+  #page-orders .cmc-detail { padding:2px 8px; border:1px solid #bfdbfe; border-radius:5px; background:#fff; color:#1d4ed8; font-size:11px; font-weight:700; cursor:pointer; }
+  #page-orders .cm-prod-btns { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  #page-orders .cm-prod-btn { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border:1px solid #d1d5db; border-radius:16px; background:#fff; color:#374151; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; }
+  #page-orders .cm-prod-btn:hover { border-color:#93c5fd; background:#eff6ff; }
+  #page-orders .cm-prod-btn.active { background:#1d4ed8; border-color:#1d4ed8; color:#fff; }
+  #page-orders .cm-prod-cnt { min-width:18px; padding:0 6px; border-radius:9px; background:#f1f5f9; color:#475569; font-size:11px; font-weight:800; text-align:center; }
+  #page-orders .cm-prod-btn.active .cm-prod-cnt { background:rgba(255,255,255,.25); color:#fff; }
+  #page-orders .cm-client-all { margin-left:4px; padding:4px 10px; border:1px solid #d1d5db; border-radius:6px; background:#fff; color:#374151; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; }
+  #page-orders .cm-client-all:hover { background:#f3f4f6; }
+  #page-orders .cm-panel { background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:16px 18px; min-height:0; overflow:auto; flex:1 1 auto; }
+  #page-orders .cm-head { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  #page-orders .cm-title { font-size:16px; font-weight:800; color:#111827; }
+  #page-orders .cm-back-btn { display:inline-flex; align-items:center; gap:2px; padding:5px 10px 5px 6px; border:1px solid #d1d5db; border-radius:6px; background:#fff; color:#374151; font-size:12px; font-weight:700; cursor:pointer; }
+  #page-orders .cm-back-btn:hover { background:#f3f4f6; }
+  #page-orders .cm-back-btn svg { width:14px; height:14px; }
+  #page-orders .cm-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:14px; }
+  #page-orders .cm-card { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; min-height:140px; padding:20px 12px 14px; border:1px solid #e5e7eb; border-radius:10px; background:#fff; cursor:pointer; transition:border-color .12s, box-shadow .12s, transform .12s; }
+  #page-orders .cm-card:hover { border-color:#60a5fa; box-shadow:0 4px 12px rgba(29,78,216,.12); transform:translateY(-1px); }
+  #page-orders .cm-card.active { border-color:#1d4ed8; box-shadow:0 0 0 2px #bfdbfe; }
+  #page-orders .cm-logo-box { height:46px; display:flex; align-items:center; justify-content:center; }
+  #page-orders .cm-logo-none { font-size:24px; font-weight:800; color:#94a3b8; }
+  #page-orders .cm-name { font-size:13px; font-weight:700; color:#374151; text-align:center; line-height:1.3; word-break:break-all; }
+  #page-orders .cm-count { position:absolute; top:8px; right:10px; min-width:20px; padding:2px 8px; border-radius:10px; background:#f1f5f9; color:#475569; font-size:11px; font-weight:800; }
   #page-orders .import-card { padding:10px; border-radius:8px; }
   #page-orders .import-title { font-size:12px; margin-bottom:8px; }
   #page-orders .import-title svg { width:14px; height:14px; }
@@ -2417,6 +2494,8 @@
     /* 画面を分割したとき: 注文書インポートとカレンダーを半分の幅で横に並べる */
     #page-orders .ord-side { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; align-items:stretch; }
     #page-orders .ord-side > .ord-side-title { grid-column:1 / -1; }
+    #page-orders .ord-side > .cm-toggle-btn,
+    #page-orders .ord-side > .cm-panel { grid-column:1 / -1; }
     #page-orders .ord-side > .import-card,
     #page-orders .ord-side > .calendar-card { margin:0; min-width:0; }
     #page-orders .ord-side > .import-card { display:flex; flex-direction:column; }
@@ -2921,6 +3000,20 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
           受注管理
         </div>
+        <!-- 各社メニュー：押すと左欄が取引先ごとのボタン一覧に切り替わる -->
+        <button type="button" class="cm-toggle-btn" id="cm-toggle-btn" onclick="toggleClientMenu()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          <span id="cm-toggle-label">各社メニュー</span>
+        </button>
+        <div class="cm-panel" id="client-menu-panel" style="display:none;">
+          <div class="cm-head">
+            <button type="button" class="cm-back-btn" onclick="toggleClientMenu(false)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="15 18 9 12 15 6"/></svg>戻る
+            </button>
+            <span class="cm-title">各社メニュー</span>
+          </div>
+          <div class="cm-grid" id="client-menu-grid"></div>
+        </div>
         <div class="import-card">
           <div class="import-title" style="display:flex;align-items:center;justify-content:space-between;">
             <div style="display:flex;align-items:center;gap:6px;">
@@ -3015,6 +3108,8 @@
             <!-- いつも見える1行: 件数・タブ・いま効いている条件 -->
             <div class="ord-tabbar">
               <span class="orders-count" id="orders-count">読込中...</span>
+              <!-- 各社メニューから会社を選んだときだけ表示（検索・絞り込み等のタブの代わり） -->
+              <div class="cm-client-head" id="cm-client-head"></div>
               <div class="ord-tabs" role="tablist">
                 <button type="button" class="ord-tab" data-panel="search" onclick="toggleOrdPanel('search')" title="検索（/ キーでも開けます）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>検索</button>
                 <button type="button" class="ord-tab" data-panel="filter" onclick="toggleOrdPanel('filter')" title="販売先・期間・納期・品目で絞り込み"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>絞り込み<span class="ord-tab-badge" id="ord-filter-badge"></span></button>
@@ -3137,6 +3232,8 @@
             </tbody>
           </table>
         </div>
+        <!-- 各社メニューで会社を選んだときの子データ一覧（受注一覧の代わりに表示） -->
+        <div class="cm-child-wrap" id="cm-child-wrap"></div>
         <div class="pagination" id="pagination" style="display:none;">
           <div class="page-info" id="page-info"></div>
           <div class="page-btns" id="page-btns"></div>
@@ -17383,6 +17480,7 @@ const LOGO_SIZE = {
   'row-logo':       { area: 850,  maxW: 78,  maxH: 17 },   // 一覧の販売先列
   'dm-client-logo': { area: 1000, maxW: 90,  maxH: 18 },   // 受注詳細の見出し
   'dfield-logo':    { area: 1700, maxW: 120, maxH: 24 },   // 詳細画面の項目
+  'cm-logo':        { area: 5200, maxW: 190, maxH: 46 },   // 各社メニューのボタン
 };
 function logoEntryAspect(entry) {
   if (entry._ar) return entry._ar;
@@ -17439,6 +17537,391 @@ function clientLogoHtml(name, cls) {
   if (!entry) return '';
   const c = cls || 'cf-logo';
   return '<img class="' + c + '" src="' + clientLogoUrl(entry) + '" style="' + logoSizeStyle(entry, c) + '" alt="">';
+}
+
+// ---- 各社メニュー ----
+// 受注管理の左欄を「取引先ごとのボタン一覧（ロゴ入り）」に切り替える。
+// 一覧は受注データの販売先（件数の多い順）。受注が無い取引先も製品マスタで多い順に並べる。
+const CLIENT_MENU_DEFAULT = [
+  '株式会社ＩＺＵＳＨＩ', 'オークマ株式会社', 'ヤマザキマザック株式会社', 'ユアサネオテック株式会社',
+  'ニデックオーケーケー株式会社', 'キタムラ機械株式会社', '株式会社ＴＡＫＩＳＡＷＡ', 'ニデックマシンツール株式会社',
+  '安田工業株式会社', '中村留精密工業株式会社', '日機株式会社',
+];
+let clientMenuSelected = '';
+// 各社メニューの「製品ボタン」：押すとそのOT番号の受注だけを表示する。kw は販売先名に含まれる語
+const CLIENT_PRODUCT_FILTERS = [
+  { kw: 'マザック', items: [
+    { label: 'E03',      ots: ['OT-086369-1', 'OT-086377', 'OT-086368', 'OT-086370', 'OT-086371'] },
+    { label: '273(LGM)', ots: ['OT-083711-2', 'OT-081495-4', 'OT-081496-1', 'OT-081497-1'] },
+    { label: 'E04(LGM)', ots: ['OT-081670-3', 'OT-083584-3', 'OT-081672-2', 'OT-081671-3'] },
+  ] },
+];
+var cmProductOts = null;      // 選択中の製品ボタンのOT番号（Set）。null＝すべて
+var cmProductLabel = '';
+function clientProductFilters(client) {
+  return (CLIENT_PRODUCT_FILTERS.find(c => String(client || '').includes(c.kw)) || {}).items || [];
+}
+function renderClientHead() {
+  const head = document.getElementById('cm-client-head');
+  if (!head) return;
+  const client = clientMenuSelected;
+  const e = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const items = clientProductFilters(client);
+  // 件数（その会社の受注のうち、各ボタンのOT番号に当たるもの）
+  const mine = (typeof allOrders !== 'undefined' ? allOrders : []).filter(r => String(r.pd_client || '').includes(client));
+  const cnt = ots => { const set = new Set(ots); return mine.filter(r => set.has(String(r.pd_ot_number || '').trim())).length; };
+  const btns = items.length
+    ? `<div class="cm-prod-btns"><button type="button" class="cm-prod-btn${!cmProductLabel ? ' active' : ''}" onclick="setClientProductFilter('')">すべて<span class="cm-prod-cnt">${mine.length}</span></button>`
+      + items.map(it => `<button type="button" class="cm-prod-btn${cmProductLabel === it.label ? ' active' : ''}" onclick="setClientProductFilter(${e(JSON.stringify(it.label))})" title="${e(it.ots.join('、'))}">${e(it.label)}<span class="cm-prod-cnt">${cnt(it.ots)}</span></button>`).join('')
+      + `</div>`
+    : '';
+  head.innerHTML = `<span class="cm-client-name">${clientLogoHtml(client, 'dm-client-logo')}${e(client)}</span>`
+    + btns
+    + `<button type="button" class="cm-client-all" onclick="exitClientView()">全社に戻る</button>`;
+}
+function setClientProductFilter(label) {
+  const it = clientProductFilters(clientMenuSelected).find(x => x.label === label);
+  cmProductLabel = it ? it.label : '';
+  cmProductOts = it ? new Set(it.ots) : null;
+  renderClientHead();
+  filterOrders();
+}
+function toggleClientMenu(open) {
+  const side = document.querySelector('#page-orders .ord-side');
+  const panel = document.getElementById('client-menu-panel');
+  if (!side || !panel) return;
+  const willOpen = open === undefined ? !side.classList.contains('cm-mode') : !!open;
+  side.classList.toggle('cm-mode', willOpen);
+  side.closest('.orders-layout')?.classList.toggle('cm-mode', willOpen);   // 受注一覧を隠して画面全体に表示
+  panel.style.display = willOpen ? '' : 'none';
+  const lbl = document.getElementById('cm-toggle-label');
+  if (lbl) lbl.textContent = willOpen ? '各社メニューを閉じる' : '各社メニュー';
+  if (willOpen) { exitClientView(); renderClientMenu(); }
+}
+// 会社を選んで表示している状態を解除して、全社の受注一覧に戻す
+function exitClientView() {
+  const page = document.getElementById('page-orders');
+  if (!page || !page.classList.contains('cm-client-view')) return;
+  page.classList.remove('cm-client-view');
+  cmProductOts = null; cmProductLabel = '';
+  const sel = document.getElementById('filter-client-select');
+  if (sel) sel.value = '';
+  setClientFilter('');
+}
+function renderClientMenu() {
+  const grid = document.getElementById('client-menu-grid');
+  if (!grid) return;
+  const e = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const counts = new Map();
+  (typeof allOrders !== 'undefined' ? allOrders : []).forEach(r => { if (r.pd_client) counts.set(r.pd_client, (counts.get(r.pd_client) || 0) + 1); });
+  const names = [...counts.keys()].sort((a, b) => counts.get(b) - counts.get(a));
+  CLIENT_MENU_DEFAULT.forEach(n => { if (!names.includes(n)) names.push(n); });
+  grid.innerHTML = names.map(n => {
+    const short = n.replace(/株式会社/g, '').replace(/[\s　]+/g, ' ').trim();
+    const logo = clientLogoHtml(n, 'cm-logo') || `<span class="cm-logo-none">${e(short.slice(0, 2))}</span>`;
+    const cnt = counts.get(n);
+    return `<div class="cm-card${n === clientMenuSelected ? ' active' : ''}" role="button" tabindex="0" data-client="${e(n)}" title="${e(n)}"
+      onclick="openClientMenu(this.dataset.client)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openClientMenu(this.dataset.client)}">
+      ${cnt ? `<span class="cm-count" title="受注件数">${cnt}</span>` : ''}
+      <div class="cm-logo-box">${logo}</div>
+      <div class="cm-name">${e(short)}</div>
+    </div>`;
+  }).join('');
+}
+// 取引先ボタンを押したとき：各社メニューを閉じ、その会社で絞り込んだ受注一覧を表示する
+function openClientMenu(client) {
+  clientMenuSelected = client;
+  document.querySelectorAll('#client-menu-grid .cm-card').forEach(c => c.classList.toggle('active', c.dataset.client === client));
+  toggleClientMenu(false);
+  // 一覧上部の販売先セレクトも合わせる（選択肢に無ければそのまま）
+  const sel = document.getElementById('filter-client-select');
+  if (sel) sel.value = [...sel.options].some(o => o.value === client) ? client : '';
+  setClientFilter(client);
+  // 販売先の絞り込みボタン（「オークマ」「キタムラ」等の短い名前のもの）も選択状態にする
+  const norm = v => String(v || '').replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).toLowerCase();
+  document.querySelectorAll('#page-orders .client-filter-btn').forEach(btn => {
+    const m = (btn.getAttribute('onclick') || '').match(/setClientFilter\('([^']*)'\)/);
+    if (m && m[1] && norm(client).includes(norm(m[1]))) btn.classList.add('active');
+  });
+  // 会社ごとの表示：検索・絞り込み等を隠し、会社名と「全社に戻る」を出す
+  cmProductOts = null; cmProductLabel = '';
+  renderClientHead();
+  document.getElementById('page-orders')?.classList.add('cm-client-view');
+  cmChildSel.clear();
+  loadCmChildren(true);
+  if (typeof toggleOrdPanel === 'function') document.querySelectorAll('#page-orders .ord-panel:not([hidden])').forEach(p => p.hidden = true);
+  document.querySelector('#page-orders .orders-list-card')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+}
+
+// =====================================================================
+// 各社メニュー：子データ一覧（シールNo単位）
+//   ・並べ替え（ドラッグ）と グループ（色分け）は orders_child.cm_sort / cm_group に保存し、全員で共有
+//   ・ダブルクリックで書き換え：子データの シールNo・出荷日、受注の 数量・希望納期
+// =====================================================================
+var cmChildren = [];            // 子データ（受注の項目はその都度 allOrders から引く）
+var cmChildClient = '';         // 読み込んだ会社
+var cmChildSel = new Set();     // 選択中の子データID
+var cmChildLastClick = null;    // Shift+クリックの範囲選択用
+var cmChildDragIds = null;
+const CM_GROUP_COLORS = [
+  { bg: '#eff6ff', bar: '#3b82f6' }, { bg: '#fef3c7', bar: '#f59e0b' }, { bg: '#ecfdf5', bar: '#10b981' },
+  { bg: '#fce7f3', bar: '#ec4899' }, { bg: '#ede9fe', bar: '#8b5cf6' }, { bg: '#ffedd5', bar: '#f97316' },
+  { bg: '#e0f2fe', bar: '#0ea5e9' }, { bg: '#f1f5f9', bar: '#64748b' },
+];
+const cmEsc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function cmIsClientView() { return !!document.getElementById('page-orders')?.classList.contains('cm-client-view'); }
+function cmOrderMap() { const m = new Map(); (allOrders || []).forEach(o => m.set(o.id, o)); return m; }
+function cmStatus(msg, isErr) {
+  const el = document.getElementById('cm-child-status');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.style.color = isErr ? '#dc2626' : '#6b7280';
+  if (msg && !isErr) { clearTimeout(cmStatus._t); cmStatus._t = setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 2500); }
+}
+
+async function loadCmChildren(force) {
+  const client = clientMenuSelected;
+  const wrap = document.getElementById('cm-child-wrap');
+  if (!wrap || !client) return;
+  if (!force && cmChildClient === client && cmChildren.length) { renderCmChildList(); return; }
+  if (loadCmChildren._busy === client) return;
+  loadCmChildren._busy = client;
+  wrap.innerHTML = '<div class="loading-state" style="padding:40px;text-align:center;"><span class="spin"></span>子データを読込中...</div>';
+  cmChildSel.clear();
+  try {
+    const ids = (allOrders || []).filter(o => String(o.pd_client || '').includes(client)).map(o => o.id);
+    cmChildren = ids.length
+      ? await shipFetchIn(`${SUPABASE_URL}/rest/v1/orders_child?select=id,order_id,sealno,delivery,inspectionsheet,laser_machine,laser_done,cm_sort,cm_group`, 'order_id', ids)
+      : [];
+    cmChildClient = client;
+    renderCmChildList();
+  } catch (e) {
+    console.error('[各社メニュー] 子データ読込エラー', e);
+    wrap.innerHTML = '<div style="padding:30px;text-align:center;color:#dc2626;">子データを読み込めませんでした</div>';
+  } finally { loadCmChildren._busy = null; }
+}
+
+// 表示する子データ（受注一覧の絞り込み＝会社・製品ボタン等に当たる受注の子データ）を並び順どおりに返す
+function cmVisibleChildren() {
+  const visibleOrderIds = new Set((filteredOrders || []).map(o => o.id));
+  const list = cmChildren.filter(c => visibleOrderIds.has(c.order_id));
+  const num = v => (v == null || v === '' ? null : Number(v));
+  list.sort((a, b) => {
+    const sa = num(a.cm_sort), sb = num(b.cm_sort);
+    if (sa != null || sb != null) { if (sa == null) return 1; if (sb == null) return -1; if (sa !== sb) return sa - sb; }
+    const da = a.delivery || '9999-99-99', db = b.delivery || '9999-99-99';
+    if (da !== db) return da < db ? -1 : 1;
+    return String(a.sealno || '').localeCompare(String(b.sealno || ''), 'ja', { numeric: true });
+  });
+  return list;
+}
+
+function renderCmChildList() {
+  const wrap = document.getElementById('cm-child-wrap');
+  if (!wrap || !cmIsClientView()) return;
+  if (cmChildClient !== clientMenuSelected) { if (!loadCmChildren._busy) loadCmChildren(); return; }
+  const om = cmOrderMap();
+  const list = cmVisibleChildren();
+  // グループの色：一覧で最初に出てくる順に色を割り当てる（全員同じ並びなので同じ色になる）
+  const gColor = new Map(), gNo = new Map();
+  list.forEach(c => { if (c.cm_group && !gColor.has(c.cm_group)) { gNo.set(c.cm_group, gColor.size + 1); gColor.set(c.cm_group, CM_GROUP_COLORS[gColor.size % CM_GROUP_COLORS.length]); } });
+  const fmtD = d => d ? String(d).slice(0, 10).replace(/-/g, '/') : '';
+  const selCnt = list.filter(c => cmChildSel.has(c.id)).length;
+  const allSel = list.length > 0 && selCnt === list.length;
+  const rows = list.map(c => {
+    const o = om.get(c.order_id) || {};
+    const g = c.cm_group ? gColor.get(c.cm_group) : null;
+    const style = g ? ` style="background:${g.bg};box-shadow:inset 4px 0 0 ${g.bar};"` : '';
+    const laser = c.laser_done ? '<span class="cmc-ok">済</span>' : cmEsc(c.laser_machine || '');
+    return `<tr class="cmc-row${cmChildSel.has(c.id) ? ' sel' : ''}" draggable="true" data-id="${c.id}"${style}>
+      <td class="cmc-chk"><input type="checkbox" ${cmChildSel.has(c.id) ? 'checked' : ''} onclick="cmChildToggle(event, ${c.id})"></td>
+      <td class="cmc-handle" title="ドラッグで並べ替え">⋮⋮</td>
+      <td class="cmc-grp">${g ? `<span class="cmc-gbadge" style="background:${g.bar};">G${gNo.get(c.cm_group)}</span>` : ''}</td>
+      <td class="cmc-edit mono" data-f="sealno" title="ダブルクリックで書き換え"><b>${cmEsc(c.sealno)}</b></td>
+      <td class="cmc-edit" data-f="delivery" title="ダブルクリックで書き換え">${fmtD(c.delivery) || '<span class="cmc-none">未設定</span>'}</td>
+      <td class="mono">${cmEsc(o.pd_ot_number)}</td>
+      <td class="cmc-name">${cmEsc(o.pd_product_name)}</td>
+      <td class="mono">${cmEsc(o.orderno)}</td>
+      <td class="mono">${cmEsc(o.productno)}</td>
+      <td>${fmtD(o.orderdate)}</td>
+      <td class="cmc-edit r" data-f="quantity" title="ダブルクリックで書き換え（受注の数量）">${o.quantity != null ? cmEsc(Number(o.quantity)) : ''}</td>
+      <td class="cmc-edit" data-f="deliverydate" title="ダブルクリックで書き換え（受注の希望納期）">${fmtD(o.deliverydate)}</td>
+      <td class="c">${c.inspectionsheet ? '<span class="cmc-ok">あり</span>' : ''}</td>
+      <td class="c">${laser}</td>
+      <td class="c"><button type="button" class="cmc-detail" onclick="openOrderDetail(${c.order_id})">詳細</button></td>
+    </tr>`;
+  }).join('');
+  wrap.innerHTML = `
+    <div class="cmc-bar">
+      <span class="cmc-count">子データ <b>${list.length}</b>件${selCnt ? `／選択 <b>${selCnt}</b>件` : ''}</span>
+      <button type="button" class="cmc-btn" onclick="cmChildMakeGroup()" ${selCnt ? '' : 'disabled'}>グループにする</button>
+      <button type="button" class="cmc-btn" onclick="cmChildClearGroup()" ${selCnt ? '' : 'disabled'}>グループ解除</button>
+      <button type="button" class="cmc-btn" onclick="cmChildSelClear()" ${selCnt ? '' : 'disabled'}>選択解除</button>
+      <span class="cmc-sep"></span>
+      <button type="button" class="cmc-btn" onclick="cmChildResetSort()" title="表示中の行の並びを、出荷日→シールNo順に戻します">出荷日順に戻す</button>
+      <button type="button" class="cmc-btn" onclick="loadCmChildren(true)" title="ほかの人の変更を読み込み直します">再読込</button>
+      <span class="cmc-status" id="cm-child-status"></span>
+      <span class="cmc-hint">行をドラッグで並べ替え／Shift+クリックで範囲選択／ダブルクリックで書き換え</span>
+    </div>
+    <div class="cmc-scroll">
+      <table class="cmc-table">
+        <thead><tr>
+          <th class="cmc-chk"><input type="checkbox" ${allSel ? 'checked' : ''} onclick="cmChildSelAll(this.checked)"></th>
+          <th></th><th>G</th><th>シールNo</th><th>出荷日</th><th>OT番号</th><th>製品名</th><th>受注番号</th><th>製番</th><th>注文日</th><th class="r">数量</th><th>希望納期</th><th class="c">検査表</th><th class="c">レーザー</th><th></th>
+        </tr></thead>
+        <tbody id="cm-child-tbody">${rows || '<tr><td colspan="15" style="padding:30px;text-align:center;color:#9ca3af;">子データがありません</td></tr>'}</tbody>
+      </table>
+    </div>`;
+  cmChildBindEvents();
+}
+
+function cmChildBindEvents() {
+  const tb = document.getElementById('cm-child-tbody');
+  if (!tb) return;
+  tb.querySelectorAll('tr.cmc-row').forEach(tr => {
+    tr.addEventListener('dragstart', ev => {
+      const id = Number(tr.dataset.id);
+      // 選択中の行をつかんだら、選択中の行をまとめて動かす
+      const vis = cmVisibleChildren().map(c => c.id);
+      cmChildDragIds = cmChildSel.has(id) ? vis.filter(x => cmChildSel.has(x)) : [id];
+      ev.dataTransfer.effectAllowed = 'move';
+      try { ev.dataTransfer.setData('text/plain', String(id)); } catch (e) {}
+      setTimeout(() => cmChildDragIds.forEach(x => tb.querySelector(`tr[data-id="${x}"]`)?.classList.add('dragging')), 0);
+    });
+    tr.addEventListener('dragend', () => { tb.querySelectorAll('.dragging,.drop-above,.drop-below').forEach(el => el.classList.remove('dragging', 'drop-above', 'drop-below')); });
+    tr.addEventListener('dragover', ev => {
+      if (!cmChildDragIds) return;
+      ev.preventDefault();
+      const r = tr.getBoundingClientRect(), below = ev.clientY > r.top + r.height / 2;
+      tb.querySelectorAll('.drop-above,.drop-below').forEach(el => el.classList.remove('drop-above', 'drop-below'));
+      tr.classList.add(below ? 'drop-below' : 'drop-above');
+    });
+    tr.addEventListener('drop', ev => {
+      ev.preventDefault();
+      if (!cmChildDragIds) return;
+      const r = tr.getBoundingClientRect(), below = ev.clientY > r.top + r.height / 2;
+      const moving = cmChildDragIds; cmChildDragIds = null;
+      cmChildMove(moving, Number(tr.dataset.id), below);
+    });
+    tr.querySelectorAll('td.cmc-edit').forEach(td => td.addEventListener('dblclick', () => cmChildEdit(td, Number(tr.dataset.id))));
+  });
+}
+
+function cmChildToggle(ev, id) {
+  const vis = cmVisibleChildren().map(c => c.id);
+  const on = ev.target.checked;
+  if (ev.shiftKey && cmChildLastClick != null && vis.includes(cmChildLastClick)) {
+    const a = vis.indexOf(cmChildLastClick), b = vis.indexOf(id);
+    vis.slice(Math.min(a, b), Math.max(a, b) + 1).forEach(x => on ? cmChildSel.add(x) : cmChildSel.delete(x));
+  } else {
+    on ? cmChildSel.add(id) : cmChildSel.delete(id);
+  }
+  cmChildLastClick = id;
+  renderCmChildList();
+}
+function cmChildSelAll(on) { cmVisibleChildren().forEach(c => on ? cmChildSel.add(c.id) : cmChildSel.delete(c.id)); renderCmChildList(); }
+function cmChildSelClear() { cmChildSel.clear(); renderCmChildList(); }
+
+// 並べ替え：表示中の並び全体を cm_sort 1,2,3… で保存する
+async function cmChildSaveOrder(ids) {
+  ids.forEach((id, i) => { const c = cmChildren.find(x => x.id === id); if (c) c.cm_sort = i + 1; });
+  renderCmChildList();
+  cmStatus('並び順を保存中…');
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/cm_reorder_children`, { method: 'POST', headers: sbHeaders(), body: JSON.stringify({ p_ids: ids }) });
+    if (!res.ok) throw new Error(await res.text());
+    cmStatus('並び順を保存しました');
+  } catch (e) {
+    console.error(e); cmStatus('並び順を保存できませんでした', true);
+    loadCmChildren(true);
+  }
+}
+function cmChildMove(moving, targetId, below) {
+  if (moving.includes(targetId)) return;
+  const ids = cmVisibleChildren().map(c => c.id).filter(x => !moving.includes(x));
+  let at = ids.indexOf(targetId);
+  if (at < 0) return;
+  if (below) at += 1;
+  ids.splice(at, 0, ...moving);
+  cmChildSaveOrder(ids);
+}
+async function cmChildResetSort() {
+  const list = cmVisibleChildren();
+  if (!list.length) return;
+  if (!confirm(`表示中の ${list.length} 件の並びを、出荷日→シールNo順に戻します。よろしいですか？`)) return;
+  list.forEach(c => c.cm_sort = null);
+  const ids = cmVisibleChildren().map(c => c.id);
+  cmChildSaveOrder(ids);
+}
+
+// グループ：選択中の行を1つのグループにする／グループから外す
+async function cmChildPatchGroup(ids, group) {
+  if (!ids.length) return;
+  ids.forEach(id => { const c = cmChildren.find(x => x.id === id); if (c) c.cm_group = group; });
+  cmChildSel.clear();
+  renderCmChildList();
+  cmStatus('グループを保存中…');
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/orders_child?id=in.(${ids.join(',')})`, {
+      method: 'PATCH', headers: { ...sbHeaders(), Prefer: 'return=minimal' }, body: JSON.stringify({ cm_group: group }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    cmStatus(group ? 'グループにしました' : 'グループを解除しました');
+  } catch (e) {
+    console.error(e); cmStatus('グループを保存できませんでした', true);
+    loadCmChildren(true);
+  }
+}
+function cmChildMakeGroup() {
+  const ids = cmVisibleChildren().map(c => c.id).filter(x => cmChildSel.has(x));
+  cmChildPatchGroup(ids, 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
+}
+function cmChildClearGroup() {
+  const ids = cmVisibleChildren().map(c => c.id).filter(x => cmChildSel.has(x));
+  cmChildPatchGroup(ids, null);
+}
+
+// 書き換え（ダブルクリック）
+//   sealno・delivery → 子データ（orders_child）、quantity・deliverydate → 受注（orders：同じ受注の子データすべてに反映）
+function cmChildEdit(td, childId) {
+  if (td.querySelector('input')) return;
+  const f = td.dataset.f;
+  const c = cmChildren.find(x => x.id === childId);
+  if (!c) return;
+  const o = cmOrderMap().get(c.order_id) || {};
+  const isChild = f === 'sealno' || f === 'delivery';
+  const cur = isChild ? c[f] : o[f];
+  const type = (f === 'delivery' || f === 'deliverydate') ? 'date' : (f === 'quantity' ? 'number' : 'text');
+  const val = cur == null ? '' : (type === 'date' ? String(cur).slice(0, 10) : String(type === 'number' ? Number(cur) : cur));
+  td.innerHTML = `<input class="cmc-input" type="${type}" value="${cmEsc(val)}"${type === 'number' ? ' min="0" step="1"' : ''}>`;
+  const inp = td.querySelector('input');
+  inp.focus(); if (type === 'text') inp.select();
+  let done = false;
+  const finish = async save => {
+    if (done) return; done = true;
+    const nv = inp.value.trim();
+    if (!save || nv === val) { renderCmChildList(); return; }
+    if (f === 'sealno' && !nv) { alert('シールNoは空にできません'); renderCmChildList(); return; }
+    if (!isChild) {
+      const sibs = cmChildren.filter(x => x.order_id === c.order_id).length;
+      if (sibs > 1 && !confirm(`${f === 'quantity' ? '数量' : '希望納期'}は受注（${o.orderno || ''}）の項目です。\n同じ受注の子データ ${sibs} 件すべてに反映されます。よろしいですか？`)) { renderCmChildList(); return; }
+    }
+    const body = { [f]: nv === '' ? null : (type === 'number' ? Number(nv) : nv) };
+    const url = isChild ? `${SUPABASE_URL}/rest/v1/orders_child?id=eq.${c.id}` : `${SUPABASE_URL}/rest/v1/orders?id=eq.${c.order_id}`;
+    cmStatus('保存中…');
+    try {
+      const res = await fetch(url, { method: 'PATCH', headers: { ...sbHeaders(), Prefer: 'return=minimal' }, body: JSON.stringify(body) });
+      if (!res.ok) throw new Error(await res.text());
+      if (isChild) c[f] = body[f]; else if (o.id) o[f] = body[f];
+      cmStatus('保存しました');
+    } catch (e) {
+      console.error(e); cmStatus('保存できませんでした', true);
+      alert('保存できませんでした: ' + (e.message || e));
+    }
+    renderCmChildList();
+  };
+  inp.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); finish(true); } else if (ev.key === 'Escape') { ev.preventDefault(); finish(false); } });
+  inp.addEventListener('blur', () => finish(true));
 }
 
 function setClientFilter(client) {
@@ -17506,6 +17989,8 @@ function filterOrders() {
       const normClient = s => (s || '').replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).toLowerCase();
       if (!normClient(r.pd_client).includes(normClient(clientFilterValue))) return false;
     }
+    // 各社メニューの製品ボタン（例 マザック「E03」）で選んだOT番号だけにする
+    if (cmProductOts && !cmProductOts.has(String(r.pd_ot_number || '').trim())) return false;
     if (unregisteredFilterActive) {
       if (r.pd_client) return false; // pd_clientが空＝productdate未登録の受注のみ表示
     }
@@ -18207,6 +18692,7 @@ function ordColsReset() {
 }
 
 function renderOrdersTable() {
+  if (cmIsClientView()) renderCmChildList();   // 各社メニューの子データ一覧も同じ絞り込みで更新
   const total = filteredOrders.length;
   const pages = Math.ceil(total / PAGE_SIZE) || 1;
   if (currentPage > pages) currentPage = pages;
