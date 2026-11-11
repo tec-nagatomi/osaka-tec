@@ -14981,6 +14981,7 @@ function parseExcelTehaijo(data, ci, filename) {
     drawingno:    ci['部品番号'],   // 部品番号を優先してdrawingnoに登録
     hinban:       ci['図面番号'],   // 図面番号（部品番号がなければ使用）
     model:        ci['部品型式'],   // 部品番号が SSS〜 のときの客先図番
+    partname:     ci['部品名称'],   // 部品型式に ONLY/WIPER/STOPPER/SET が無いときに部品型式の後ろへ付ける
     quantity:     ci['数量'],
     price:        ci['金額'],
     originalno:   ci['オーダ'],
@@ -15001,10 +15002,16 @@ function parseExcelTehaijo(data, ci, filename) {
     let drawingno = String(row[colMap.drawingno] || row[colMap.hinban] || '').trim();
     if (!orderno && !drawingno) continue;
     // ニデック: 部品番号が SSS〜 のときは部品型式（例「VA56970 ITEM2 REAR SIDE 2DANME WIPER」）を客先図番にする。
-    //   ただし製品マスタに部品型式が無く SSS番号で登録済みの製品は、SSS番号のまま照合する（resolveDrawingAlternatives）
+    //   部品型式に「ONLY」「WIPER」「STOPPER」「SET」のどれも無いときは「部品型式＋半角スペース＋部品名称」を客先図番にする。
+    //   ただし製品マスタに該当が無く SSS番号で登録済みの製品は、SSS番号のまま照合する（resolveDrawingAlternatives）
     let drawAlts;
-    const model = colMap.model != null ? String(row[colMap.model] || '').replace(/[\s　]+/g, ' ').trim() : '';
-    if (/^SSS/i.test(drawingno) && model) { drawAlts = [model, drawingno]; drawingno = model; }
+    const sp = v => String(v || '').replace(/[\s　]+/g, ' ').trim();
+    const model = colMap.model != null ? sp(row[colMap.model]) : '';
+    const pname = colMap.partname != null ? sp(row[colMap.partname]) : '';
+    if (/^SSS/i.test(drawingno) && (model || pname)) {
+      const key = (model && /ONLY|WIPER|STOPPER|SET/i.test(model)) ? model : [model, pname].filter(Boolean).join(' ');
+      drawAlts = [key, drawingno]; drawingno = key;
+    }
     const reqDate = reqDateCol !== undefined ? excelDateToStr(row[reqDateCol]) : '';
     rows.push({
       orderdate:            /^\d{4}\/\d{2}\/\d{2}$/.test(reqDate) ? reqDate : fileDate,
