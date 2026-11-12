@@ -13681,6 +13681,10 @@ async function extractNakamuraRows(text, ocr) {
   }
   // 納期の印字に手書きの訂正（取り消し線＋書き込み）が重なると日付が読めない。誤った日付を入れないよう、その場合は空欄のまま（プレビュー後に手入力）
   console.log('[中村留]', items);
+  return nakamuraMatchItems(items);
+}
+// 中村留：読み取った明細（品番・版・品名区分など）を製品マスタと照合して受注データにする（スキャン・EDIテキスト共通）
+async function nakamuraMatchItems(items) {
   if (!items.length) return [];
   let list = [];
   try {
@@ -13707,9 +13711,50 @@ async function extractNakamuraRows(text, ocr) {
       orderdate: it.orderdate, orderno: it.orderno, drawingno: p ? p.customer_drawing_no : (it.base ? `${it.base}${it.rev ? '-' + it.rev.slice(0, 2) : ''}` : ''),
       quantity: it.qty, unit: '個', price: it.price, originalno: it.pj, deliverydate: it.deliverydate, productno: null,
       delivery_destination: null, shippingdate: null,
-      _otNumber: (p && p.ot_number) || it.otRead || undefined, _productName: (p && p.product_name) || undefined, _ocr: true,
+      _otNumber: (p && p.ot_number) || it.otRead || undefined, _productName: (p && p.product_name) || undefined, _ocr: !it.edi,
     };
   });
+}
+
+// ---- フォーマット9b: 中村留 EDI出力の注文書（テキストPDF・JasperReports、ページは90°回転） ----
+//   文字が縦向きに配置されているため行の組み立てはせず、「項目名（小さい文字）」の右下にある値を拾う。
+//   品目「J21*4017101AD」= 品番 J214017101 ＋ 版 AD、品目名「10ﾀﾞﾝｼｷﾌﾟﾛﾃｸﾀｰ (ﾛｯﾄ)」、注文No「P100120647 1」
+function isNakamuraEdiItems(items) {
+  return items.some(i => /中村留/.test(i.str)) && items.some(i => /^品目$/.test(String(i.str).trim())) && items.some(i => /^注文日$/.test(String(i.str).trim()));
+}
+async function extractNakamuraEdiRows(rawItems) {
+  const its = rawItems.filter(i => i.str && i.str.trim() && i.transform)
+    .map(i => ({ s: i.str.trim(), x: i.transform[4], y: i.transform[5], fs: Math.hypot(i.transform[0], i.transform[1]) }));
+  const isLabel = i => i.fs <= 10.5;
+  const labels = its.filter(isLabel), vals = its.filter(i => !isLabel(i));
+  // 項目名の欄の値：項目名と同じ列（x が少し右）で、次の項目名（同じ x で y が大きいもの）より手前
+  const field = name => {
+    const L = labels.find(l => l.s === name);
+    if (!L) return '';
+    const nextY = Math.min(...labels.filter(l => Math.abs(l.x - L.x) < 4 && l.y > L.y + 1).map(l => l.y), Infinity);
+    return vals.filter(v => v.x > L.x + 8 && v.x < L.x + 32 && v.y >= L.y - 5 && v.y < nextY - 2)
+      .sort((a, b) => a.y - b.y).map(v => v.s).join(' ').trim();
+  };
+  const toYmd = v => { const m = String(v || '').match(/(20\d{2})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/); return m ? `${m[1]}/${m[2].padStart(2, '0')}/${m[3].padStart(2, '0')}` : ''; };
+  const num = v => { const n = parseFloat(String(v || '').replace(/[,\s]|JPY/g, '')); return isNaN(n) ? 0 : n; };
+  const hinmoku = field('品目').replace(/\s/g, '');
+  const hm = hinmoku.match(/^([A-Z]\d{2}\*?\d{5,9})([A-Z]{1,3})?/) || hinmoku.match(/^([A-Z0-9*]+?)([A-Z]{1,3})?$/);
+  const base = hm ? hm[1].replace(/\*/g, '') : '';
+  const rev = hm && hm[2] ? hm[2] : '';
+  const name = field('品目名');
+  const nom = its.find(i => /^P\d{8,10}(\s+\d+)?$/.test(i.s));
+  const otm = field('メーカー型番・メーカー名').match(/OT-?\d{5,6}(?:-\d{1,2})?/i);
+  const qty = num(field('注文数量')) || 1;
+  const price = num(field('単価'));
+  const item = {
+    orderno: nom ? nom.s.split(/\s+/)[0] : '', base, rev, pj: '',
+    orderdate: toYmd(field('注文日')), deliverydate: toYmd(field('納期')),
+    qty, price, amount: num(field('納入金額')), otRead: otm ? otm[0].toUpperCase() : '',
+    protector: /ﾌﾟﾛﾃｸ|プロテク|ﾀﾞﾝｼｷ|ダンシキ/.test(name), edi: true,
+  };
+  console.log('[中村留 EDI]', item, '品目:', hinmoku, '品目名:', name);
+  if (!item.orderno && !item.base) return [];
+  return nakamuraMatchItems([item]);
 }
 
 // ---- フォーマット2b: ユアサネオテック「注文書」（DocuWorks等でスキャンした画像PDF） ----
@@ -13962,6 +14007,11 @@ async function parsePDF(file) {
       continue;
     }
 
+    if (isNakamuraEdiItems(content.items)) {
+      console.log('[PDF] → フォーマット9b: 中村留 EDI出力（テキストPDF）');
+      rows.push(...await extractNakamuraEdiRows(content.items));
+      continue;
+    }
     // pdf.jsはword単位でitemsを返す → y座標でグループ化して行を再構築
     // transform[5] はページ下からのy（大きいほど上）→ 降順ソートで上から下へ
     // ±2px の誤差を吸収するため、既存グループに近いyがあればマージする
