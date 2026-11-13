@@ -13925,7 +13925,11 @@ async function parsePDF(file) {
         const ocr = await ocrPdfPage(ocrWorker, page);
         const t = ocrNormalize(ocr.text);
         console.log(`[OCR p${p}] 先頭:`, t.substring(0, 120).replace(/\n/g, ' '));
-        if (/貴社図番/.test(t)) {
+        if (isOkumaScanText(t)) {
+          console.log('[PDF] → フォーマット3s: オークマ 購買注文書（スキャン画像・OCR）');
+          showStatus('processing', `オークマの注文書を文字認識(OCR)しています… ${file.name}（${p}/${pdf.numPages}ページ）`);
+          rows.push(...await extractOkumaScanRows(ocr, ocrWorker, page));
+        } else if (/貴社図番/.test(t)) {
           // 野村製作所の購入仕様書: 「貴社図番:OT-062180 ｹﾌﾟﾗｰ材」と工事番号(AH226174)を控えておく
           //   図番の後ろの仕様（半角カナ）はOCRで崩れやすいため、読み方を変えた複数の候補を集め、
           //   最後に発注書側の「品名/形式寸法」欄の文字と突き合わせて確定する（parsePDF の最後）
@@ -14767,6 +14771,198 @@ async function resolveDrawingAlternatives(rows) {
       r.drawingno = hit;
     }
   }
+}
+
+// ---- フォーマット3s: オークマ 購買注文書（スキャン画像PDF・OCR） ----
+//   表の縦罫線が文字に重なってページ全体のOCRでは明細が読めないため、
+//   ① 罫線を消した画像で全体を読み、品目（例 H0190-0164-04-1）の行を見つける
+//   ② その行の縦罫線の位置から欄（単価・数量・税抜金額・納期）を割り出し、400dpi の画像から欄ごとに読み直す
+//   ③ 次の段から 行No（10）・プロジェクト（616087）を読む
+//   orderno = 購買オーダー + "-" + 行No（BJ-32546922-010）、originalno = PJ-プロジェクト
+function isOkumaScanText(t) {
+  const u = String(t || '').replace(/\s/g, '');
+  return /購買注文書/.test(u) && /(オークマ|大口町|BJ-?\d{6})/.test(u);
+}
+function okDarkMap(img, thr) {
+  const { width: W, height: H, data } = img; const d = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) { const j = i * 4; d[i] = (data[j] * 0.299 + data[j + 1] * 0.587 + data[j + 2] * 0.114) < thr ? 1 : 0; }
+  return d;
+}
+// 縦線（minV px 以上続く黒）と横線（minH px 以上）を白く塗る
+function okEraseLines(img, minV, minH) {
+  const { width: W, height: H, data } = img; const d = okDarkMap(img, 170);
+  const kill = new Uint8Array(W * H);
+  for (let x = 0; x < W; x++) { let s = -1; for (let y = 0; y <= H; y++) { const v = y < H && d[y * W + x]; if (v && s < 0) s = y; if (!v && s >= 0) { if (y - s >= minV) for (let k = s; k < y; k++) kill[k * W + x] = 1; s = -1; } } }
+  for (let y = 0; y < H; y++) { let s = -1; for (let x = 0; x <= W; x++) { const v = x < W && d[y * W + x]; if (v && s < 0) s = x; if (!v && s >= 0) { if (x - s >= minH) for (let k = s; k < x; k++) kill[y * W + k] = 1; s = -1; } } }
+  for (let y = 0; y < H; y++) for (let x = 1; x < W - 1; x++) { const i = y * W + x; if (kill[i] || ((kill[i - 1] || kill[i + 1]) && d[i])) { const j = i * 4; data[j] = data[j + 1] = data[j + 2] = 255; } }
+  return img;
+}
+// y0..y1 の帯にある縦罫線の x 位置（帯の高さの8割以上が黒い列）
+function okVLines(img, y0, y1) {
+  const { width: W } = img; const d = okDarkMap(img, 170); const xs = [];
+  y0 = Math.max(0, Math.round(y0)); y1 = Math.min(img.height, Math.round(y1));
+  const h = Math.max(1, y1 - y0);
+  for (let x = 0; x < W; x++) { let c = 0; for (let y = y0; y < y1; y++) c += d[y * W + x]; if (c >= h * 0.8) xs.push(x); }
+  const out = []; for (const x of xs) { const l = out[out.length - 1]; if (l && x - l[1] <= 4) l[1] = x; else out.push([x, x]); }
+  return out.map(([a, b]) => Math.round((a + b) / 2));
+}
+// 画像の一部を切り出して白黒にし、罫線とその切れ端を消して周りに余白を付ける（欄ごとのOCR用）
+function okCropClean(img, x0, y0, x1, y1, margin) {
+  x0 = Math.max(0, Math.round(x0)); y0 = Math.max(0, Math.round(y0)); x1 = Math.min(img.width, Math.round(x1)); y1 = Math.min(img.height, Math.round(y1));
+  const w = Math.max(1, x1 - x0), h = Math.max(1, y1 - y0), m = margin || 20, W = w + 2 * m, H = h + 2 * m;
+  const out = { width: W, height: H, data: new Uint8ClampedArray(W * H * 4).fill(255) };
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const s = ((y0 + y) * img.width + x0 + x) * 4, d = ((y + m) * W + x + m) * 4; out.data[d] = img.data[s]; out.data[d + 1] = img.data[s + 1]; out.data[d + 2] = img.data[s + 2]; }
+  for (let i = 0; i < W * H; i++) { const j = i * 4; const v = (out.data[j] * 0.299 + out.data[j + 1] * 0.587 + out.data[j + 2] * 0.114) < 140 ? 0 : 255; out.data[j] = out.data[j + 1] = out.data[j + 2] = v; }
+  okEraseLines(out, Math.max(12, Math.round(h * 0.6)), Math.max(40, Math.round(w * 0.5)));
+  const band = Math.round(h * 0.28), minRun = Math.max(18, Math.round(h * 0.35));
+  for (let y = m; y < m + h; y++) {
+    if (y >= m + band && y < m + h - band) continue;
+    let s = -1;
+    for (let x = 0; x <= W; x++) {
+      const dk = x < W && out.data[(y * W + x) * 4] === 0;
+      if (dk && s < 0) s = x;
+      if (!dk && s >= 0) {
+        if (x - s >= minRun) {
+          let thick = 0; for (let yy = Math.max(0, y - 4); yy < Math.min(H, y + 5); yy++) if (out.data[(yy * W + s + ((x - s) >> 1)) * 4] === 0) thick++;
+          if (thick <= 4) for (let yy = Math.max(0, y - 3); yy < Math.min(H, y + 4); yy++) for (let k = s; k < x; k++) { const j = (yy * W + k) * 4; out.data[j] = out.data[j + 1] = out.data[j + 2] = 255; }
+        }
+        s = -1;
+      }
+    }
+  }
+  return out;
+}
+function okImageToCanvas(img) {
+  const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+  const ctx = cv.getContext('2d'); const id = ctx.createImageData(img.width, img.height); id.data.set(img.data); ctx.putImageData(id, 0, 0);
+  return cv;
+}
+// OCRの数字の読み違いを直す（O→0 など）
+function okFixDigits(s) { return String(s || '').replace(/[OoＯ〇]/g, '0').replace(/[Il|lｌ]/g, '1').replace(/[Ss]/g, '5').replace(/[Bb]/g, '8'); }
+// 金額: 「180.100.00」「180,100」→ 180100（末尾が .00 なら小数として外す）
+function okParseYen(s) {
+  let v = okFixDigits(s).replace(/[^\d.,]/g, '');
+  v = v.replace(/[.,]\d{2}$/, '').replace(/[.,]/g, '');
+  const n = parseInt(v, 10); return isNaN(n) ? 0 : n;
+}
+// 日付: 「2026/11/25」「2026/1 1725」（/ が 7 や 1 に化ける）→ 2026/11/25
+function okParseDate(s, minYmd) {
+  const v = okFixDigits(s).replace(/\s/g, '');
+  const valid = (y, m, d) => m >= 1 && m <= 12 && d >= 1 && d <= new Date(y, m, 0).getDate();
+  const fmt = (y, m, d) => `${y}/${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}`;
+  const cands = [];
+  let m = v.match(/(20\d{2})[\/.\-](\d{1,2})[\/.\-](\d{1,2})/);
+  if (m) cands.push([+m[1], +m[2], +m[3]]);
+  m = v.match(/(20\d{2})[\/.\-]?(\d{3,5})/);
+  if (m) {
+    const r = m[2];
+    if (r.length === 4) cands.push([+m[1], +r.slice(0, 2), +r.slice(2)]);
+    if (r.length === 5) { cands.push([+m[1], +r.slice(0, 2), +r.slice(3)]); cands.push([+m[1], +r.slice(0, 1), +r.slice(2)]); }
+    if (r.length === 3) { cands.push([+m[1], +r.slice(0, 1), +r.slice(1)]); cands.push([+m[1], +r.slice(0, 2), +r.slice(2)]); }
+  }
+  for (const [y, mo, d] of cands) { if (!valid(y, mo, d)) continue; const f = fmt(y, mo, d); if (!minYmd || f >= minYmd) return f; }
+  return '';
+}
+async function extractOkumaScanRows(ocr, worker, page) {
+  const raw = String(ocr.text || '');
+  // 発注日（右上「発注日 26/11/13」、無ければ発注印の日付）
+  let orderDate = '';
+  let dm = raw.replace(/\s/g, '').match(/発注日(\d{2})\/(\d{1,2})\/(\d{1,2})/);
+  if (dm) orderDate = okParseDate(`20${dm[1]}/${dm[2]}/${dm[3]}`);
+  if (!orderDate) { const dm2 = raw.match(/(20\d{2})\s?\/\s?(\d{1,2})\s?\/\s?(\d{1,2})/); if (dm2) orderDate = okParseDate(dm2[0]); }
+
+  // ① 罫線を消した画像で全体を読む
+  const src = ocr.canvas;
+  const orig = src.getContext('2d').getImageData(0, 0, src.width, src.height);
+  const cleanImg = okEraseLines({ width: orig.width, height: orig.height, data: new Uint8ClampedArray(orig.data) }, 40, 120);
+  await worker.setParameters({ tessedit_pageseg_mode: '6', tessedit_char_whitelist: '', preserve_interword_spaces: '1' });
+  const { data } = await worker.recognize(okImageToCanvas(cleanImg), {}, { text: true, blocks: true });
+  const lines = [];
+  for (const b of (data.blocks || [])) for (const pg of (b.paragraphs || [])) for (const l of (pg.lines || [])) lines.push(l);
+  const cleanText = ocrNormalize(data.text || '');
+  console.log('[Okuma OCR] 罫線除去後:', cleanText.substring(0, 400));
+
+  // ② 欄ごとの読み直し用に 400dpi で描き直す
+  const hiCv = await renderPdfPageToCanvas(page, 400);
+  const hi = hiCv.getContext('2d').getImageData(0, 0, hiCv.width, hiCv.height);
+  const K = hi.width / orig.width;
+  const cell = async (x0, y0, x1, y1, psm, whitelist) => {
+    if (x1 - x0 < 6 || y1 - y0 < 6) return '';
+    const c = okCropClean(hi, x0 * K, y0 * K, x1 * K, y1 * K, 24);
+    await worker.setParameters({ tessedit_pageseg_mode: psm || '7', tessedit_char_whitelist: whitelist || '' });
+    const r = await worker.recognize(okImageToCanvas(c));
+    return ocrNormalize(r.data.text || '').trim();
+  };
+
+  // 購買オーダー番号（「購買オーダー」の右の欄）
+  let po = '';
+  const poLine = lines.find(l => /オ\s*ー\s*ダ/.test(l.text || ''));
+  if (poLine) {
+    const lw = (poLine.words || []).find(w => /ダ/.test(w.text || ''));
+    const x0 = lw ? lw.bbox.x1 + 4 : poLine.bbox.x0 + (poLine.bbox.x1 - poLine.bbox.x0) * 0.2;
+    // 字間の広い書体のため、1行として読むモード(13)を優先し、だめなら英数字だけに絞って読む
+    for (const [psm, wl] of [['13', ''], ['13', 'BJ-0123456789'], ['7', 'BJ-0123456789']]) {
+      const t = await cell(x0, poLine.bbox.y0 - 4, Math.min(orig.width, x0 + orig.width * 0.3), poLine.bbox.y1 + 4, psm, wl);
+      const m = okFixDigits(t.replace(/\s/g, '')).match(/(\d{8})(?!\d)/);
+      console.log('[Okuma OCR] 購買オーダー欄:', psm, t, '→', m ? m[1] : '-');
+      if (m) { po = 'BJ-' + m[1]; break; }
+    }
+  }
+  if (!po) { const m = okFixDigits(cleanText.replace(/\s/g, '')).match(/オーダ[^\d]{0,8}(\d{8})/); if (m) po = 'BJ-' + m[1]; }
+
+  // ③ 品目の行ごとに欄を読む
+  const rows = [];
+  let idx = 0;
+  for (let li = 0; li < lines.length; li++) {
+    const l = lines[li];
+    const t = ocrNormalize(l.text || '').replace(/\s+/g, '').replace(/(?<=^[A-Z])[OoＯ〇]/, '0').replace(/(?<=\d)[OoＯ〇]|[OoＯ〇](?=\d)/g, '0');
+    const dmm = t.match(/([A-Z]{1,2}\d{4}-\d{4}-\d{2}(?:-\d)?)(?!\d)/);
+    if (!dmm) continue;
+    idx++;
+    const { y0, y1 } = l.bbox;
+    const xs = okVLines(orig, y0 + 3, y1 - 3);
+    // 欄: [左端, 表の左端, 行No|品目, 品目|単価, 単価|数量, 数量|金額, 金額|空欄, 空欄|納期, 右端]
+    if (xs.length < 6) { console.warn('[Okuma OCR] 縦罫線を見つけられませんでした', xs); continue; }
+    const tl = xs.findIndex((x, i) => i + 1 < xs.length && xs[i + 1] - x > (xs[xs.length - 1] - xs[0]) * 0.18);   // 品目欄（幅の広い欄）の左
+    const c = tl >= 0 ? xs.slice(tl) : xs.slice(2);
+    // c[0]=品目の左, c[1]=単価の左, c[2]=数量の左, c[3]=金額の左, c[4]=空欄の左, c[5]=納期の左, c[6]=右端
+    let drawing = dmm[1];
+    const dCell = await cell(c[0] + 2, y0 - 2, c[1] - 2, y1 + 2);
+    // 全体の読み取りで末尾（-1 等）が欠けたときだけ、欄の読み直しの結果で補う
+    const dm2 = ocrNormalize(dCell).replace(/\s/g, '').replace(/(?<=^[A-Z])[OoＯ〇]/, '0').replace(/(?<=\d)[OoＯ〇]|[OoＯ〇](?=\d)/g, '0')
+      .match(/([A-Z]{1,2}\d{4}-\d{4}-\d{2}(?:-\d)?)(?!\d)/);
+    if (dm2 && dm2[1].startsWith(drawing) && dm2[1].length > drawing.length) drawing = dm2[1];
+    const price = okParseYen(await cell(c[1] + 2, y0 - 2, c[2] - 2, y1 + 2));
+    const qtyT = await cell(c[2] + 2, y0 - 2, c[3] - 2, y1 + 2);
+    const amount = okParseYen(await cell(c[3] + 2, y0 - 2, c[4] - 2, y1 + 2));
+    const dateCellL = c.length >= 7 ? c[5] : c[c.length - 2], dateCellR = c[c.length - 1];
+    let delivery = '';
+    for (const psm of ['7', '6']) { delivery = okParseDate(await cell(dateCellL + 2, y0 - 2, dateCellR - 2, y1 + 2, psm), orderDate); if (delivery) break; }
+    let qty = parseInt(okFixDigits(qtyT).replace(/[^\d]/g, ''), 10) || 0;
+    // 数量は 税抜金額 ÷ 単価 と合わなければ計算値を使う
+    if (price > 0 && amount > 0 && amount % price === 0) { const q = amount / price; if (!qty || qty * price !== amount) qty = q; }
+    if (!qty) qty = 1;
+    // 次の段: 行No（表の左端〜品目の左）とプロジェクト（右端の欄）
+    const nl = lines[li + 1];
+    const ny0 = nl && nl.bbox.y0 > y1 && nl.bbox.y0 - y1 < (y1 - y0) * 2 ? nl.bbox.y0 : y1 + 6;
+    const ny1 = nl && nl.bbox.y0 === ny0 ? nl.bbox.y1 : ny0 + (y1 - y0);
+    const leftX = tl > 0 ? xs[tl - 1] : xs[0];
+    const lnT = okFixDigits(await cell(leftX + 2, ny0 - 6, c[0] - 2, ny1 + 6, '7')).replace(/[^\d]/g, '');
+    let lineNo = /^\d{1,3}$/.test(lnT) && +lnT > 0 ? lnT.padStart(3, '0') : String(idx * 10).padStart(3, '0');
+    const xsN = okVLines(orig, ny0 + 3, ny1 - 3);
+    const pjT = xsN.length >= 2 ? okFixDigits(await cell(xsN[xsN.length - 2] + 2, ny0 - 6, xsN[xsN.length - 1] - 2, ny1 + 6, '7')).replace(/[^\d]/g, '') : '';
+    const pj = /^\d{6}$/.test(pjT) ? 'PJ-' + pjT : '';
+    console.log('[Okuma OCR] 明細', { drawing, price, qtyT, qty, amount, delivery, lnT, lineNo, pjT });
+    rows.push({
+      orderdate: orderDate, orderno: po ? (lineNo ? `${po}-${lineNo}` : po) : '',
+      drawingno: drawing, quantity: qty, unit: '', price, originalno: pj,
+      deliverydate: delivery, delivery_destination: null, shippingdate: null,
+      _isChange: false, _sealCount: null, _ocr: true,
+    });
+  }
+  try { await worker.setParameters({ tessedit_pageseg_mode: '6', tessedit_char_whitelist: '' }); } catch (_) {}
+  console.log('[Okuma OCR] po=', po, 'orderDate=', orderDate, rows);
+  return rows;
 }
 
 // ---- フォーマット3: オークマ 購買注文書 ----
