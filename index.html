@@ -14780,8 +14780,11 @@ async function resolveDrawingAlternatives(rows) {
 //   ③ 次の段から 行No（10）・プロジェクト（616087）を読む
 //   orderno = 購買オーダー + "-" + 行No（BJ-32546922-010）、originalno = PJ-プロジェクト
 function isOkumaScanText(t) {
+  // スキャンの文字認識では「購買注文書」が「購具注文」のように崩れることがあるため、
+  // オークマの所在地（丹羽郡大口町）や表の見出し（ホスト品名・税抜金額）でも判定する
   const u = String(t || '').replace(/\s/g, '');
-  return /購買注文書/.test(u) && /(オークマ|大口町|BJ-?\d{6})/.test(u);
+  if (!/(注文|発注)/.test(u)) return false;
+  return /(オークマ|大口町|丹羽郡)/.test(u) || (/ホス.{0,2}品名/.test(u) && /税抜金額/.test(u)) || (/購.注文書/.test(u) && /BJ-?\d{6}/.test(u));
 }
 function okDarkMap(img, thr) {
   const { width: W, height: H, data } = img; const d = new Uint8Array(W * H);
