@@ -26676,7 +26676,7 @@ async function osDownloadPdf(sheetSelector, orderNo){
     const on = (orderNo || ($("os-orderNoTag") ? $("os-orderNoTag").textContent : '') || 'order').replace(/[^0-9A-Za-z-]/g, '');
     const a = document.createElement('a');
     a.href = url;
-    a.download = `発注書_${on || 'order'}.pdf`;
+    a.download = `${on || 'order'}.pdf`;   // ファイル名はオーダーNoの番号だけ（例 12345.pdf）
     document.body.appendChild(a);
     a.click();
     a.remove();
