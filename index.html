@@ -23142,6 +23142,19 @@ async function printInspectionSheets(dateKey) {
   showInspectDialog(label, totalCount, items, totalCount, true);
 }
 
+// ▼ マザックの検査表だけ、検査日の西暦を固定する（西暦ありで印刷したとき）
+const MAZAK_INSPECT_YEAR = 2027;
+function isMazakInspectItem(item) {
+  if (!item) return false;
+  const re = /マザック|MAZAK/i;
+  if (item.client && re.test(item.client)) return true;
+  const list = (typeof allOrders !== 'undefined' && Array.isArray(allOrders)) ? allOrders : [];
+  const dno = String(item.drawingno || '').trim();
+  const ot  = String(item.ot_number || item.shanai_no || '').trim();
+  const hit = list.find(o => (dno && o.drawingno === dno) || (!dno && ot && o.pd_ot_number === ot));
+  return !!hit && re.test(`${hit.client || ''} ${hit.pd_client || ''}`);
+}
+
 function showInspectDialog(label, count, items, totalCount, unchecked) {
   const existing = document.getElementById('inspect-dialog-overlay');
   if (existing) existing.remove();
@@ -23167,7 +23180,14 @@ function showInspectDialog(label, count, items, totalCount, unchecked) {
              <span style="font-size:22px;font-weight:800;color:#059669;display:block;margin:10px 0;">${total}件中 ${count} 枚</span>
              を印刷します。
              <div style="margin-top:14px;padding:10px 12px;border-radius:8px;background:#f0f9ff;border:1px solid #bae6fd;color:#0c4a6e;font-size:13px;font-weight:700;">
-               検査日に西暦（${new Date().getFullYear()}年）は入れますか？
+               検査日に西暦（${(() => {
+                 const arr = items || [];
+                 const mz = arr.filter(isMazakInspectItem).length;
+                 const y = new Date().getFullYear();
+                 if (!mz) return y + '年';
+                 if (mz === arr.length) return MAZAK_INSPECT_YEAR + '年';
+                 return `${y}年／マザックは${MAZAK_INSPECT_YEAR}年`;
+               })()}）は入れますか？
                <div style="font-size:11px;font-weight:500;color:#0369a1;margin-top:3px;">月・日は入れません</div>
              </div>
              ${unchecked ? `<br><span style="font-size:11px;color:#d97706;">※検査表ファイルの一覧を取得できず、有無は未確認です（無いものは自動スキップされます）</span>` : (total !== count ? `<br><span style="font-size:11px;color:#9ca3af;">※${total-count}件は検査表ファイルなし</span>` : '')}`
@@ -23230,7 +23250,9 @@ async function execPrintInspection(dateMode) {
       // Supabaseの検査表ファイル（印刷サーバーがダウンロードして印刷する）
       ...(item.file_url ? { file_url: item.file_url, file_name: item.file_name || '' } : {}),
       ...(item.shanai_no ? { shanai_no: item.shanai_no } : {}),
-      date_mode: dateMode   // 検査日：'year'=西暦のみ ／ 'none'=入れない
+      date_mode: dateMode,  // 検査日：'year'=西暦のみ ／ 'none'=入れない
+      // マザックだけ西暦を固定（印刷サーバーは year があればその年を書き込む）
+      ...(dateMode === 'year' && isMazakInspectItem(item) ? { year: MAZAK_INSPECT_YEAR } : {})
     })));
   } catch (e) {
     showResult(false, '印刷できません', esc(e.message));
