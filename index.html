@@ -15083,13 +15083,18 @@ function extractOkumaRows(full, rawItems) {
     const sorted = grp.items.sort((a, b) => a.x - b.x);
 
     // 品目行: "H1090-xxx" または "ZT0202-xxx" 等の図番パターン
-    const drawItem = sorted.find(t => /^[A-Z]{1,2}\d{4}[\-\.]\d/.test(t.text) && t.x >= 30 && t.x < 130);
-    if (!drawItem) continue;
-
     // 同じy行から単価・数量・納期を取得
     const priceItem    = sorted.find(t => /^[\d,]+\.\d+$/.test(t.text));  // "235,500.00"
     const qtyItem      = sorted.find(t => /^\d+$/.test(t.text) && parseInt(t.text) < 10000 && t.x >= 270 && t.x < 320);
     const deliveryItem = sorted.find(t => /^\d{4}\/\d{2}\/\d{2}$/.test(t.text));
+
+    // 品目が図番でない注文（例: "FUTAI-SYURI" 付帯費用（修理）など）も、
+    // 同じ行に単価（小数付き）と納期がそろっていれば品目行として読む
+    const drawItem = sorted.find(t => /^[A-Z]{1,2}\d{4}[\-\.]\d/.test(t.text) && t.x >= 30 && t.x < 130)
+      || (priceItem && deliveryItem
+          ? sorted.find(t => /^[A-Z0-9][A-Z0-9\-\._\/]{2,}$/i.test(t.text) && /[A-Z]/i.test(t.text) && !/^BJ-/i.test(t.text) && t.x >= 30 && t.x < 130)
+          : null);
+    if (!drawItem) continue;
 
     const price    = priceItem    ? parseInt(priceItem.text.replace(/\.\d+$/, '').replace(/,/g, '')) : 0;
     const quantity = qtyItem      ? parseInt(qtyItem.text) : 1;
@@ -23211,7 +23216,10 @@ function showInspectDialog(label, count, items, totalCount, unchecked) {
 // dateMode: 'year' = 検査日に西暦だけ入れる ／ 'none' = 検査日は何も入れない（今日の月日は入れない）
 async function execPrintInspection(dateMode) {
   dateMode = dateMode === 'year' ? 'year' : 'none';
-  const items = window._pendingInspectItems || [];
+  // シールNoの若い順に並べ替えて依頼する（印刷サーバーは依頼順に印刷する）
+  //   シールNoなし・数字でないものは最後。同じシールNo内（分割ファイル等）は元の順番のまま（安定ソート）
+  const sealNum = it => { const n = parseInt(String(it?.sealno || '').replace(/[^0-9]/g, ''), 10); return isNaN(n) ? Infinity : n; };
+  const items = (window._pendingInspectItems || []).slice().sort((a, b) => sealNum(a) - sealNum(b));
   if (!items.length) return;
 
   const overlay = document.getElementById('inspect-dialog-overlay');
