@@ -13446,6 +13446,129 @@ async function extractYasudaKobaiRows(text) {
   return yasdaFinalizeListRows(orderdate, items);
 }
 
+// ---- フォーマット10: 台灣瀧澤科技股份有限公司「採購單」（スキャン画像・OCR） ----
+// 台湾の瀧澤（株式会社ＴＡＫＩＳＡＷＡの台湾法人）からの注文書。日付は民国暦（115/11/23 = 2026/11/23）。
+//   採購單號（9桁: 115110958）= 注文No。明細は 序號(0001) / 品號(=客先図番 GM75188T005) / 品名・規格 / 採購數量 / 單位 /
+//   單價（下段=金額）/ 預交日（=納期）/ 備註。
+// 繁体字は日本語OCRで崩れるので、明細は表の縦罫線から欄を切り出し、欄ごとに英数字だけで読み直す。
+// 客先図番は製品マスタ（株式会社ＴＡＫＩＳＡＷＡ）と照合して1文字違いを補正する。
+function isTwTakisawaText(t) {
+  const u = String(t || '').replace(/\s/g, '');
+  return /採.?購/.test(u) && (/瀧|台灣|台湾|科技股/.test(u) || /A041/.test(u) || (/PCS/i.test(u) && /(?<!\d)11\d{7}(?!\d)/.test(u)));
+}
+// 民国暦の日付（116/05/10 → 2027/05/10）。区切りの「/」が 7・1・| に読まれることがある
+function twRocDate(s) {
+  const u = String(s || '').replace(/\s/g, '');
+  for (const re of [/(1[01]\d)\/(\d{1,2})\/(\d{1,2})/, /(1[01]\d)[\/7|1Il](\d{1,2})[\/7|1Il](\d{1,2})/]) {
+    const m = u.match(re);
+    if (!m) continue;
+    const mo = +m[2], d = +m[3];
+    if (mo < 1 || mo > 12 || d < 1 || d > 31) continue;
+    return `${+m[1] + 1911}/${String(mo).padStart(2, '0')}/${String(d).padStart(2, '0')}`;
+  }
+  return '';
+}
+async function extractTwTakisawaRows(ocr, worker, page) {
+  const t = ocrNormalize(ocr.text);
+  const lines = t.split('\n');
+  const isItemLine = s => /^\s*[\[|(]?\s*[0O]{2,3}[0-9]{1,2}(?![0-9])/.test(ocrNormalize(s)) && /[A-Z0-9]{5,}/i.test(s);
+  const firstItem = lines.findIndex(isItemLine);
+  const head = (firstItem < 0 ? lines : lines.slice(0, firstItem)).join('\n');
+  // 採購單號（注文No）: 11で始まる9桁
+  const pom = head.replace(/[O]/g, '0').match(/(?<!\d)(1[01]\d{7})(?!\d)/);
+  const po = pom ? pom[1] : '';
+  // 單據日期（なければ製表日期）
+  let orderdate = '';
+  for (const l of head.split('\n')) { if (/(單|单|単|據|据|製表|日期)/.test(l)) { orderdate = twRocDate(l); if (orderdate) break; } }
+  if (!orderdate) orderdate = twRocDate(head);
+
+  // 英数字だけを読むOCR（無ければ日本語のOCRで代用）
+  let ew = null;
+  try {
+    const T = await loadTesseract();
+    ew = await T.createWorker('eng', 1, { workerPath: OCR_WORKER_PATH, corePath: OCR_CORE_PATH, langPath: SHP_OCR_LANG_PATH });
+  } catch (e) { console.warn('[台湾瀧澤] 英数字OCRの準備に失敗（日本語OCRで読みます）', e); ew = null; }
+  const rw = ew || worker;
+  const hi = await renderPdfPageToCanvas(page, 300);
+  const k = 300 / 200;
+  const g = hi.getContext('2d'), W = hi.width, H = hi.height;
+  const px = g.getImageData(0, 0, W, H).data;
+  const dark = (x, y) => { const i = (y * W + x) * 4; return (px[i] + px[i + 1] + px[i + 2]) / 3 < 140; };
+  // 指定の高さの帯で、上から下まで続く縦線（表の罫線）のx座標
+  const vLines = (y0, y1) => {
+    const hgt = y1 - y0, xs = [];
+    for (let x = 0; x < W; x++) {
+      let n = 0;
+      for (let y = y0; y < y1; y++) if (dark(x, y)) n++;
+      if (n >= hgt * 0.85) xs.push(x);
+    }
+    const out = [];
+    for (const x of xs) { const last = out[out.length - 1]; if (last && x - last.x1 <= 3) last.x1 = x; else out.push({ x0: x, x1: x }); }
+    return out.map(b => ({ l: b.x0, r: b.x1 }));
+  };
+  const readCell = async (x0, y0, x1, y1, wl, psm) => {
+    x0 = Math.max(0, Math.round(x0)); y0 = Math.max(0, Math.round(y0));
+    const w = Math.min(W, Math.round(x1)) - x0, h = Math.min(H, Math.round(y1)) - y0;
+    if (w < 5 || h < 5) return '';
+    const c = document.createElement('canvas');
+    c.width = w + 40; c.height = h + 40;
+    const cx = c.getContext('2d');
+    cx.fillStyle = '#fff'; cx.fillRect(0, 0, c.width, c.height);
+    cx.drawImage(hi, x0, y0, w, h, 20, 20, w, h);
+    const im = cx.getImageData(0, 0, c.width, c.height), d = im.data;
+    for (let i = 0; i < d.length; i += 4) { const v = (d[i] + d[i + 1] + d[i + 2]) / 3 > 150 ? 255 : 0; d[i] = d[i + 1] = d[i + 2] = v; }
+    cx.putImageData(im, 0, 0);
+    await rw.setParameters({ tessedit_pageseg_mode: psm, tessedit_char_whitelist: wl });
+    const r = await rw.recognize(c);
+    return String(r.data.text || '').trim();
+  };
+
+  const items = [];
+  try {
+    for (const ln of ocr.lines.filter(l => l.bbox && isItemLine(l.text))) {
+      const seqm = ocrNormalize(ln.text).replace(/O/g, '0').match(/([0-9]{4})/);
+      const seq = seqm ? seqm[1] : String(items.length + 1).padStart(4, '0');
+      const lh = (ln.bbox.y1 - ln.bbox.y0) * k;
+      const yTop = Math.round(ln.bbox.y0 * k - lh * 0.35), yBot = Math.round(ln.bbox.y1 * k + lh * 0.35);
+      const vs = vLines(yTop, yBot);
+      console.log('[台湾瀧澤] 行', seq, '縦線', vs.map(v => v.l));
+      if (vs.length < 8) continue;
+      const cell = i => [vs[i].r + 4, vs[i + 1].l - 3];
+      // 品號（客先図番）
+      const [dx0, dx1] = cell(1);
+      let dno = (await readCell(dx0, yTop, dx1, yBot, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-', '7')).replace(/\s/g, '');
+      // 数字の並びの中の O は 0（例: GM75188TOO5 → GM75188T005）
+      for (let i = 0; i < 3; i++) dno = dno.replace(/(?<=[0-9T])O|O(?=[0-9])/g, '0');
+      if (dno.length < 6) {
+        const m = ocrNormalize(ln.text).match(/[0O]{2,3}\d{1,2}\s+\S*?([A-Z0-9]{2}\d{4,}[A-Z0-9]*)/i);
+        if (m) dno = m[1].toUpperCase();
+      }
+      // 單價（上段）と金額（下段）
+      const [px0, px1] = cell(5);
+      const pt = await readCell(px0, yTop, px1, Math.round(yBot + lh * 2.2), '0123456789,', '6');
+      const nums = (pt.match(/\d[\d,]*/g) || []).map(v => parseInt(v.replace(/,/g, ''), 10)).filter(v => v > 0);
+      const price = nums[0] || 0, amount = nums.length > 1 ? nums[nums.length - 1] : 0;
+      // 預交日（納期）
+      const [tx0, tx1] = cell(6);
+      const deliverydate = twRocDate(await readCell(tx0, yTop, tx1, yBot, '0123456789/', '7')) || twRocDate(ln.text);
+      // 採購數量: 金額÷単価で割り切れればそれを使い、だめなら欄を読む
+      let qty = (price && amount && amount % price === 0) ? amount / price : 0;
+      if (!qty) {
+        const [qx0, qx1] = cell(3);
+        qty = parseInt(await readCell(qx0, yTop, qx1, yBot, '0123456789', '7'), 10) || 1;
+      }
+      console.log('[台湾瀧澤]', { seq, dno, price, amount, qty, deliverydate });
+      if (!dno) continue;
+      items.push({ orderno: po ? `${po}-${seq}` : seq, drawingno: dno, name: '', qty, deliverydate, price, otRead: '' });
+    }
+  } finally {
+    if (ew) { try { await ew.terminate(); } catch (_) {} }
+    try { await worker.setParameters({ tessedit_pageseg_mode: '6', tessedit_char_whitelist: '' }); } catch (_) {}
+  }
+  console.log('[台湾瀧澤]', { po, orderdate, items });
+  return yasdaFinalizeListRows(orderdate, items, 'ＴＡＫＩＳＡＷＡ');
+}
+
 // ---- フォーマット7: 株式会社TAKISAWA「注文書」（スキャン画像・横向き） ----
 // 用紙を横向きにスキャンしたPDF（文字が90°寝ている）なので、画像を回して読む。
 // 1枚=1明細。手書き（シールNo・丸印・メモ等）は読み取り対象の欄から拾わないので無視される。
@@ -13928,7 +14051,11 @@ async function parsePDF(file) {
         const ocr = await ocrPdfPage(ocrWorker, page);
         const t = ocrNormalize(ocr.text);
         console.log(`[OCR p${p}] 先頭:`, t.substring(0, 120).replace(/\n/g, ' '));
-        if (isOkumaScanText(t)) {
+        if (isTwTakisawaText(t)) {
+          console.log('[PDF] → フォーマット10: 台灣瀧澤科技 採購單（スキャン画像・OCR）');
+          showStatus('processing', `台灣瀧澤の採購單を文字認識(OCR)しています… ${file.name}（${p}/${pdf.numPages}ページ）`);
+          rows.push(...await extractTwTakisawaRows(ocr, ocrWorker, page));
+        } else if (isOkumaScanText(t)) {
           console.log('[PDF] → フォーマット3s: オークマ 購買注文書（スキャン画像・OCR）');
           showStatus('processing', `オークマの注文書を文字認識(OCR)しています… ${file.name}（${p}/${pdf.numPages}ページ）`);
           rows.push(...await extractOkumaScanRows(ocr, ocrWorker, page));
