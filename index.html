@@ -13468,6 +13468,20 @@ function twRocDate(s) {
   }
   return '';
 }
+// 品號の読み違いを補正: 先頭の英字以降の「数字の位置」にある英字を数字に直す
+//   例) GM75188T00Y → GM75188T009 / GM75188TOO5 → GM75188T005 / M75188T009 → (製品マスタ照合で GM… に補正)
+function twFixDrawingNo(raw) {
+  let d = String(raw || '').replace(/[^A-Z0-9-]/gi, '').toUpperCase();
+  if (!d) return '';
+  const toDigit = { O: '0', D: '0', Q: '0', U: '0', I: '1', L: '1', J: '1', Z: '2', A: '4', S: '5', G: '6', B: '8', Y: '9', g: '9' };
+  const m = d.match(/^([A-Z]{0,2})([0-9A-Z]{5})T([0-9A-Z]{3})$/);
+  if (m && m[1].length === 2) {
+    const dig = x => x.replace(/[A-Z]/g, c => toDigit[c] || c);
+    return `${m[1]}${dig(m[2])}T${dig(m[3])}`;
+  }
+  for (let i = 0; i < 3; i++) d = d.replace(/(?<=[0-9T])O|O(?=[0-9])/g, '0');
+  return d;
+}
 async function extractTwTakisawaRows(ocr, worker, page) {
   const t = ocrNormalize(ocr.text);
   const lines = t.split('\n');
@@ -13475,8 +13489,16 @@ async function extractTwTakisawaRows(ocr, worker, page) {
   const firstItem = lines.findIndex(isItemLine);
   const head = (firstItem < 0 ? lines : lines.slice(0, firstItem)).join('\n');
   // 採購單號（注文No）: 11で始まる9桁
-  const pom = head.replace(/[O]/g, '0').match(/(?<!\d)(1[01]\d{7})(?!\d)/);
-  const po = pom ? pom[1] : '';
+  //   「115/11/23」の「/」が7や1に読まれた日付（115711723）を拾わないよう、日付の形をしたものは除く
+  const looksDate = n => /^1[01]\d[7\/1|](0[1-9]|1[0-2])[7\/1|](0[1-9]|[12]\d|3[01])$/.test(n);
+  const poCands = [];
+  for (const l of head.replace(/O/g, '0').split('\n')) {
+    for (const m of l.matchAll(/(?<!\d)(1[01]\d{7})(?!\d)/g)) {
+      if (looksDate(m[1])) continue;
+      poCands.push({ no: m[1], label: /單|单|号|號|購/.test(l) && !/日期/.test(l) });
+    }
+  }
+  const po = ((poCands.find(c => c.label) || poCands[0]) || {}).no || '';
   // 單據日期（なければ製表日期）
   let orderdate = '';
   for (const l of head.split('\n')) { if (/(單|单|単|據|据|製表|日期)/.test(l)) { orderdate = twRocDate(l); if (orderdate) break; } }
@@ -13536,9 +13558,13 @@ async function extractTwTakisawaRows(ocr, worker, page) {
       const cell = i => [vs[i].r + 4, vs[i + 1].l - 3];
       // 品號（客先図番）
       const [dx0, dx1] = cell(1);
-      let dno = (await readCell(dx0, yTop, dx1, yBot, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-', '7')).replace(/\s/g, '');
-      // 数字の並びの中の O は 0（例: GM75188TOO5 → GM75188T005）
-      for (let i = 0; i < 3; i++) dno = dno.replace(/(?<=[0-9T])O|O(?=[0-9])/g, '0');
+      // 2通りの読み方（英数字／G・M・T＋数字だけ）で読み、品號の形（英字2つ＋数字5桁＋T＋数字3桁 など）に整える
+      const dReads = [
+        await readCell(dx0, yTop, dx1, yBot, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-', '7'),
+        await readCell(dx0, yTop, dx1, yBot, 'GMT0123456789', '7'),
+      ].map(twFixDrawingNo).filter(Boolean);
+      let dno = dReads.find(d => /^[A-Z]{2}\d{5}T\d{3}$/.test(d)) || dReads.find(d => /^[A-Z]{1,2}\d{4,}/.test(d)) || dReads[0] || '';
+      console.log('[台湾瀧澤] 品號の読み', dReads, '→', dno);
       if (dno.length < 6) {
         const m = ocrNormalize(ln.text).match(/[0O]{2,3}\d{1,2}\s+\S*?([A-Z0-9]{2}\d{4,}[A-Z0-9]*)/i);
         if (m) dno = m[1].toUpperCase();
