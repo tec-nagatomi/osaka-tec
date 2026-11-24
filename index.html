@@ -23111,18 +23111,18 @@ function shpRender() {
 var SHP_PRINT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>';
 function shpPrintRow(i) {
   const r = _shp && _shp.rows[i]; if (!r || !(r._jobs || []).length) return;
-  showInspectDialog(r.order || r.ot || '出荷表', r._jobs.length, r._jobs, r._jobs.length);
+  showInspectDialog(r.order || r.ot || '出荷表', r._jobs.length, r._jobs, r._jobs.length, false, true);
 }
 function shpPrintOne(i, k) {
   const r = _shp && _shp.rows[i]; const j = r && (r._jobs || [])[k]; if (!j) return;
-  showInspectDialog(`${j.ot_number}${j.sealno ? '（' + j.sealno + '）' : ''}`, 1, [j], 1);
+  showInspectDialog(`${j.ot_number}${j.sealno ? '（' + j.sealno + '）' : ''}`, 1, [j], 1, false, true);
 }
 
 function shpPrint() {
   if (!_shp) return;
   const jobs = _shp.rows.filter(r => r.on).flatMap(r => r._jobs || []);
   if (!jobs.length) return;
-  showInspectDialog(`出荷表（${_shp.fileName}）`, jobs.length, jobs, jobs.length);
+  showInspectDialog(`出荷表（${_shp.fileName}）`, jobs.length, jobs, jobs.length, false, true);   // 出荷表はリストの上から順に印刷
 }
 
 // ==================== 印刷キュー（Supabase経由で印刷サーバーPCへ依頼） ====================
@@ -23313,7 +23313,8 @@ function isMazakInspectItem(item) {
   return !!hit && re.test(`${hit.client || ''} ${hit.pd_client || ''}`);
 }
 
-function showInspectDialog(label, count, items, totalCount, unchecked) {
+function showInspectDialog(label, count, items, totalCount, unchecked, keepOrder) {
+  window._inspectKeepOrder = !!keepOrder;   // true=並べ替えずに渡された順で印刷（出荷表からの印刷）
   const existing = document.getElementById('inspect-dialog-overlay');
   if (existing) existing.remove();
 
@@ -23371,8 +23372,10 @@ async function execPrintInspection(dateMode) {
   dateMode = dateMode === 'year' ? 'year' : 'none';
   // シールNoの若い順に並べ替えて依頼する（印刷サーバーは依頼順に印刷する）
   //   シールNoなし・数字でないものは最後。同じシールNo内（分割ファイル等）は元の順番のまま（安定ソート）
+  //   出荷表からの印刷は並べ替えず、リストの上から順に印刷する
   const sealNum = it => { const n = parseInt(String(it?.sealno || '').replace(/[^0-9]/g, ''), 10); return isNaN(n) ? Infinity : n; };
-  const items = (window._pendingInspectItems || []).slice().sort((a, b) => sealNum(a) - sealNum(b));
+  const items = (window._pendingInspectItems || []).slice();
+  if (!window._inspectKeepOrder) items.sort((a, b) => sealNum(a) - sealNum(b));
   if (!items.length) return;
 
   const overlay = document.getElementById('inspect-dialog-overlay');
