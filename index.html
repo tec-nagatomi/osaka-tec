@@ -18198,7 +18198,13 @@ function cmVisibleChildren() {
   const visibleOrderIds = new Set((filteredOrders || []).map(o => o.id));
   const list = cmChildren.filter(c => visibleOrderIds.has(c.order_id));
   const num = v => (v == null || v === '' ? null : Number(v));
+  // 出荷日が過ぎたものは、出荷日がまだ来ていないもの・出荷日未設定のものの後ろへ
+  const _t = new Date();
+  const todayStr = `${_t.getFullYear()}-${String(_t.getMonth() + 1).padStart(2, '0')}-${String(_t.getDate()).padStart(2, '0')}`;
+  const isPast = c => !!c.delivery && String(c.delivery).slice(0, 10) < todayStr;
   list.sort((a, b) => {
+    const pa = isPast(a), pb = isPast(b);
+    if (pa !== pb) return pa ? 1 : -1;
     const sa = num(a.cm_sort), sb = num(b.cm_sort);
     if (sa != null || sb != null) { if (sa == null) return 1; if (sb == null) return -1; if (sa !== sb) return sa - sb; }
     const da = a.delivery || '9999-99-99', db = b.delivery || '9999-99-99';
@@ -18212,6 +18218,9 @@ function renderCmChildList() {
   const wrap = document.getElementById('cm-child-wrap');
   if (!wrap || !cmIsClientView()) return;
   if (cmChildClient !== clientMenuSelected) { if (!loadCmChildren._busy) loadCmChildren(); return; }
+  // 書き直す前のスクロール位置を覚えておき、書き直した後に戻す（チェックしても先頭に戻らないように）
+  const _oldScroll = wrap.querySelector('.cmc-scroll');
+  const _keepTop = _oldScroll ? _oldScroll.scrollTop : 0, _keepLeft = _oldScroll ? _oldScroll.scrollLeft : 0;
   const om = cmOrderMap();
   const list = cmVisibleChildren();
   // グループの色：一覧で最初に出てくる順に色を割り当てる（全員同じ並びなので同じ色になる）
@@ -18268,6 +18277,8 @@ function renderCmChildList() {
         <tbody id="cm-child-tbody">${rows || '<tr><td colspan="15" style="padding:30px;text-align:center;color:#9ca3af;">子データがありません</td></tr>'}</tbody>
       </table>
     </div>`;
+  const _newScroll = wrap.querySelector('.cmc-scroll');
+  if (_newScroll) { _newScroll.scrollTop = _keepTop; _newScroll.scrollLeft = _keepLeft; }
   cmChildBindEvents();
 }
 
