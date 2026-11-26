@@ -2197,6 +2197,14 @@
     background:var(--run-bg); color:var(--run-c); border:1px solid var(--run-c); font-size:11px; font-weight:700; line-height:1.4; }
   #page-orders .cmc-runbadge b { font-size:13px; font-weight:800; }
   #page-orders .cmc-runbadge small { font-size:10px; font-weight:600; opacity:.8; }
+  /* 納入先（大口製作所・ワールドパーツセンター等）のタグ */
+  #page-orders .cmc-dest { display:inline-flex; align-items:center; gap:4px; padding:2px 8px 2px 6px; border-radius:6px; font-size:11.5px; font-weight:700;
+    border:1px solid var(--d-bd); background:var(--d-bg); color:var(--d-c); line-height:1.4; max-width:120px; overflow:hidden; text-overflow:ellipsis; }
+  #page-orders .cmc-dest svg { width:13px; height:13px; flex:none; }
+  #page-orders .cmc-dest.d-oguchi { --d-c:#1d4ed8; --d-bg:#dbeafe; --d-bd:#93c5fd; }
+  #page-orders .cmc-dest.d-wpc    { --d-c:#b45309; --d-bg:#fef3c7; --d-bd:#fcd34d; }
+  #page-orders .cmc-dest.d-other  { --d-c:#475569; --d-bg:#f1f5f9; --d-bd:#cbd5e1; font-weight:600; }
+  #page-orders .cmc-row.cmc-past .cmc-dest { --d-c:#6b7280 !important; --d-bg:#111827 !important; --d-bd:#374151 !important; }
   #page-orders .cmc-row.cmc-past td.cmc-run { --run-c:#6b7280 !important; --run-bg:#111827 !important; }
   #page-orders .cmc-chk { width:28px; text-align:center; }
   #page-orders .cmc-handle { width:18px; color:#cbd5e1; cursor:grab; user-select:none; letter-spacing:-2px; }
@@ -18248,7 +18256,18 @@ function renderCmChildList() {
   // 同じ製品名・同じ出荷日が続く行のまとまり（区画）を求める（2行以上続くときだけ）
   const runNorm = c => String((om.get(c.order_id) || {}).pd_product_name || '')
     .replace(/[Ａ-Ｚａ-ｚ０-９（）]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0)).replace(/\s+/g, '');
-  const runKey = c => `${runNorm(c)}|${c.delivery ? String(c.delivery).slice(0, 10) : ''}`;
+  // 納入先（受注の delivery_destination）: 大口製作所／ワールドパーツセンター(WPC)を見分けるタグ
+  const destOf = c => String((om.get(c.order_id) || {}).delivery_destination || '').trim();
+  const destTag = c => {
+    const d = destOf(c);
+    if (!d) return '';
+    if (/大口/.test(d)) return `<span class="cmc-dest d-oguchi" title="${cmEsc(d)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V10l6 4V10l6 4V5h6v16z"/><path d="M3 21h18"/></svg>大口</span>`;
+    if (/ワールド\s*パーツ|^WPC$/i.test(d)) return `<span class="cmc-dest d-wpc" title="${cmEsc(d)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>WPC</span>`;
+    const short = d.replace(/製作所$/, '').replace(/\(.*\)$/, '');
+    return `<span class="cmc-dest d-other" title="${cmEsc(d)}">${cmEsc(short)}</span>`;
+  };
+  // 区画は「製品名・出荷日・納入先」が同じ行のまとまり（大口とWPCは別々に数える）
+  const runKey = c => `${runNorm(c)}|${c.delivery ? String(c.delivery).slice(0, 10) : ''}|${destOf(c)}`;
   const RUN_COLORS = [{ c: '#4f46e5', bg: '#eef2ff' }, { c: '#0d9488', bg: '#f0fdfa' }, { c: '#c2410c', bg: '#fff7ed' }];
   const runInfo = new Map();   // child id → { pos:'first'|'mid'|'last', n, color }
   for (let i = 0, runNo = 0; i < list.length;) {
@@ -18278,6 +18297,7 @@ function renderCmChildList() {
       <td class="cmc-grp">${g ? `<span class="cmc-gbadge" style="background:${g.bar};">G${gNo.get(c.cm_group)}</span>` : ''}</td>
       <td class="cmc-edit mono" data-f="sealno" title="ダブルクリックで書き換え"><b>${cmEsc(c.sealno)}</b></td>
       <td class="cmc-edit" data-f="delivery" title="ダブルクリックで書き換え">${fmtD(c.delivery) || '<span class="cmc-none">未設定</span>'}</td>
+      <td>${destTag(c)}</td>
       <td class="mono">${cmEsc(o.pd_ot_number)}</td>
       ${nameTd}
       <td class="mono">${cmEsc(o.orderno)}</td>
@@ -18306,9 +18326,9 @@ function renderCmChildList() {
       <table class="cmc-table">
         <thead><tr>
           <th class="cmc-chk"><input type="checkbox" ${allSel ? 'checked' : ''} onclick="cmChildSelAll(this.checked)"></th>
-          <th></th><th>G</th><th>シールNo</th><th>出荷日</th><th>OT番号</th><th>製品名</th><th>受注番号</th><th>製番</th><th>注文日</th><th class="r">数量</th><th>希望納期</th><th class="c">検査表</th><th class="c">レーザー</th><th></th>
+          <th></th><th>G</th><th>シールNo</th><th>出荷日</th><th>納入先</th><th>OT番号</th><th>製品名</th><th>受注番号</th><th>製番</th><th>注文日</th><th class="r">数量</th><th>希望納期</th><th class="c">検査表</th><th class="c">レーザー</th><th></th>
         </tr></thead>
-        <tbody id="cm-child-tbody">${rows || '<tr><td colspan="15" style="padding:30px;text-align:center;color:#9ca3af;">子データがありません</td></tr>'}</tbody>
+        <tbody id="cm-child-tbody">${rows || '<tr><td colspan="16" style="padding:30px;text-align:center;color:#9ca3af;">子データがありません</td></tr>'}</tbody>
       </table>
     </div>`;
   const _newScroll = wrap.querySelector('.cmc-scroll');
