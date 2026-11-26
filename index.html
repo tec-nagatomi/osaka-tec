@@ -2185,6 +2185,19 @@
   #page-orders .cmc-table .r { text-align:right; } #page-orders .cmc-table .c { text-align:center; }
   #page-orders .cmc-table .mono { font-family:'SF Mono','Consolas',monospace; }
   #page-orders .cmc-name { max-width:260px; overflow:hidden; text-overflow:ellipsis; }
+  /* 同じ製品名・同じ出荷日が続く範囲を「［」の区画で囲み、台数を表示 */
+  #page-orders td.cmc-name.cmc-run { position:relative; padding-left:20px; max-width:320px; }
+  #page-orders td.cmc-run::before { content:''; position:absolute; left:7px; top:0; bottom:0; width:7px;
+    border-left:3px solid var(--run-c); }
+  #page-orders td.cmc-run.run-first::before { top:9px; border-top:3px solid var(--run-c); border-top-left-radius:7px; }
+  #page-orders td.cmc-run.run-last::before { bottom:9px; border-bottom:3px solid var(--run-c); border-bottom-left-radius:7px; }
+  #page-orders .cmc-nm { display:flex; align-items:center; gap:8px; min-width:0; }
+  #page-orders .cmc-nmtxt { overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  #page-orders .cmc-runbadge { flex:none; display:inline-flex; align-items:baseline; gap:4px; padding:2px 9px 2px 8px; border-radius:999px;
+    background:var(--run-bg); color:var(--run-c); border:1px solid var(--run-c); font-size:11px; font-weight:700; line-height:1.4; }
+  #page-orders .cmc-runbadge b { font-size:13px; font-weight:800; }
+  #page-orders .cmc-runbadge small { font-size:10px; font-weight:600; opacity:.8; }
+  #page-orders .cmc-row.cmc-past td.cmc-run { --run-c:#6b7280 !important; --run-bg:#111827 !important; }
   #page-orders .cmc-chk { width:28px; text-align:center; }
   #page-orders .cmc-handle { width:18px; color:#cbd5e1; cursor:grab; user-select:none; letter-spacing:-2px; }
   #page-orders .cmc-row:hover .cmc-handle { color:#64748b; }
@@ -18232,8 +18245,29 @@ function renderCmChildList() {
   // 各社の一覧で、出荷日が過ぎた（今日より前の）子データをブラックアウトする
   const _t = new Date();
   const todayStr = `${_t.getFullYear()}-${String(_t.getMonth() + 1).padStart(2, '0')}-${String(_t.getDate()).padStart(2, '0')}`;
+  // 同じ製品名・同じ出荷日が続く行のまとまり（区画）を求める（2行以上続くときだけ）
+  const runNorm = c => String((om.get(c.order_id) || {}).pd_product_name || '')
+    .replace(/[Ａ-Ｚａ-ｚ０-９（）]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0)).replace(/\s+/g, '');
+  const runKey = c => `${runNorm(c)}|${c.delivery ? String(c.delivery).slice(0, 10) : ''}`;
+  const RUN_COLORS = [{ c: '#4f46e5', bg: '#eef2ff' }, { c: '#0d9488', bg: '#f0fdfa' }, { c: '#c2410c', bg: '#fff7ed' }];
+  const runInfo = new Map();   // child id → { pos:'first'|'mid'|'last', n, color }
+  for (let i = 0, runNo = 0; i < list.length;) {
+    let j = i + 1;
+    if (runNorm(list[i])) while (j < list.length && runKey(list[j]) === runKey(list[i])) j++;
+    const n = j - i;
+    if (n >= 2) {
+      const color = RUN_COLORS[runNo++ % RUN_COLORS.length];
+      for (let k = i; k < j; k++) runInfo.set(list[k].id, { pos: k === i ? 'first' : (k === j - 1 ? 'last' : 'mid'), n, color });
+    }
+    i = j;
+  }
   const rows = list.map(c => {
     const o = om.get(c.order_id) || {};
+    const run = runInfo.get(c.id);
+    const nameTd = run
+      ? `<td class="cmc-name cmc-run run-${run.pos}" style="--run-c:${run.color.c};--run-bg:${run.color.bg};"><div class="cmc-nm"><span class="cmc-nmtxt">${cmEsc(o.pd_product_name)}</span>${
+          run.pos === 'first' ? `<span class="cmc-runbadge" title="この製品の出荷日${fmtD(c.delivery) || '未設定'}の台数"><b>${run.n}</b>台<small>${fmtD(c.delivery) ? fmtD(c.delivery).slice(5) + '出荷' : '出荷日未定'}</small></span>` : ''}</div></td>`
+      : `<td class="cmc-name">${cmEsc(o.pd_product_name)}</td>`;
     const g = c.cm_group ? gColor.get(c.cm_group) : null;
     const style = g ? ` style="background:${g.bg};box-shadow:inset 4px 0 0 ${g.bar};"` : '';
     const laser = c.laser_done ? '<span class="cmc-ok">済</span>' : cmEsc(c.laser_machine || '');
@@ -18245,7 +18279,7 @@ function renderCmChildList() {
       <td class="cmc-edit mono" data-f="sealno" title="ダブルクリックで書き換え"><b>${cmEsc(c.sealno)}</b></td>
       <td class="cmc-edit" data-f="delivery" title="ダブルクリックで書き換え">${fmtD(c.delivery) || '<span class="cmc-none">未設定</span>'}</td>
       <td class="mono">${cmEsc(o.pd_ot_number)}</td>
-      <td class="cmc-name">${cmEsc(o.pd_product_name)}</td>
+      ${nameTd}
       <td class="mono">${cmEsc(o.orderno)}</td>
       <td class="mono">${cmEsc(o.productno)}</td>
       <td>${fmtD(o.orderdate)}</td>
