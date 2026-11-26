@@ -2202,7 +2202,9 @@
     border:1px solid var(--d-bd); background:var(--d-bg); color:var(--d-c); line-height:1.4; max-width:120px; overflow:hidden; text-overflow:ellipsis; }
   #page-orders .cmc-dest svg { width:13px; height:13px; flex:none; }
   #page-orders .cmc-dest.d-oguchi { --d-c:#1d4ed8; --d-bg:#dbeafe; --d-bd:#93c5fd; }
-  #page-orders .cmc-dest.d-wpc    { --d-c:#b45309; --d-bg:#fef3c7; --d-bd:#fcd34d; }
+  #page-orders .cmc-dest.d-wpc    { --d-c:#dc2626; --d-bg:#fee2e2; --d-bd:#fca5a5; }
+  /* ワールドパーツセンター（WPC）向けの行は文字を赤にする（出荷日が過ぎた行はブラックアウトを優先） */
+  #page-orders .cmc-row.cmc-wpc:not(.cmc-past) td, #page-orders .cmc-row.cmc-wpc:not(.cmc-past) td b { color:#dc2626; }
   #page-orders .cmc-dest.d-other  { --d-c:#475569; --d-bg:#f1f5f9; --d-bd:#cbd5e1; font-weight:600; }
   #page-orders .cmc-row.cmc-past .cmc-dest { --d-c:#6b7280 !important; --d-bg:#111827 !important; --d-bd:#374151 !important; }
   #page-orders .cmc-row.cmc-past td.cmc-run { --run-c:#6b7280 !important; --run-bg:#111827 !important; }
@@ -2218,8 +2220,8 @@
   #page-orders .cmc-row.cmc-past.sel td { background:#334155 !important; }
   #page-orders .cmc-row.drop-above td { box-shadow:inset 0 2px 0 #1d4ed8; }
   #page-orders .cmc-row.drop-below td { box-shadow:inset 0 -2px 0 #1d4ed8; }
-  #page-orders .cmc-grp { width:32px; }
-  #page-orders .cmc-gbadge { display:inline-block; padding:1px 6px; border-radius:8px; color:#fff; font-size:10px; font-weight:800; }
+  #page-orders .cmc-grp { width:1%; }
+  #page-orders .cmc-gbadge { display:inline-block; padding:1px 7px; border-radius:8px; color:#fff; font-size:10.5px; font-weight:800; max-width:140px; overflow:hidden; text-overflow:ellipsis; vertical-align:middle; cursor:default; }
   #page-orders .cmc-edit { cursor:text; }
   #page-orders .cmc-edit:hover { outline:1px dashed #93c5fd; outline-offset:-2px; }
   #page-orders .cmc-input { width:100%; min-width:90px; box-sizing:border-box; padding:3px 5px; border:1px solid #3b82f6; border-radius:4px; font-size:12.5px; }
@@ -18291,10 +18293,11 @@ function renderCmChildList() {
     const style = g ? ` style="background:${g.bg};box-shadow:inset 4px 0 0 ${g.bar};"` : '';
     const laser = c.laser_done ? '<span class="cmc-ok">済</span>' : cmEsc(c.laser_machine || '');
     const past = c.delivery && String(c.delivery).slice(0, 10) < todayStr;
-    return `<tr class="cmc-row${cmChildSel.has(c.id) ? ' sel' : ''}${past ? ' cmc-past' : ''}" draggable="true" data-id="${c.id}"${style}${past ? ' title="出荷日が過ぎています"' : ''}>
+    const wpc = /ワールド\s*パーツ|^WPC$/i.test(destOf(c));
+    return `<tr class="cmc-row${cmChildSel.has(c.id) ? ' sel' : ''}${past ? ' cmc-past' : ''}${wpc ? ' cmc-wpc' : ''}" draggable="true" data-id="${c.id}"${style}${past ? ' title="出荷日が過ぎています"' : ''}>
       <td class="cmc-chk"><input type="checkbox" ${cmChildSel.has(c.id) ? 'checked' : ''} onclick="cmChildToggle(event, ${c.id})"></td>
       <td class="cmc-handle" title="ドラッグで並べ替え">⋮⋮</td>
-      <td class="cmc-grp">${g ? `<span class="cmc-gbadge" style="background:${g.bar};">G${gNo.get(c.cm_group)}</span>` : ''}</td>
+      <td class="cmc-grp">${g ? `<span class="cmc-gbadge" style="background:${g.bar};" title="${cmEsc(cmGroupName(c.cm_group, gNo.get(c.cm_group)))}（ダブルクリックで名前を変更）" ondblclick="event.stopPropagation();cmChildRenameGroup(${cmEsc(JSON.stringify(c.cm_group))})">${cmEsc(cmGroupName(c.cm_group, gNo.get(c.cm_group)))}</span>` : ''}</td>
       <td class="cmc-edit mono" data-f="sealno" title="ダブルクリックで書き換え"><b>${cmEsc(c.sealno)}</b></td>
       <td class="cmc-edit" data-f="delivery" title="ダブルクリックで書き換え">${fmtD(c.delivery) || '<span class="cmc-none">未設定</span>'}</td>
       <td>${destTag(c)}</td>
@@ -18433,10 +18436,44 @@ async function cmChildPatchGroup(ids, group) {
     loadCmChildren(true);
   }
 }
+// グループ名：cm_group は「名前#識別子」で保存する（名前が同じグループも別々に扱えるように）。古い形式（名前なし）は G1, G2…
+function cmGroupName(group, no) {
+  const g = String(group || '');
+  const i = g.lastIndexOf('#');
+  return i > 0 ? g.slice(0, i) : `G${no || ''}`;
+}
+// 選んだ行から既定のグループ名を作る（例: E03(12/2)）
+//   製品の記号＝選択中の製品ボタン（E03 等）、なければ製品名の (E03) から。日付＝いちばん早い出荷日
+function cmDefaultGroupName(rows) {
+  const om = cmOrderMap();
+  let code = String(typeof cmProductLabel !== 'undefined' && cmProductLabel ? cmProductLabel : '').trim();
+  if (!code) {
+    const cnt = new Map();
+    rows.forEach(c => { const m = String((om.get(c.order_id) || {}).pd_product_name || '').match(/[（(]\s*([A-Z]{1,3}\d{1,3})\s*[)）]/i); if (m) cnt.set(m[1].toUpperCase(), (cnt.get(m[1].toUpperCase()) || 0) + 1); });
+    code = [...cnt.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || '';
+  }
+  const ds = rows.map(c => c.delivery ? String(c.delivery).slice(0, 10) : '').filter(Boolean).sort();
+  const d = ds[0] ? `${+ds[0].slice(5, 7)}/${+ds[0].slice(8, 10)}` : '';
+  return d ? `${code}(${d})` : code;
+}
+function cmNewGroupValue(name) {
+  return `${String(name).replace(/#/g, '＃').trim()}#${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+}
+async function cmChildRenameGroup(group) {
+  const rows = cmChildren.filter(c => c.cm_group === group);
+  if (!rows.length) return;
+  const cur = cmGroupName(group);
+  const name = prompt('グループ名を入力してください', cur.startsWith('G') && !String(group).includes('#') ? cmDefaultGroupName(rows) : cur);
+  if (name == null || !name.trim()) return;
+  await cmChildPatchGroup(rows.map(c => c.id), cmNewGroupValue(name));
+}
+
 async function cmChildMakeGroup() {
   const vis = cmVisibleChildren();
   const ids = vis.map(c => c.id).filter(x => cmChildSel.has(x));
   if (!ids.length) return;
+  const gname = prompt('グループ名を入力してください', cmDefaultGroupName(vis.filter(c => cmChildSel.has(c.id))));
+  if (gname == null) return;   // キャンセル
   // グループにした行を、最初の行の位置にまとめ、同じ製品名どうしで固めて並べる
   //   製品名の順は一覧で先に出てくる順。製品名の空白・全角半角の違いは同じとみなす
   const om = cmOrderMap();
@@ -18450,7 +18487,7 @@ async function cmChildMakeGroup() {
   const rest = vis.map(c => c.id).filter(x => !cmChildSel.has(x));
   const before = vis.slice(0, firstAt).map(c => c.id).filter(x => !cmChildSel.has(x)).length;
   rest.splice(before, 0, ...groupedIds);
-  await cmChildPatchGroup(ids, 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
+  await cmChildPatchGroup(ids, cmNewGroupValue(gname.trim() || cmDefaultGroupName(picked) || 'グループ'));
   cmChildSaveOrder(rest);
 }
 function cmChildClearGroup() {
