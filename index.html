@@ -3123,7 +3123,7 @@
             <div class="ord-panel" id="ord-panel-search" hidden>
               <div class="ord-row">
                 <div class="ord-search">
-                  <input class="search-input" id="search-input" type="text" placeholder="🔍 受注番号・図番・販売先・日付" title="受注番号・図番・販売先・取込日（例 10/15・2026-10-15・10/15 13:43）・出荷日・希望納期で検索" oninput="filterOrders()">
+                  <input class="search-input" id="search-input" type="text" placeholder="🔍 受注番号・図番・シールNo・販売先・日付" title="受注番号・図番・シールNo・販売先・取込日（例 10/15・2026-10-15・10/15 13:43）・出荷日・希望納期で検索" oninput="filterOrders()">
                 </div>
               </div>
             </div>
@@ -17642,7 +17642,7 @@ async function loadOrders() {
       const [memoRows, pdMemoRows, childRows] = await Promise.all([
         fetchAllPaged(`${SUPABASE_URL}/rest/v1/order_memos?select=order_id`),
         fetchAllPaged(`${SUPABASE_URL}/rest/v1/productdate_memos?select=designid`),
-        fetchAllPaged(`${SUPABASE_URL}/rest/v1/orders_child?select=order_id,delivery`)
+        fetchAllPaged(`${SUPABASE_URL}/rest/v1/orders_child?select=order_id,delivery,sealno`)
       ]);
 
       // order_memosのorder_idセット
@@ -17673,9 +17673,11 @@ async function loadOrders() {
       // hasChildSet: 子データを持つ order_id（子データ0件と区別するため）
       const unsetSet = new Set();
       const hasChildSet = new Set();
+      const sealMap = new Map();   // order_id → シールNoの一覧（検索用）
       childRows.forEach(k => {
         hasChildSet.add(k.order_id);
         if (!k.delivery) unsetSet.add(k.order_id);
+        if (k.sealno) { if (!sealMap.has(k.order_id)) sealMap.set(k.order_id, []); sealMap.get(k.order_id).push(String(k.sealno)); }
       });
 
       allOrders = allOrders.map(r => ({
@@ -17685,6 +17687,7 @@ async function loadOrders() {
         has_memo:       orderMemoSet.has(r.id) || pdMemoDrawingSet.has(r.drawingno),
         has_child:          hasChildSet.has(r.id),
         has_unset_delivery: unsetSet.has(r.id),
+        seal_text:          (sealMap.get(r.id) || []).join(' ').toLowerCase(),   // シールNoで検索するため
       }));
     } catch(e) { console.warn('[loadOrders] メモ取得失敗', e); }
     buildClientSelect(); // 販売先セレクトを更新
@@ -18501,7 +18504,8 @@ function filterOrders() {
                || (r.pd_ot_number||'').toLowerCase().includes(q)
                || importedSearchText(r).includes(q)   // 日付の検索は受注日ではなく取込日時で
                || (r.shippingdate||'').includes(q)
-               || (r.deliverydate||'').includes(q);
+               || (r.deliverydate||'').includes(q)
+               || (r.seal_text||'').includes(q);      // シールNo（子データ）
       if (!hit) return false;
     }
     return true;
@@ -23413,7 +23417,8 @@ async function execPrintInspection(dateMode) {
       sealno:    item.sealno,
       // Supabaseの検査表ファイル（印刷サーバーがダウンロードして印刷する）
       ...(item.file_url ? { file_url: item.file_url, file_name: item.file_name || '' } : {}),
-      ...(item.shanai_no ? { shanai_no: item.shanai_no } : {}),
+      // 社内番号（F6）: 指定がなければOT番号を入れる（どの画面から印刷しても社内番号が入るように）
+      ...((item.shanai_no || item.ot_number) ? { shanai_no: item.shanai_no || item.ot_number } : {}),
       date_mode: dateMode,  // 検査日：'year'=西暦のみ ／ 'none'=入れない
       // マザックだけ西暦を固定（印刷サーバーは year があればその年を書き込む）
       ...(dateMode === 'year' && isMazakInspectItem(item) ? { year: MAZAK_INSPECT_YEAR } : {})
