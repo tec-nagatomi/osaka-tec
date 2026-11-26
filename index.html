@@ -2190,6 +2190,11 @@
   #page-orders .cmc-row:hover .cmc-handle { color:#64748b; }
   #page-orders .cmc-row.sel td { background:rgba(59,130,246,.10); }
   #page-orders .cmc-row.dragging { opacity:.4; }
+  /* 出荷日が過ぎた子データはブラックアウト（各社メニュー） */
+  #page-orders .cmc-row.cmc-past td { background:#1f2937 !important; color:#6b7280 !important; }
+  #page-orders .cmc-row.cmc-past td b, #page-orders .cmc-row.cmc-past .cmc-ok, #page-orders .cmc-row.cmc-past .cmc-none { color:#6b7280 !important; background:transparent !important; }
+  #page-orders .cmc-row.cmc-past .cmc-detail { opacity:.55; }
+  #page-orders .cmc-row.cmc-past.sel td { background:#334155 !important; }
   #page-orders .cmc-row.drop-above td { box-shadow:inset 0 2px 0 #1d4ed8; }
   #page-orders .cmc-row.drop-below td { box-shadow:inset 0 -2px 0 #1d4ed8; }
   #page-orders .cmc-grp { width:32px; }
@@ -18215,12 +18220,16 @@ function renderCmChildList() {
   const fmtD = d => d ? String(d).slice(0, 10).replace(/-/g, '/') : '';
   const selCnt = list.filter(c => cmChildSel.has(c.id)).length;
   const allSel = list.length > 0 && selCnt === list.length;
+  // 各社の一覧で、出荷日が過ぎた（今日より前の）子データをブラックアウトする
+  const _t = new Date();
+  const todayStr = `${_t.getFullYear()}-${String(_t.getMonth() + 1).padStart(2, '0')}-${String(_t.getDate()).padStart(2, '0')}`;
   const rows = list.map(c => {
     const o = om.get(c.order_id) || {};
     const g = c.cm_group ? gColor.get(c.cm_group) : null;
     const style = g ? ` style="background:${g.bg};box-shadow:inset 4px 0 0 ${g.bar};"` : '';
     const laser = c.laser_done ? '<span class="cmc-ok">済</span>' : cmEsc(c.laser_machine || '');
-    return `<tr class="cmc-row${cmChildSel.has(c.id) ? ' sel' : ''}" draggable="true" data-id="${c.id}"${style}>
+    const past = c.delivery && String(c.delivery).slice(0, 10) < todayStr;
+    return `<tr class="cmc-row${cmChildSel.has(c.id) ? ' sel' : ''}${past ? ' cmc-past' : ''}" draggable="true" data-id="${c.id}"${style}${past ? ' title="出荷日が過ぎています"' : ''}>
       <td class="cmc-chk"><input type="checkbox" ${cmChildSel.has(c.id) ? 'checked' : ''} onclick="cmChildToggle(event, ${c.id})"></td>
       <td class="cmc-handle" title="ドラッグで並べ替え">⋮⋮</td>
       <td class="cmc-grp">${g ? `<span class="cmc-gbadge" style="background:${g.bar};">G${gNo.get(c.cm_group)}</span>` : ''}</td>
