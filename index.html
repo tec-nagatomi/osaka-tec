@@ -18379,9 +18379,25 @@ async function cmChildPatchGroup(ids, group) {
     loadCmChildren(true);
   }
 }
-function cmChildMakeGroup() {
-  const ids = cmVisibleChildren().map(c => c.id).filter(x => cmChildSel.has(x));
-  cmChildPatchGroup(ids, 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
+async function cmChildMakeGroup() {
+  const vis = cmVisibleChildren();
+  const ids = vis.map(c => c.id).filter(x => cmChildSel.has(x));
+  if (!ids.length) return;
+  // グループにした行を、最初の行の位置にまとめ、同じ製品名どうしで固めて並べる
+  //   製品名の順は一覧で先に出てくる順。製品名の空白・全角半角の違いは同じとみなす
+  const om = cmOrderMap();
+  const normName = c => String((om.get(c.order_id) || {}).pd_product_name || '')
+    .replace(/[Ａ-Ｚａ-ｚ０-９（）]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0)).replace(/\s+/g, '');
+  const picked = vis.filter(c => cmChildSel.has(c.id));
+  const nameOrder = [];
+  picked.forEach(c => { const n = normName(c); if (!nameOrder.includes(n)) nameOrder.push(n); });
+  const groupedIds = nameOrder.flatMap(n => picked.filter(c => normName(c) === n).map(c => c.id));
+  const firstAt = vis.findIndex(c => cmChildSel.has(c.id));
+  const rest = vis.map(c => c.id).filter(x => !cmChildSel.has(x));
+  const before = vis.slice(0, firstAt).map(c => c.id).filter(x => !cmChildSel.has(x)).length;
+  rest.splice(before, 0, ...groupedIds);
+  await cmChildPatchGroup(ids, 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
+  cmChildSaveOrder(rest);
 }
 function cmChildClearGroup() {
   const ids = cmVisibleChildren().map(c => c.id).filter(x => cmChildSel.has(x));
