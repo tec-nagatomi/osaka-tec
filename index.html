@@ -23418,7 +23418,8 @@ async function execPrintInspection(dateMode) {
       // Supabaseの検査表ファイル（印刷サーバーがダウンロードして印刷する）
       ...(item.file_url ? { file_url: item.file_url, file_name: item.file_name || '' } : {}),
       // 社内番号（F6）: 指定がなければOT番号を入れる（どの画面から印刷しても社内番号が入るように）
-      ...((item.shanai_no || item.ot_number) ? { shanai_no: item.shanai_no || item.ot_number } : {}),
+      //   枝番（OT-104902-1 の「-1」）は付けない → OT-104902
+      ...((item.shanai_no || item.ot_number) ? { shanai_no: String(item.shanai_no || item.ot_number).trim().replace(/^(OT-\d+)-\d+$/i, '$1') } : {}),
       date_mode: dateMode,  // 検査日：'year'=西暦のみ ／ 'none'=入れない
       // マザックだけ西暦を固定（印刷サーバーは year があればその年を書き込む）
       ...(dateMode === 'year' && isMazakInspectItem(item) ? { year: MAZAK_INSPECT_YEAR } : {})
